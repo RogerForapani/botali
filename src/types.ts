@@ -1,4 +1,5 @@
 export type FuelCode = 'gasolina' | 'etanol' | 'diesel_s10'
+export type MapView = FuelCode | 'electric'
 
 export interface Station {
   id: string

@@ -29,6 +29,8 @@ Estruture a interface em quatro camadas: Tokens → Primitivos → Componentes b
 
 Preço comunitário deve sempre mostrar confiança por texto, número e cor. No mapa, somente a melhor opção usa o verde principal; os demais marcadores ficam neutros. No celular, priorize mapa com bottom sheet; no desktop, lista lateral com mapa.
 
+O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de combustível mostram o preço selecionado como informação principal e, quando possível, “Etanol NN%” em uma segunda linha discreta. O modo Recarga usa azul informativo e filtra postos com carregamento elétrico.
+
 ## Marca
 
 O símbolo combina B, direção e localização. Não substitua a identidade principal por bomba de combustível, gota, chama, volante ou carro genérico.

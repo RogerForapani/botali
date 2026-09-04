@@ -9,6 +9,8 @@ Aplicação web mobile-first para encontrar postos próximos, comparar preços d
 - React, TypeScript e Vite
 - Leaflet com OpenStreetMap
 - mapa, lista, busca, raio e seleção de combustível
+- alternância dos marcadores entre gasolina, etanol, diesel e recarga elétrica
+- comparação flex com percentual do etanol sobre a gasolina
 - detalhes e confiança separados por combustível
 - dados demonstrativos isolados em `src/data/stations.ts`
 - Supabase Auth e cliente preparado em `src/lib/supabase.ts`
