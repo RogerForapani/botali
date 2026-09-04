@@ -5,6 +5,7 @@ import './forms.css'
 import './components.css'
 import { AddStationModal } from './components/AddStationModal'
 import { AuthModal } from './components/AuthModal'
+import { PriceSubmissionModal } from './components/PriceSubmissionModal'
 import { StationMap } from './components/StationMap'
 import { StationCard } from './components/StationCard'
 import { FlexRatioBadge } from './components/botali/FlexRatioBadge'
@@ -34,6 +35,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [showAuth, setShowAuth] = useState(false)
   const [showAddStation, setShowAddStation] = useState(false)
+  const [showPriceSubmission, setShowPriceSubmission] = useState(false)
   const [notice, setNotice] = useState('')
   const selectStation = useCallback((station: Station) => setSelected(station), [])
   const fuel: FuelCode = mapView === 'electric' ? 'gasolina' : mapView
@@ -57,7 +59,7 @@ function App() {
   function requestContribution(kind: 'station' | 'price') {
     if (!user) { setShowAuth(true); setNotice(kind === 'price' ? 'Entre para informar um preço.' : 'Entre para cadastrar um posto.'); return }
     if (kind === 'station') setShowAddStation(true)
-    else setNotice('O envio de preços será liberado na próxima etapa.')
+    else if (selected) setShowPriceSubmission(true)
   }
 
   return <div className="app-shell">
@@ -76,6 +78,7 @@ function App() {
     {selected && <><button className="scrim" onClick={() => setSelected(null)} aria-label="Fechar detalhes" /><aside className="details"><button className="close" onClick={() => setSelected(null)}>×</button><span className="eyebrow">{selected.brand}</span><h2>{selected.name}</h2><p>{selected.address}</p><div className="stats"><div><b>{selected.distanceKm ? `${selected.distanceKm.toFixed(1).replace('.', ',')} km` : '—'}</b><small>distância</small></div><div><b>{selected.rating ? `★ ${selected.rating}` : '—'}</b><small>avaliação</small></div><div><b>{selected.prices[fuel] ? `${selected.prices[fuel]?.confidence}%` : '—'}</b><small>confiança</small></div></div>{selectedFlexRatio && <div className="flex-comparison"><span>Comparação para carro flex</span><FlexRatioBadge percentage={selectedFlexRatio.percentage} favorable={selectedFlexRatio.favorable} /></div>}<h3>Preço da comunidade</h3>{selected.prices[fuel] ? <div className="community-price"><div><small>{fuelLabels[fuel]}</small><strong>{selected.prices[fuel]?.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div><p>{selected.prices[fuel]?.confirmations} confirmações<br />Atualizado há {selected.prices[fuel]?.updatedMinutes} min</p></div> : <div className="empty-price">Ninguém informou este preço recentemente.<br /><b>Seja o primeiro a informar.</b></div>}<button className="primary" onClick={() => requestContribution('price')}>Informar novo preço</button><h3>Serviços</h3><div className="chips">{selected.services.length ? selected.services.map((service) => <span key={service}>{service}</span>) : <span>Nenhum serviço confirmado</span>}</div></aside></>}
     {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     {showAddStation && user && <AddStationModal userId={user.id} onClose={() => setShowAddStation(false)} onCreated={() => { setShowAddStation(false); refreshStations(); setNotice('Posto cadastrado e aguardando verificação.') }} />}
+    {showPriceSubmission && user && selected && <PriceSubmissionModal station={selected} initialFuel={fuel} userId={user.id} onClose={() => setShowPriceSubmission(false)} onCreated={() => { setShowPriceSubmission(false); refreshStations(); setNotice('Preço enviado! Valeu pela ajuda.'); }} />}
   </div>
 }
 

@@ -17,6 +17,7 @@ Aplicação web mobile-first para encontrar postos próximos, comparar preços d
 - migração PostgreSQL/PostGIS em `supabase/migrations/`
 - cadastro de postos com localização e bloqueio de duplicidade em 100 metros
 - novos postos entram com status `pending`
+- envio autenticado de preços por combustível, com localização opcional
 
 ## Documentação do produto
 
