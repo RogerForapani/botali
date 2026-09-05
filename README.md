@@ -31,6 +31,18 @@ Aplicativo Android/iOS para encontrar postos próximos, comparar preços de comb
 
 ## Executar localmente
 
+### Aplicativo Android/iOS
+
+```powershell
+cd apps/mobile
+npm install
+npm run android
+```
+
+O desenvolvimento de iOS exige macOS para builds locais. Builds remotos poderão ser configurados posteriormente com EAS.
+
+### Protótipo web
+
 ```powershell
 npm install
 npm run dev
