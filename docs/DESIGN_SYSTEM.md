@@ -39,6 +39,9 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `BottomNavigation`: Explorar, Favoritos, Contribuir, Atividade e Perfil.
 - `ConfidenceBadge`: confiança sempre expressa por texto, número e cor.
 - `FlexRatioBadge`: recomendação flex com percentual explícito.
+- `StationMarker`: preço, percentual flex e recarga no mapa com hierarquia compacta.
+- `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
+- `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - Modais de autenticação e atualização rápida de preço.
 
 Novas telas mobile devem compor esses componentes e os tokens de `apps/mobile/src/theme/tokens.ts`, sem duplicar cores ou medidas localmente.

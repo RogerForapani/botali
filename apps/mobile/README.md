@@ -14,7 +14,9 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - lembretes inteligentes opcionais com geofencing, permanência mínima e limite de frequência
 - navegação inferior entre Explorar, Favoritos, Contribuir, Atividade e Perfil
 - favoritos persistidos localmente
+- histórico real dos preços enviados pelo usuário autenticado
 - componentes reutilizáveis alinhados ao Design System oficial
+- perfis EAS para builds de desenvolvimento, preview e produção
 
 ## Executar
 
@@ -22,6 +24,14 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 npm install
 npm run android
 ```
+
+Para iniciar o bundler de um development build já instalado:
+
+```powershell
+npm run dev-client
+```
+
+A primeira compilação nativa exige login em uma conta Expo e associação do projeto no EAS. Depois disso, use `eas build --profile development --platform android` ou `--platform ios`.
 
 Para verificar os tipos:
 
