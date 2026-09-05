@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar'
+import './src/services/smartVisits'
 import MapView, { Marker, type Region } from 'react-native-maps'
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
@@ -54,7 +55,7 @@ export default function App() {
         <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={styles.locate} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable>
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {selected ? <StationSheet station={selected} mode={mode} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View>}
-        <AuthModal visible={showAuth} user={user} onClose={() => setShowAuth(false)} />
+        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={() => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); refresh() }} />
       </View>
     </SafeAreaProvider>

@@ -1,16 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { supabase } from '../lib/supabase'
+import { disableSmartVisits, enableSmartVisits, smartVisitsEnabled } from '../services/smartVisits'
 import { colors, radius, spacing, typography } from '../theme/tokens'
+import type { Station } from '../types'
 
-export function AuthModal({ visible, user, onClose }: { visible: boolean; user: User | null; onClose: () => void }) {
+export function AuthModal({ visible, user, stations, onClose }: { visible: boolean; user: User | null; stations: Station[]; onClose: () => void }) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [smartVisits, setSmartVisits] = useState(false)
+  useEffect(() => { if (visible && user) smartVisitsEnabled().then(setSmartVisits) }, [visible, user])
 
   async function submit() {
     if (!supabase) return setMessage('Configure o Supabase no arquivo .env.local para entrar.')
@@ -26,12 +30,22 @@ export function AuthModal({ visible, user, onClose }: { visible: boolean; user: 
   }
 
   async function signOut() { await supabase?.auth.signOut(); onClose() }
+  async function toggleSmartVisits() {
+    setBusy(true); setMessage('')
+    try {
+      if (smartVisits) await disableSmartVisits()
+      else await enableSmartVisits(stations)
+      setSmartVisits(!smartVisits)
+      setMessage(smartVisits ? 'Lembretes desativados.' : 'Lembretes inteligentes ativados.')
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível alterar os lembretes.') }
+    finally { setBusy(false) }
+  }
 
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.layer}>
       <Pressable accessibilityRole="button" accessibilityLabel="Fechar" style={styles.scrim} onPress={onClose} />
       <View style={styles.card}><View style={styles.handle} />
-        {user ? <><Text style={styles.eyebrow}>MINHA CONTA</Text><Text style={styles.title}>Olá, {user.user_metadata.full_name || user.email?.split('@')[0]}</Text><Text style={styles.description}>{user.email}</Text><Pressable style={styles.outlineButton} onPress={signOut}><Text style={styles.outlineText}>Sair da conta</Text></Pressable></> : <>
+        {user ? <><Text style={styles.eyebrow}>MINHA CONTA</Text><Text style={styles.title}>Olá, {user.user_metadata.full_name || user.email?.split('@')[0]}</Text><Text style={styles.description}>{user.email}</Text><View style={styles.preference}><View style={styles.preferenceCopy}><Text style={styles.preferenceTitle}>Lembretes inteligentes</Text><Text style={styles.preferenceText}>Detecta uma permanência no posto e envia no máximo uma sugestão por dia. Desligado por padrão.</Text></View><Pressable disabled={busy} accessibilityRole="switch" accessibilityState={{ checked: smartVisits }} style={[styles.toggle, smartVisits && styles.toggleActive]} onPress={toggleSmartVisits}><View style={[styles.toggleKnob, smartVisits && styles.toggleKnobActive]} /></Pressable></View>{message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}<Pressable style={styles.outlineButton} onPress={signOut}><Text style={styles.outlineText}>Sair da conta</Text></Pressable></> : <>
           <Text style={styles.eyebrow}>COMUNIDADE BOTALI</Text><Text style={styles.title}>{mode === 'signin' ? 'Entre para contribuir' : 'Crie sua conta'}</Text><Text style={styles.description}>Consultar preços é livre. Sua conta só é necessária para enviar ou confirmar informações.</Text>
           {mode === 'signup' ? <TextInput accessibilityLabel="Nome" style={styles.input} placeholder="Seu nome" placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} /> : null}
           <TextInput accessibilityLabel="E-mail" style={styles.input} placeholder="seu@email.com" placeholderTextColor={colors.textMuted} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
@@ -46,5 +60,5 @@ export function AuthModal({ visible, user, onClose }: { visible: boolean; user: 
 }
 
 const styles = StyleSheet.create({
-  layer: { flex: 1, justifyContent: 'flex-end' }, scrim: { position: 'absolute', inset: 0, backgroundColor: '#02061799' }, card: { padding: spacing[5], paddingBottom: spacing[8], borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colors.graphite }, handle: { alignSelf: 'center', width: 42, height: 4, borderRadius: radius.full, backgroundColor: colors.border, marginBottom: spacing[5] }, eyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { color: colors.offWhite, fontSize: typography.h2, fontWeight: '900', marginTop: spacing[2] }, description: { color: colors.textMuted, fontSize: typography.small, lineHeight: 20, marginTop: spacing[2], marginBottom: spacing[4] }, input: { minHeight: 50, marginBottom: spacing[3], paddingHorizontal: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, color: colors.offWhite, fontSize: typography.body }, message: { marginBottom: spacing[3], color: colors.amber, fontSize: typography.small }, primaryButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.brand }, primaryText: { color: colors.graphite, fontWeight: '900' }, switchButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2] }, switchText: { color: colors.brand, fontWeight: '800' }, outlineButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md }, outlineText: { color: colors.offWhite, fontWeight: '800' },
+  layer: { flex: 1, justifyContent: 'flex-end' }, scrim: { position: 'absolute', inset: 0, backgroundColor: '#02061799' }, card: { padding: spacing[5], paddingBottom: spacing[8], borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colors.graphite }, handle: { alignSelf: 'center', width: 42, height: 4, borderRadius: radius.full, backgroundColor: colors.border, marginBottom: spacing[5] }, eyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { color: colors.offWhite, fontSize: typography.h2, fontWeight: '900', marginTop: spacing[2] }, description: { color: colors.textMuted, fontSize: typography.small, lineHeight: 20, marginTop: spacing[2], marginBottom: spacing[4] }, input: { minHeight: 50, marginBottom: spacing[3], paddingHorizontal: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, color: colors.offWhite, fontSize: typography.body }, message: { marginBottom: spacing[3], color: colors.amber, fontSize: typography.small }, primaryButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.brand }, primaryText: { color: colors.graphite, fontWeight: '900' }, switchButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2] }, switchText: { color: colors.brand, fontWeight: '800' }, outlineButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md }, outlineText: { color: colors.offWhite, fontWeight: '800' }, preference: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginBottom: spacing[4], padding: spacing[4], borderRadius: radius.md, backgroundColor: colors.surface }, preferenceCopy: { flex: 1 }, preferenceTitle: { color: colors.offWhite, fontWeight: '800' }, preferenceText: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 }, toggle: { width: 48, height: 28, padding: 3, justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.border }, toggleActive: { backgroundColor: colors.brand }, toggleKnob: { width: 22, height: 22, borderRadius: radius.full, backgroundColor: colors.offWhite }, toggleKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.graphite },
 })

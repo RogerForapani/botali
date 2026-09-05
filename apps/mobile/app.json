@@ -7,12 +7,22 @@
     "icon": "./assets/icon.png",
     "scheme": "botali",
     "userInterfaceStyle": "dark",
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O botali usa sua localização para mostrar postos e preços próximos.",
+          "locationAlwaysAndWhenInUsePermission": "O botali usa geofences para reconhecer visitas a postos e sugerir confirmações úteis, mesmo com o app fechado.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-notifications"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.botali.app",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "O botali usa sua localização para mostrar postos e preços próximos."
-      }
+      "infoPlist": {}
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +33,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.botali.app",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

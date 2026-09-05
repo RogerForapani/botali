@@ -11,6 +11,7 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - cadastro e entrada por e-mail com sessão persistente
 - atualização rápida de preço para usuários autenticados
 - rota externa até o posto
+- lembretes inteligentes opcionais com geofencing, permanência mínima e limite de frequência
 
 ## Executar
 
@@ -36,4 +37,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=
 
 ## Localização
 
-Nesta primeira etapa, o app solicita apenas localização em primeiro plano e somente quando o usuário toca no botão de localização. Geofencing e localização em segundo plano serão habilitados posteriormente, depois do onboarding específico e da adesão explícita aos lembretes inteligentes.
+O app solicita localização em primeiro plano somente quando o usuário toca no botão de localização. Usuários autenticados podem ativar separadamente os lembretes inteligentes no perfil. Somente essa ação inicia o pedido de localização em segundo plano, notificações e geofences.
+
+Os lembretes exigem permanência mínima de três minutos, têm limite global de um por dia e não repetem a mesma sugestão para um posto durante sete dias.
