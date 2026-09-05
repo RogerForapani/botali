@@ -31,6 +31,18 @@ Preço comunitário deve sempre mostrar confiança por texto, número e cor. No 
 
 O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de combustível mostram o preço selecionado como informação principal e, quando possível, “Etanol NN%” em uma segunda linha discreta. O modo Recarga usa azul informativo e filtra postos com carregamento elétrico.
 
+### Componentes mobile implementados
+
+- `Button`: ações primária, secundária e ghost.
+- `Chip`: filtros selecionáveis do mapa.
+- `EmptyState`: ausência de favoritos ou atividade.
+- `BottomNavigation`: Explorar, Favoritos, Contribuir, Atividade e Perfil.
+- `ConfidenceBadge`: confiança sempre expressa por texto, número e cor.
+- `FlexRatioBadge`: recomendação flex com percentual explícito.
+- Modais de autenticação e atualização rápida de preço.
+
+Novas telas mobile devem compor esses componentes e os tokens de `apps/mobile/src/theme/tokens.ts`, sem duplicar cores ou medidas localmente.
+
 ## Marca
 
 O símbolo combina B, direção e localização. Não substitua a identidade principal por bomba de combustível, gota, chama, volante ou carro genérico.
