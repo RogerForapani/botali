@@ -20,6 +20,7 @@ Aplicativo Android/iOS para encontrar postos próximos, comparar preços de comb
 - envio autenticado de preços por combustível, com localização opcional
 - consenso por volume de relatos, reputação e confirmações recentes
 - check-in voluntário por GPS, validado em até 200 metros e armazenado sem coordenada exata
+- aplicativo Expo em `apps/mobile`, com autenticação e dados reais do Supabase
 
 ## Documentação do produto
 

@@ -2,9 +2,12 @@ import { useMemo, useRef, useState } from 'react'
 import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar'
 import MapView, { Marker, type Region } from 'react-native-maps'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { stations } from './src/data/stations'
+import { AuthModal } from './src/components/AuthModal'
+import { PriceModal } from './src/components/PriceModal'
+import { useSession } from './src/hooks/useSession'
+import { useStations } from './src/hooks/useStations'
 import { colors, radius, shadow, spacing, typography } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
 
@@ -18,9 +21,13 @@ const modes: { value: MapMode; label: string }[] = [
 
 export default function App() {
   const mapRef = useRef<MapView>(null)
+  const { user } = useSession()
+  const { stations, loading, usingDemo, refresh } = useStations()
   const [mode, setMode] = useState<MapMode>('gasolina')
   const [selected, setSelected] = useState<Station | null>(stations[0])
   const [locationMessage, setLocationMessage] = useState('')
+  const [showAuth, setShowAuth] = useState(false)
+  const [showPrice, setShowPrice] = useState(false)
   const visibleStations = useMemo(() => mode === 'electric' ? stations.filter((station) => station.hasElectricCharging) : stations, [mode])
 
   async function locate() {
@@ -40,13 +47,15 @@ export default function App() {
         </MapView>
 
         <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><View><Text style={styles.brand}>botali</Text><Text style={styles.tagline}>O melhor posto tá ali.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar}><Text style={styles.avatarText}>○</Text></Pressable></View>
+          <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><View><Text style={styles.brand}>botali</Text><Text style={styles.tagline}>{loading ? 'Buscando preços…' : usingDemo ? 'Explorando com dados demonstrativos' : 'O melhor posto tá ali.'}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modes}>{modes.map((item) => <Pressable key={item.value} accessibilityRole="button" accessibilityState={{ selected: mode === item.value }} style={[styles.mode, mode === item.value && styles.modeActive]} onPress={() => { setMode(item.value); setSelected(null) }}><Text style={[styles.modeText, mode === item.value && styles.modeTextActive]}>{item.label}</Text></Pressable>)}</ScrollView>
         </SafeAreaView>
 
         <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={styles.locate} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable>
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {selected ? <StationSheet station={selected} mode={mode} onClose={() => setSelected(null)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View>}
+        {selected ? <StationSheet station={selected} mode={mode} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View>}
+        <AuthModal visible={showAuth} user={user} onClose={() => setShowAuth(false)} />
+        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={() => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); refresh() }} />
       </View>
     </SafeAreaProvider>
   )
@@ -63,10 +72,10 @@ function StationMarker({ station, mode, selected, onPress }: { station: Station;
   </Marker>
 }
 
-function StationSheet({ station, mode, onClose }: { station: Station; mode: MapMode; onClose: () => void }) {
+function StationSheet({ station, mode, onClose, onContribute }: { station: Station; mode: MapMode; onClose: () => void; onContribute: () => void }) {
   const fuel = mode === 'electric' ? 'gasolina' : mode
   const price = station.prices[fuel]
-  return <SafeAreaView edges={['bottom']} style={styles.sheet}><View style={styles.handle} /><View style={styles.sheetHead}><View><Text style={styles.eyebrow}>{station.brand.toUpperCase()}</Text><Text style={styles.stationName}>{station.name}</Text><Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km · ★ {station.rating.toFixed(1)}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Fechar detalhes" onPress={onClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>{mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><Text style={styles.confidence}>Serviço confirmado</Text></View> : <View style={styles.priceRow}><View><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={styles.priceValue}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text></View>{price ? <Text style={styles.confidence}>{price.confidence}% confiança</Text> : null}</View>}<View style={styles.actions}><Pressable style={styles.secondaryButton}><Text style={styles.secondaryText}>Ver posto</Text></Pressable><Pressable style={styles.primaryButton}><Text style={styles.primaryText}>Ver rota</Text></Pressable></View></SafeAreaView>
+  return <SafeAreaView edges={['bottom']} style={styles.sheet}><View style={styles.handle} /><View style={styles.sheetHead}><View><Text style={styles.eyebrow}>{station.brand.toUpperCase()}</Text><Text style={styles.stationName}>{station.name}</Text><Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km · {station.rating ? `★ ${station.rating.toFixed(1)}` : station.address}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Fechar detalhes" onPress={onClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>{mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><Text style={styles.confidence}>Serviço confirmado</Text></View> : <View style={styles.priceRow}><View><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={styles.priceValue}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text></View>{price ? <Text style={styles.confidence}>{price.confidence}% confiança{price.reports ? ` · ${price.reports} relatos` : ''}</Text> : null}</View>}<View style={styles.actions}><Pressable style={styles.secondaryButton} onPress={onContribute}><Text style={styles.secondaryText}>Atualizar preço</Text></Pressable><Pressable style={styles.primaryButton} onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`)}><Text style={styles.primaryText}>Ver rota</Text></Pressable></View></SafeAreaView>
 }
 
 const styles = StyleSheet.create({
