@@ -60,6 +60,15 @@
 .flex-ratio.favorable { background: #dff5e8; color: #167244; }
 .flex-ratio.unfavorable { background: #fff0bf; color: #86600c; }
 
+.presence-card { margin-top: 16px; padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: #f8faf9; }
+.presence-card h3 { margin: 4px 0 0; }
+.presence-card p { margin: 8px 0 12px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.presence-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.presence-actions button { min-height: 44px; margin: 0; padding: 9px; border-radius: 11px; font-size: 12px; font-weight: 800; }
+.secondary-action { border: 1px solid #8fb2a4; background: #fff; color: var(--green); }
+.presence-actions button:disabled { opacity: .6; cursor: wait; }
+.presence-card .form-message { margin-top: 9px; }
+
 @media (max-width: 760px) {
   .segmented-control { overflow-x: auto; }
   .segmented-control button { min-width: 68px; }

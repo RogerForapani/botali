@@ -11,5 +11,5 @@ export interface Station {
   distanceKm: number
   rating: number
   services: string[]
-  prices: Partial<Record<FuelCode, { value: number; confidence: number; confirmations: number; updatedMinutes: number }>>
+  prices: Partial<Record<FuelCode, { submissionId?: string; value: number; confidence: number; confirmations: number; reports?: number; updatedMinutes: number }>>
 }

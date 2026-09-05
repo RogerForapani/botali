@@ -36,6 +36,18 @@
 - Confirmações recentes e contribuições consistentes aumentam confiança.
 - Divergências, dados antigos e correções reduzem confiança.
 - Evoluções do algoritmo devem ser documentadas e auditáveis antes de alterar os limites oficiais.
+- O preço comunitário considera relatos das últimas 48 horas agrupados pelo mesmo valor em centavos.
+- O volume de relatos independentes é o sinal principal; reputação, confirmações e divergências ajustam o resultado.
+- A pontuação inicial de um grupo é `100 × relatos + 0,25 × reputação + 30 × confirmações ponderadas − 40 × divergências ponderadas`.
+- Assim, vários usuários com o mesmo preço podem superar um relato isolado, mesmo quando esse autor tem reputação alta.
+
+## Presença e localização
+
+- A localização é solicitada apenas após uma ação explícita do usuário.
+- Check-in e confirmação só são aceitos a até 200 metros do posto.
+- A coordenada exata não é armazenada no histórico de visitas; persistem somente posto, usuário, dia e distância aproximada.
+- Cada usuário conta no máximo uma vez por posto por dia para métricas de visitação.
+- Métricas públicas devem ser agregadas e nunca expor quais usuários visitaram o posto.
 
 ## Linguagem
 

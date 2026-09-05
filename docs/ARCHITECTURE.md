@@ -35,3 +35,4 @@ O MVP atual ainda é compacto. A migração para essa estrutura deve ocorrer inc
 - Somente chaves públicas do Supabase podem chegar ao navegador.
 - Nunca versionar `.env.local` nem `service_role`.
 - Operações privilegiadas devem ser executadas no backend ou por funções protegidas.
+- Geolocalização é dado pessoal: capture somente com ação clara, valide proximidade no banco e retenha o mínimo necessário.

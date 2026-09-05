@@ -4,8 +4,9 @@ import type { FuelCode, Station } from '../types'
 type BrandRow = { name: string } | { name: string }[] | null
 type StationRow = { id: string; name: string; latitude: number; longitude: number; address: string | null; station_brands: BrandRow }
 type FuelTypeRow = { code: string } | { code: string }[] | null
-type PriceRow = { station_id: string; price: number; user_trust_score_snapshot: number; created_at: string; fuel_types: FuelTypeRow }
+type PriceRow = { id: string; station_id: string; price: number; user_trust_score_snapshot: number; created_at: string; fuel_types: FuelTypeRow }
 type ServiceRow = { station_id: string; services: { name: string } | { name: string }[] | null }
+type ConfirmationRow = { submission_id: string; agrees: boolean; trust_score_snapshot: number }
 
 function relationName(relation: { name: string } | { name: string }[] | null) {
   return Array.isArray(relation) ? relation[0]?.name : relation?.name
@@ -13,22 +14,51 @@ function relationName(relation: { name: string } | { name: string }[] | null) {
 
 export async function loadStations(): Promise<Station[]> {
   if (!supabase) return []
-  const [stationsResult, pricesResult, servicesResult] = await Promise.all([
+  const recentLimit = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+  const [stationsResult, pricesResult, servicesResult, confirmationsResult] = await Promise.all([
     supabase.from('stations').select('id,name,latitude,longitude,address,station_brands(name)').neq('status', 'rejected'),
-    supabase.from('price_submissions').select('station_id,price,user_trust_score_snapshot,created_at,fuel_types(code)').order('created_at', { ascending: false }),
+    supabase.from('price_submissions').select('id,station_id,price,user_trust_score_snapshot,created_at,fuel_types(code)').gte('created_at', recentLimit).order('created_at', { ascending: false }),
     supabase.from('station_services').select('station_id,services(name)').neq('status', 'rejected'),
+    supabase.from('price_confirmations').select('submission_id,agrees,trust_score_snapshot'),
   ])
   if (stationsResult.error) throw stationsResult.error
   if (pricesResult.error) throw pricesResult.error
   if (servicesResult.error) throw servicesResult.error
+  if (confirmationsResult.error) throw confirmationsResult.error
 
-  const latestPrices = new Map<string, PriceRow>()
+  const confirmationWeights = new Map<string, { agrees: number; disagrees: number }>()
+  for (const confirmation of (confirmationsResult.data ?? []) as ConfirmationRow[]) {
+    const weights = confirmationWeights.get(confirmation.submission_id) ?? { agrees: 0, disagrees: 0 }
+    const weight = 1 + Math.min(100, confirmation.trust_score_snapshot) / 100
+    if (confirmation.agrees) weights.agrees += weight
+    else weights.disagrees += weight
+    confirmationWeights.set(confirmation.submission_id, weights)
+  }
+
+  const priceGroups = new Map<string, PriceRow[]>()
   for (const price of (pricesResult.data ?? []) as PriceRow[]) {
     const fuelRelation = price.fuel_types
     const code = Array.isArray(fuelRelation) ? fuelRelation[0]?.code : fuelRelation?.code
     if (!code || !['gasolina', 'etanol', 'diesel_s10'].includes(code)) continue
-    const key = `${price.station_id}:${code}`
-    if (!latestPrices.has(key)) latestPrices.set(key, price)
+    const key = `${price.station_id}:${code}:${Number(price.price).toFixed(2)}`
+    priceGroups.set(key, [...(priceGroups.get(key) ?? []), price])
+  }
+
+  const consensusPrices = new Map<string, { rows: PriceRow[]; score: number; agrees: number; disagrees: number }>()
+  for (const [groupKey, rows] of priceGroups) {
+    const [stationId, fuelCode] = groupKey.split(':')
+    let agrees = 0
+    let disagrees = 0
+    for (const row of rows) {
+      const weights = confirmationWeights.get(row.id)
+      agrees += weights?.agrees ?? 0
+      disagrees += weights?.disagrees ?? 0
+    }
+    const reputation = rows.reduce((total, row) => total + Math.min(100, row.user_trust_score_snapshot), 0)
+    const score = rows.length * 100 + reputation * 0.25 + agrees * 30 - disagrees * 40
+    const consensusKey = `${stationId}:${fuelCode}`
+    const current = consensusPrices.get(consensusKey)
+    if (!current || score > current.score) consensusPrices.set(consensusKey, { rows, score, agrees, disagrees })
   }
 
   const servicesByStation = new Map<string, string[]>()
@@ -41,12 +71,17 @@ export async function loadStations(): Promise<Station[]> {
   return ((stationsResult.data ?? []) as StationRow[]).map((row) => {
     const prices: Station['prices'] = {}
     for (const code of ['gasolina', 'etanol', 'diesel_s10'] as FuelCode[]) {
-      const submission = latestPrices.get(`${row.id}:${code}`)
-      if (!submission) continue
+      const consensus = consensusPrices.get(`${row.id}:${code}`)
+      if (!consensus) continue
+      const submission = consensus.rows[0]
+      const averageTrust = consensus.rows.reduce((total, item) => total + Math.min(100, item.user_trust_score_snapshot), 0) / consensus.rows.length
+      const confidence = Math.round(Math.min(99, Math.max(10, 20 + Math.log1p(consensus.rows.length) * 18 + averageTrust * 0.35 + consensus.agrees * 4 - consensus.disagrees * 7)))
       prices[code] = {
+        submissionId: submission.id,
         value: Number(submission.price),
-        confidence: Math.min(100, submission.user_trust_score_snapshot),
-        confirmations: 1,
+        confidence,
+        confirmations: Math.round(consensus.agrees),
+        reports: consensus.rows.length,
         updatedMinutes: Math.max(0, Math.round((Date.now() - new Date(submission.created_at).getTime()) / 60000)),
       }
     }
@@ -94,4 +129,18 @@ export async function createPriceSubmission(input: { stationId: string; fuel: Fu
     submitted_location: input.coords ? `POINT(${input.coords.longitude} ${input.coords.latitude})` : null,
   })
   if (error) throw error
+}
+
+export async function checkInStation(stationId: string, coords: { latitude: number; longitude: number }) {
+  if (!supabase) throw new Error('Supabase não configurado.')
+  const { data, error } = await supabase.rpc('check_in_station', { station_id: stationId, lat: coords.latitude, long: coords.longitude })
+  if (error) throw error
+  return Number(data)
+}
+
+export async function confirmPriceAtStation(submissionId: string, coords: { latitude: number; longitude: number }, agrees = true) {
+  if (!supabase) throw new Error('Supabase não configurado.')
+  const { data, error } = await supabase.rpc('confirm_price_at_station', { submission_id: submissionId, lat: coords.latitude, long: coords.longitude, agrees })
+  if (error) throw error
+  return Number(data)
 }

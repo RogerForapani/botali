@@ -18,6 +18,8 @@ Aplicação web mobile-first para encontrar postos próximos, comparar preços d
 - cadastro de postos com localização e bloqueio de duplicidade em 100 metros
 - novos postos entram com status `pending`
 - envio autenticado de preços por combustível, com localização opcional
+- consenso por volume de relatos, reputação e confirmações recentes
+- check-in voluntário por GPS, validado em até 200 metros e armazenado sem coordenada exata
 
 ## Documentação do produto
 
