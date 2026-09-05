@@ -48,6 +48,11 @@
 - A coordenada exata não é armazenada no histórico de visitas; persistem somente posto, usuário, dia e distância aproximada.
 - Cada usuário conta no máximo uma vez por posto por dia para métricas de visitação.
 - Métricas públicas devem ser agregadas e nunca expor quais usuários visitaram o posto.
+- Localização em segundo plano é opcional e desligada até uma adesão clara do usuário.
+- Uma geofence indica visita provável, não confirmação automática de combustível ou preço.
+- Exija permanência mínima e precisão aceitável para evitar contar quem apenas passou pela via.
+- Não mostrar formulários recorrentes. Sugestões de confirmação devem usar ações rápidas e limite de frequência.
+- Não solicitar confirmação quando o preço já tiver consenso forte e recente; priorize preços antigos, divergentes ou com poucos relatos.
 
 ## Linguagem
 

@@ -2,7 +2,7 @@
 
 **O melhor posto tá ali.**
 
-Aplicação web mobile-first para encontrar postos próximos, comparar preços de combustíveis informados pela comunidade e avaliar a confiança de cada informação.
+Aplicativo Android/iOS para encontrar postos próximos, comparar preços de combustíveis informados pela comunidade e avaliar a confiança de cada informação. O frontend web atual é um protótipo funcional usado durante a migração para React Native.
 
 ## Estado atual
 
