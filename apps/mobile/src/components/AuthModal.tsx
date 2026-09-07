@@ -22,7 +22,7 @@ export function AuthModal({ visible, user, stations, onClose }: { visible: boole
     setBusy(true); setMessage('')
     const result = mode === 'signin'
       ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      : await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim() } } })
+      : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: 'botali://auth/callback', data: { full_name: name.trim() } } })
     setBusy(false)
     if (result.error) return setMessage(result.error.message)
     if (mode === 'signup' && !result.data.session) return setMessage('Confira seu e-mail para confirmar a conta.')

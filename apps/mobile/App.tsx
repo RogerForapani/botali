@@ -11,6 +11,7 @@ import { BottomNavigation, type AppTab } from './src/components/botali/BottomNav
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
 import { StationMarker } from './src/components/botali/StationMarker'
+import { StationSearch } from './src/components/botali/StationSearch'
 import { StationSheet } from './src/components/botali/StationSheet'
 import { Chip } from './src/components/ui/Chip'
 import { EmptyState } from './src/components/ui/EmptyState'
@@ -33,16 +34,26 @@ const modes: { value: MapMode; label: string }[] = [
 export default function App() {
   const mapRef = useRef<MapView>(null)
   const { user } = useSession()
-  const { stations, loading, usingDemo, refresh } = useStations()
+  const { stations, refresh } = useStations()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
   const [tab, setTab] = useState<AppTab>('explore')
   const [mode, setMode] = useState<MapMode>('gasolina')
   const [selected, setSelected] = useState<Station | null>(stations[0])
   const [locationMessage, setLocationMessage] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [radiusKm, setRadiusKm] = useState(10)
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
-  const visibleStations = useMemo(() => mode === 'electric' ? stations.filter((station) => station.hasElectricCharging) : stations, [mode])
+  const visibleStations = useMemo(() => stations.filter((station) => station.distanceKm <= radiusKm && (mode !== 'electric' || station.hasElectricCharging)), [mode, radiusKm, stations])
+  const bestStationId = useMemo(() => {
+    if (mode === 'electric') return null
+    return visibleStations.reduce<{ id: string; price: number } | null>((best, station) => {
+      const price = station.prices[mode]?.value
+      return price != null && (!best || price < best.price) ? { id: station.id, price } : best
+    }, null)?.id ?? null
+  }, [mode, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
 
   function changeTab(next: AppTab) {
@@ -64,22 +75,29 @@ export default function App() {
     setLocationMessage('Mapa centralizado na sua localização.')
   }
 
+  function selectFromSearch(station: Station) {
+    setSelected(station)
+    setShowSearch(false)
+    mapRef.current?.animateToRegion({ latitude: station.latitude, longitude: station.longitude, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
+  }
+
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style="light" />
-        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} showsCompass={false} toolbarEnabled={false}>
-          {visibleStations.map((station) => <StationMarker key={station.id} station={station} mode={mode} selected={selected?.id === station.id} onPress={() => setSelected(station)} />)}
+        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false}>
+          {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><View><Text style={styles.brand}>botali</Text><Text style={styles.tagline}>{loading ? 'Buscando preços…' : usingDemo ? 'Explorando com dados demonstrativos' : 'O melhor posto tá ali.'}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modes}>{modes.map((item) => <Chip key={item.value} label={item.label} selected={mode === item.value} onPress={() => { setMode(item.value); setSelected(null) }} />)}</ScrollView>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} /> : <>
+          <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.searchButton} onPress={() => setShowSearch(true)}><Text style={styles.searchIcon}>⌕</Text><View><Text style={styles.searchTitle}>Buscar postos</Text><Text style={styles.searchMeta}>Em um raio de {radiusKm} km</Text></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modes}>{modes.map((item) => <Chip key={item.value} label={item.label} selected={mode === item.value} onPress={() => { setMode(item.value); setSelected(null) }} />)}</ScrollView></>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={styles.locate} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' ? selected ? <StationSheet station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View> : null}
+        {tab === 'explore' && !showSearch ? selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={() => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); refresh(); activity.refresh() }} />
         <BottomNavigation value={tab} onChange={changeTab} />
@@ -94,12 +112,14 @@ function LibraryScreen({ stations, onExplore, onSelect }: { stations: Station[];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.graphite },
-  topArea: { position: 'absolute', top: 0, left: 0, right: 0 },
+  topArea: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   header: { marginHorizontal: spacing[4], marginTop: spacing[2], padding: spacing[3], borderRadius: radius.lg, backgroundColor: colors.graphite, flexDirection: 'row', alignItems: 'center', ...shadow.floating },
   logo: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginRight: spacing[3] },
   logoText: { color: colors.graphite, fontSize: 26, fontWeight: '900' },
-  brand: { color: colors.offWhite, fontSize: typography.h3, fontWeight: '800' },
-  tagline: { color: colors.textMuted, fontSize: typography.caption, marginTop: 1 },
+  searchButton: { flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
+  searchIcon: { color: colors.brand, fontSize: 23, marginRight: spacing[2] },
+  searchTitle: { color: colors.offWhite, fontSize: typography.small, fontWeight: '800' },
+  searchMeta: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   avatar: { marginLeft: 'auto', width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.offWhite, fontSize: 22 },
   modes: { paddingHorizontal: spacing[4], paddingTop: spacing[3], gap: spacing[2] },

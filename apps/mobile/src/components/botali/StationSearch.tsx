@@ -1,0 +1,70 @@
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { colors, radius, shadow, spacing, typography } from '../../theme/tokens'
+import type { MapMode, Station } from '../../types'
+
+const radiusOptions = [2, 5, 10, 20]
+
+type Props = {
+  query: string
+  radiusKm: number
+  mode: MapMode
+  stations: Station[]
+  onQueryChange: (value: string) => void
+  onRadiusChange: (value: number) => void
+  onClose: () => void
+  onSelect: (station: Station) => void
+}
+
+export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect }: Props) {
+  const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
+  const results = stations
+    .filter((station) => station.distanceKm <= radiusKm)
+    .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+
+  return <View style={styles.panel}>
+    <View style={styles.searchRow}>
+      <Text style={styles.searchIcon}>⌕</Text>
+      <TextInput autoFocus accessibilityLabel="Buscar posto" placeholder="Nome, bandeira ou endereço" placeholderTextColor={colors.textMuted} value={query} onChangeText={onQueryChange} style={styles.input} />
+      <Pressable accessibilityRole="button" accessibilityLabel="Fechar busca" onPress={onClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable>
+    </View>
+    <Text style={styles.label}>DISTÂNCIA MÁXIMA</Text>
+    <View style={styles.radiusRow}>{radiusOptions.map((value) => <Pressable key={value} onPress={() => onRadiusChange(value)} style={[styles.radius, radiusKm === value && styles.radiusActive]}><Text style={[styles.radiusText, radiusKm === value && styles.radiusTextActive]}>{value} km</Text></Pressable>)}</View>
+    <Text style={styles.count}>{results.length} {results.length === 1 ? 'posto encontrado' : 'postos encontrados'}</Text>
+    <ScrollView keyboardShouldPersistTaps="handled" style={styles.list} contentContainerStyle={styles.listContent}>
+      {results.map((station) => {
+        const price = mode === 'electric' ? null : station.prices[mode]
+        return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
+          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{station.distanceKm.toFixed(1).replace('.', ',')} km{station.address ? ` · ${station.address}` : ''}</Text></View>
+          <Text style={styles.price}>{mode === 'electric' ? '⚡' : price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : '—'}</Text>
+        </Pressable>
+      })}
+      {!results.length ? <Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text> : null}
+    </ScrollView>
+  </View>
+}
+
+const styles = StyleSheet.create({
+  panel: { maxHeight: '72%', paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[4], borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, backgroundColor: colors.graphite, ...shadow.sheet },
+  searchRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
+  searchIcon: { color: colors.brand, fontSize: 24, marginRight: spacing[2] },
+  input: { flex: 1, color: colors.offWhite, fontSize: typography.body },
+  close: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: colors.offWhite, fontSize: 25 },
+  label: { marginTop: spacing[4], color: colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  radiusRow: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] },
+  radius: { minHeight: 38, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.surface },
+  radiusActive: { backgroundColor: colors.brand },
+  radiusText: { color: colors.offWhite, fontSize: 12, fontWeight: '800' },
+  radiusTextActive: { color: colors.graphite },
+  count: { color: colors.textMuted, fontSize: typography.caption, marginTop: spacing[4] },
+  list: { marginTop: spacing[2] },
+  listContent: { gap: spacing[2], paddingBottom: spacing[3] },
+  card: { minHeight: 70, flexDirection: 'row', alignItems: 'center', padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
+  cardCopy: { flex: 1 },
+  brand: { color: colors.brand, fontSize: 9, fontWeight: '900' },
+  name: { color: colors.offWhite, fontWeight: '800', marginTop: 2 },
+  meta: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
+  price: { color: colors.offWhite, fontSize: typography.h3, fontWeight: '900', marginLeft: spacing[3] },
+  empty: { color: colors.textMuted, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
+})
