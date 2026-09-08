@@ -29,7 +29,7 @@
 
 - Novos cadastros entram como `pending`.
 - Cadastro deve usar localização válida.
-- Postos dentro do limite geográfico de duplicidade devem ser bloqueados ou encaminhados para correção; o MVP usa 100 metros.
+- Postos diferentes podem coexistir próximos. O bloqueio de duplicidade do MVP ocorre somente quando já existe um posto com o mesmo nome normalizado em um raio de 100 metros.
 
 ## Confiança e reputação
 
