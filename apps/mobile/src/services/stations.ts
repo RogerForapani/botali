@@ -5,18 +5,23 @@ type Relation<T> = T | T[] | null
 type StationRow = { id: string; name: string; latitude: number; longitude: number; address: string | null; station_brands: Relation<{ name: string }> }
 type PriceRow = { id: string; station_id: string; price: number; created_at: string; user_trust_score_snapshot: number; fuel_types: Relation<{ code: string }> }
 type ServiceRow = { station_id: string; services: Relation<{ code: string; name: string }> }
+type NearbyRow = StationRow & { brand: string | null; distance_m: number }
+export type MapCenter = { latitude: number; longitude: number }
 
 const first = <T,>(relation: Relation<T>) => Array.isArray(relation) ? relation[0] : relation
 
-export async function loadStations(): Promise<Station[]> {
+export async function loadStations(center: MapCenter, radiusKm = 10): Promise<Station[]> {
   if (!supabase) return []
   const recentLimit = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-  const [stationResult, priceResult, serviceResult] = await Promise.all([
-    supabase.from('stations').select('id,name,latitude,longitude,address,station_brands(name)').neq('status', 'rejected'),
-    supabase.from('price_submissions').select('id,station_id,price,created_at,user_trust_score_snapshot,fuel_types(code)').gte('created_at', recentLimit).order('created_at', { ascending: false }),
-    supabase.from('station_services').select('station_id,services(code,name)').neq('status', 'rejected'),
-  ])
+  const stationResult = await supabase.rpc('nearby_stations', { lat: center.latitude, long: center.longitude, radius_m: Math.round(radiusKm * 1000) })
   if (stationResult.error) throw stationResult.error
+  const nearby = (stationResult.data ?? []) as NearbyRow[]
+  const stationIds = nearby.map((station) => station.id)
+  if (!stationIds.length) return []
+  const [priceResult, serviceResult] = await Promise.all([
+    supabase.from('price_submissions').select('id,station_id,price,created_at,user_trust_score_snapshot,fuel_types(code)').in('station_id', stationIds).gte('created_at', recentLimit).order('created_at', { ascending: false }),
+    supabase.from('station_services').select('station_id,services(code,name)').in('station_id', stationIds).neq('status', 'rejected'),
+  ])
   if (priceResult.error) throw priceResult.error
   if (serviceResult.error) throw serviceResult.error
 
@@ -46,7 +51,7 @@ export async function loadStations(): Promise<Station[]> {
     services.set(row.station_id, current)
   }
 
-  return ((stationResult.data ?? []) as StationRow[]).map((row) => {
+  return nearby.map((row) => {
     const prices: Station['prices'] = {}
     for (const fuel of ['gasolina', 'etanol', 'diesel_s10'] as FuelCode[]) {
       const reports = winners.get(`${row.id}:${fuel}`)
@@ -54,8 +59,21 @@ export async function loadStations(): Promise<Station[]> {
       const averageTrust = reports.reduce((sum, report) => sum + Math.min(100, report.user_trust_score_snapshot), 0) / reports.length
       prices[fuel] = { value: Number(reports[0].price), confidence: Math.round(Math.min(99, 20 + Math.log1p(reports.length) * 18 + averageTrust * .35)), reports: reports.length, updatedAt: reports[0].created_at }
     }
-    return { id: row.id, name: row.name, brand: first(row.station_brands)?.name ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: 0, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], prices }
+    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], prices }
   })
+}
+
+export async function loadStationOptions() {
+  if (!supabase) return { brands: [], fuels: [], services: [] }
+  const [brands, fuels, services] = await Promise.all([
+    supabase.from('station_brands').select('name').eq('active', true).order('name'),
+    supabase.from('fuel_types').select('code,name').eq('active', true).order('name'),
+    supabase.from('services').select('code,name').eq('active', true).order('name'),
+  ])
+  if (brands.error) throw brands.error
+  if (fuels.error) throw fuels.error
+  if (services.error) throw services.error
+  return { brands: brands.data ?? [], fuels: fuels.data ?? [], services: services.data ?? [] }
 }
 
 export async function submitPrice(input: { stationId: string; fuel: FuelCode; price: number; userId: string }) {
@@ -84,26 +102,7 @@ export type StationSuggestion = {
 
 export async function submitStation(input: StationSuggestion) {
   if (!supabase) throw new Error('Supabase não configurado.')
-  const { data: brand, error: brandError } = await supabase.from('station_brands').select('id').eq('name', input.brand).single()
-  if (brandError) throw brandError
-  const { data: station, error: stationError } = await supabase.from('stations').insert({
-    name: input.name.trim(), brand_id: brand.id, address: input.address.trim(), neighborhood: input.neighborhood.trim(), city: input.city.trim(),
-    state: input.state.trim().toUpperCase(), postal_code: input.postalCode.trim(), latitude: input.latitude, longitude: input.longitude,
-    status: 'pending', created_by: input.userId,
-  }).select('id').single()
-  if (stationError) throw stationError
-
-  if (input.fuelCodes.length) {
-    const { data: fuels, error: fuelError } = await supabase.from('fuel_types').select('id,code').in('code', input.fuelCodes)
-    if (fuelError) throw fuelError
-    const { error } = await supabase.from('station_fuels').insert((fuels ?? []).map((fuel) => ({ station_id: station.id, fuel_type_id: fuel.id })))
-    if (error) throw error
-  }
-  if (input.serviceCodes.length) {
-    const { data: services, error: serviceError } = await supabase.from('services').select('id,code').in('code', input.serviceCodes)
-    if (serviceError) throw serviceError
-    const { error } = await supabase.from('station_services').insert((services ?? []).map((service) => ({ station_id: station.id, service_id: service.id, status: 'reported', created_by: input.userId })))
-    if (error) throw error
-  }
-  return station.id as string
+  const { data, error } = await supabase.rpc('create_station_suggestion', { station_name: input.name.trim(), brand_name: input.brand, station_address: input.address.trim(), station_neighborhood: input.neighborhood.trim(), station_city: input.city.trim(), station_state: input.state.trim().toUpperCase(), station_postal_code: input.postalCode.trim(), lat: input.latitude, long: input.longitude, fuel_codes: input.fuelCodes, service_codes: input.serviceCodes })
+  if (error) throw error
+  return data as string
 }

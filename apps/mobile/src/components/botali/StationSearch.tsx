@@ -3,7 +3,7 @@ import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
 
-const radiusOptions = [2, 5, 10, 20]
+const radiusOptions = [2, 5, 10, 25, 50, 100]
 
 type Props = {
   query: string

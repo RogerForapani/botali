@@ -26,6 +26,7 @@ import { radius, shadow, spacing, typography, type ThemeColors } from './src/the
 import type { MapMode, Station } from './src/types'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
+const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
 const modes: { value: MapMode; label: string }[] = [
   { value: 'gasolina', label: 'Gasolina' },
   { value: 'etanol', label: 'Etanol' },
@@ -38,7 +39,7 @@ export default function App() {
   const styles = useMemo(() => createStyles(colors), [colors])
   const mapRef = useRef<MapView>(null)
   const { user } = useSession()
-  const { stations, refresh } = useStations()
+  const { stations, refresh } = useStations(initialCenter, 10)
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
   const [tab, setTab] = useState<AppTab>('explore')
@@ -48,6 +49,9 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [radiusKm, setRadiusKm] = useState(10)
+  const [mapCenter, setMapCenter] = useState(initialCenter)
+  const [pendingCenter, setPendingCenter] = useState(initialCenter)
+  const [showSearchArea, setShowSearchArea] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showNewStation, setShowNewStation] = useState(false)
@@ -76,7 +80,10 @@ export default function App() {
     const permission = await Location.requestForegroundPermissionsAsync()
     if (!permission.granted) return setLocationMessage('Ative a localização para ver postos perto de você.')
     const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-    mapRef.current?.animateToRegion({ latitude: current.coords.latitude, longitude: current.coords.longitude, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
+    const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
+    setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
+    mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
+    await refresh(center, radiusKm)
     setLocationMessage('Mapa centralizado na sua localização.')
   }
 
@@ -96,17 +103,18 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false}>
+        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null); refresh(mapCenter, value) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
           <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.searchButton} onPress={() => setShowSearch(true)}><Text style={styles.searchIcon}>⌕</Text><View><Text style={styles.searchTitle}>Buscar postos</Text><Text style={styles.searchMeta}>Em um raio de {radiusKm} km</Text></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel={themeMode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'} style={styles.themeButton} onPress={toggle}><Text style={styles.themeText}>{themeMode === 'light' ? '☾' : '☀'}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modes}>{modes.map((item) => <Chip key={item.value} label={item.label} selected={mode === item.value} onPress={() => { setMode(item.value); setSelected(null) }} />)}</ScrollView></>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={styles.locate} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
+        {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch ? selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{stations.length === 0 ? 'Nenhum posto cadastrado nesta região' : mode === 'electric' ? 'Nenhum ponto de recarga neste raio' : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>{stations.length === 0 ? 'Ajude a construir o Botali cadastrando um posto real.' : 'Compare valor, distância e confiança.'}</Text>{stations.length === 0 ? <Pressable accessibilityRole="button" style={styles.emptyAction} onPress={openNewStation}><Text style={styles.emptyActionText}>Cadastrar posto</Text></Pressable> : null}</View> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
@@ -141,6 +149,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   mode: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.graphite, ...shadow.floating },
   modeActive: { backgroundColor: colors.brand }, modeText: { color: colors.offWhite, fontWeight: '700', fontSize: typography.small }, modeTextActive: { color: colors.graphite },
   locate: { position: 'absolute', right: spacing[4], bottom: 248, width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.offWhite, alignItems: 'center', justifyContent: 'center', ...shadow.floating }, locateText: { color: colors.graphite, fontSize: 27, fontWeight: '800' },
+  searchArea: { position: 'absolute', alignSelf: 'center', top: 166, minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating }, searchAreaText: { color: colors.text, fontSize: typography.small, fontWeight: '900' },
   emptyHint: { position: 'absolute', left: spacing[4], right: spacing[4], bottom: 82, padding: spacing[4], borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.floating }, emptyTitle: { color: colors.text, fontWeight: '800', fontSize: typography.h3 }, emptyText: { color: colors.textMuted, marginTop: 3 },
   emptyAction: { marginTop: spacing[3], minHeight: 42, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' }, emptyActionText: { color: colors.graphite, fontWeight: '900', fontSize: typography.small },
   toast: { position: 'absolute', alignSelf: 'center', top: 175, maxWidth: '85%', paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface }, toastText: { color: colors.text, fontSize: typography.small },

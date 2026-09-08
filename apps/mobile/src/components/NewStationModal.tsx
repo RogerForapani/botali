@@ -1,12 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as Location from 'expo-location'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
-import { submitStation } from '../services/stations'
+import { loadStationOptions, submitStation } from '../services/stations'
 import { colors, radius, spacing, typography } from '../theme/tokens'
-
-const brands = ['Shell', 'Ipiranga', 'Petrobras', 'Ale', 'Independente', 'Outra']
-const fuels = [{ code: 'gasolina', label: 'Gasolina' }, { code: 'etanol', label: 'Etanol' }, { code: 'diesel_s10', label: 'Diesel S10' }, { code: 'gnv', label: 'GNV' }]
-const services = [{ code: '24h', label: '24 horas' }, { code: 'conveniencia', label: 'Conveniência' }, { code: 'banheiro', label: 'Banheiro' }, { code: 'calibrador', label: 'Calibrador' }, { code: 'lava_jato', label: 'Lava-jato' }, { code: 'recarga_ac', label: 'Recarga AC' }, { code: 'recarga_dc', label: 'Recarga rápida' }]
 
 type Props = { visible: boolean; userId: string | null; onClose: () => void; onSent: () => void }
 
@@ -23,6 +19,17 @@ export function NewStationModal({ visible, userId, onClose, onSent }: Props) {
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [brands, setBrands] = useState<string[]>([])
+  const [fuels, setFuels] = useState<{ code: string; name: string }[]>([])
+  const [services, setServices] = useState<{ code: string; name: string }[]>([])
+
+  useEffect(() => {
+    if (!visible) return
+    loadStationOptions().then((options) => {
+      setBrands(options.brands.map((item) => item.name)); setFuels(options.fuels); setServices(options.services)
+      setBrand((current) => options.brands.some((item) => item.name === current) ? current : options.brands[0]?.name ?? current)
+    }).catch(() => setMessage('Não foi possível carregar as opções do cadastro.'))
+  }, [visible])
 
   function toggle(value: string, current: string[], update: (values: string[]) => void) { update(current.includes(value) ? current.filter((item) => item !== value) : [...current, value]) }
 
@@ -55,8 +62,8 @@ export function NewStationModal({ visible, userId, onClose, onSent }: Props) {
     <Field label="Bairro" value={neighborhood} onChangeText={setNeighborhood} placeholder="Bairro" />
     <View style={styles.row}><View style={styles.grow}><Field label="Cidade" value={city} onChangeText={setCity} placeholder="Cidade" /></View><View style={styles.uf}><Field label="UF" value={state} onChangeText={(value) => setState(value.slice(0, 2))} placeholder="MG" /></View></View>
     <Field label="CEP" value={postalCode} onChangeText={setPostalCode} placeholder="00000-000" keyboardType="numeric" />
-    <Text style={styles.label}>COMBUSTÍVEIS</Text><View style={styles.options}>{fuels.map((item) => <Option key={item.code} label={item.label} active={fuelCodes.includes(item.code)} onPress={() => toggle(item.code, fuelCodes, setFuelCodes)} />)}</View>
-    <Text style={styles.label}>SERVIÇOS</Text><View style={styles.options}>{services.map((item) => <Option key={item.code} label={item.label} active={serviceCodes.includes(item.code)} onPress={() => toggle(item.code, serviceCodes, setServiceCodes)} />)}</View>
+    <Text style={styles.label}>COMBUSTÍVEIS</Text><View style={styles.options}>{fuels.map((item) => <Option key={item.code} label={item.name} active={fuelCodes.includes(item.code)} onPress={() => toggle(item.code, fuelCodes, setFuelCodes)} />)}</View>
+    <Text style={styles.label}>SERVIÇOS</Text><View style={styles.options}>{services.map((item) => <Option key={item.code} label={item.name} active={serviceCodes.includes(item.code)} onPress={() => toggle(item.code, serviceCodes, setServiceCodes)} />)}</View>
     <Pressable onPress={locate} style={[styles.locationButton, coordinates && styles.locationReady]}><Text style={styles.locationText}>{coordinates ? '✓ Localização do posto capturada' : '⌖ Usar minha localização atual'}</Text></Pressable>
     {message ? <Text style={styles.message}>{message}</Text> : null}
   </ScrollView><Pressable disabled={busy} style={styles.primary} onPress={send}><Text style={styles.primaryText}>{busy ? 'Enviando…' : 'Enviar posto para validação'}</Text></Pressable></View></KeyboardAvoidingView></Modal>

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import { loadStations } from '../services/stations'
+import { loadStations, type MapCenter } from '../services/stations'
 import type { Station } from '../types'
 
-export function useStations() {
+export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
   const [stations, setStations] = useState<Station[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (center = initialCenter, radiusKm = initialRadiusKm) => {
     setLoading(true)
     setError(null)
     try {
-      const rows = await loadStations()
+      const rows = await loadStations(center, radiusKm)
       setStations(rows)
     } catch {
       setStations([])
@@ -19,7 +19,7 @@ export function useStations() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [initialCenter, initialRadiusKm])
 
   useEffect(() => { refresh() }, [refresh])
   return { stations, loading, error, refresh }
