@@ -15,6 +15,8 @@ O botali é uma plataforma de tecnologia e mobilidade, não uma rede de postos. 
 
 Use como referência a proporção 70/20/10: neutros estruturais, superfícies e cores de ação. Não transforme a interface inteira em verde.
 
+O aplicativo oferece temas claro e escuro. O modo claro é o padrão inicial; a preferência escolhida pelo usuário é persistida no dispositivo. O tema escuro usa cinzas neutros, sem deslocamento azulado, mantendo verde, âmbar, azul informativo e vermelho como cores semânticas oficiais.
+
 ## Tipografia e forma
 
 - Fonte: `Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`.

@@ -3,10 +3,12 @@ import type { User } from '@supabase/supabase-js'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { disableSmartVisits, enableSmartVisits, smartVisitsEnabled } from '../services/smartVisits'
-import { colors, radius, spacing, typography } from '../theme/tokens'
+import { useTheme } from '../theme/ThemeProvider'
+import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import type { Station } from '../types'
 
 export function AuthModal({ visible, user, stations, onClose }: { visible: boolean; user: User | null; stations: Station[]; onClose: () => void }) {
+  const { colors } = useTheme(); const styles = createStyles(colors)
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -59,6 +61,6 @@ export function AuthModal({ visible, user, stations, onClose }: { visible: boole
   </Modal>
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   layer: { flex: 1, justifyContent: 'flex-end' }, scrim: { position: 'absolute', inset: 0, backgroundColor: '#02061799' }, card: { padding: spacing[5], paddingBottom: spacing[8], borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colors.graphite }, handle: { alignSelf: 'center', width: 42, height: 4, borderRadius: radius.full, backgroundColor: colors.border, marginBottom: spacing[5] }, eyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { color: colors.offWhite, fontSize: typography.h2, fontWeight: '900', marginTop: spacing[2] }, description: { color: colors.textMuted, fontSize: typography.small, lineHeight: 20, marginTop: spacing[2], marginBottom: spacing[4] }, input: { minHeight: 50, marginBottom: spacing[3], paddingHorizontal: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, color: colors.offWhite, fontSize: typography.body }, message: { marginBottom: spacing[3], color: colors.amber, fontSize: typography.small }, primaryButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.brand }, primaryText: { color: colors.graphite, fontWeight: '900' }, switchButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2] }, switchText: { color: colors.brand, fontWeight: '800' }, outlineButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md }, outlineText: { color: colors.offWhite, fontWeight: '800' }, preference: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginBottom: spacing[4], padding: spacing[4], borderRadius: radius.md, backgroundColor: colors.surface }, preferenceCopy: { flex: 1 }, preferenceTitle: { color: colors.offWhite, fontWeight: '800' }, preferenceText: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 }, toggle: { width: 48, height: 28, padding: 3, justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.border }, toggleActive: { backgroundColor: colors.brand }, toggleKnob: { width: 22, height: 22, borderRadius: radius.full, backgroundColor: colors.offWhite }, toggleKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.graphite },
 })

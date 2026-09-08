@@ -1,4 +1,8 @@
-export const colors = { brand: '#22C55E', graphite: '#111827', offWhite: '#F8FAFC', amber: '#FBBF24', info: '#3B82F6', danger: '#EF4444', surface: '#1F2937', border: '#334155', textMuted: '#94A3B8' } as const
+export const baseColors = { brand: '#22C55E', graphite: '#111827', offWhite: '#F8FAFC', amber: '#FBBF24', info: '#3B82F6', danger: '#EF4444' } as const
+export const lightColors = { ...baseColors, graphite: '#FFFFFF', offWhite: '#111827', background: '#F8FAFC', surface: '#FFFFFF', surfaceAlt: '#F1F5F9', border: '#D1D5DB', text: '#111827', textMuted: '#64748B', onBrand: '#111827', scrim: '#11182766' } as const
+export const darkColors = { ...baseColors, background: '#111827', surface: '#202020', surfaceAlt: '#2A2A2A', border: '#404040', text: '#F8FAFC', textMuted: '#A3A3A3', onBrand: '#111827', scrim: '#00000099' } as const
+export const colors = lightColors
+export type ThemeColors = { [K in keyof typeof lightColors]: string }
 export const spacing = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32 } as const
 export const radius = { sm: 8, md: 12, lg: 16, xl: 20, full: 999 } as const
 export const typography = { caption: 12, small: 14, body: 16, h3: 20, h2: 24, h1: 28 } as const

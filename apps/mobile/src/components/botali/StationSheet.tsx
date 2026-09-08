@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Linking, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { colors, radius, shadow, spacing, typography } from '../../theme/tokens'
+import { useTheme } from '../../theme/ThemeProvider'
+import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
 import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
@@ -10,6 +11,7 @@ import { FlexRatioBadge } from './FlexRatioBadge'
 type Props = { station: Station; mode: MapMode; favorite: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void }
 
 export function StationSheet({ station, mode, favorite, onToggleFavorite, onClose, onContribute }: Props) {
+  const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
   const fuel = mode === 'electric' ? 'gasolina' : mode
   const price = station.prices[fuel]
@@ -51,7 +53,7 @@ export function StationSheet({ station, mode, favorite, onToggleFavorite, onClos
   </SafeAreaView>
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sheet: { position: 'absolute', left: spacing[3], right: spacing[3], bottom: 76, maxHeight: '48%', paddingHorizontal: spacing[5], paddingTop: spacing[1], paddingBottom: spacing[4], borderRadius: radius.xl, backgroundColor: colors.graphite, ...shadow.sheet },
   sheetExpanded: { maxHeight: '78%' },
   handleButton: { minHeight: 32, alignItems: 'center', justifyContent: 'center' },

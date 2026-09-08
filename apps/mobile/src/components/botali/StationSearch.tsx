@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
-import { colors, radius, shadow, spacing, typography } from '../../theme/tokens'
+import { useTheme } from '../../theme/ThemeProvider'
+import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
 
 const radiusOptions = [2, 5, 10, 20]
@@ -17,6 +18,7 @@ type Props = {
 }
 
 export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation }: Props) {
+  const { colors } = useTheme(); const styles = createStyles(colors)
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
   const results = stations
     .filter((station) => station.distanceKm <= radiusKm)
@@ -46,7 +48,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
   </View>
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   panel: { maxHeight: '72%', paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[4], borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, backgroundColor: colors.graphite, ...shadow.sheet },
   searchRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   searchIcon: { color: colors.brand, fontSize: 24, marginRight: spacing[2] },

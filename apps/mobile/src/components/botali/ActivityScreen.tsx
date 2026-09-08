@@ -1,13 +1,15 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { ActivityItem } from '../../hooks/useActivity'
-import { colors, radius, spacing, typography } from '../../theme/tokens'
+import { useTheme } from '../../theme/ThemeProvider'
+import { radius, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 
 type Props = { authenticated: boolean; items: ActivityItem[]; loading: boolean; error: string; onSignIn: () => void; onExplore: () => void }
 
 export function ActivityScreen({ authenticated, items, loading, error, onSignIn, onExplore }: Props) {
+  const { colors } = useTheme(); const styles = createStyles(colors)
   return <SafeAreaView style={styles.screen}>
     <View style={styles.header}><Text style={styles.eyebrow}>BOTALI</Text><Text style={styles.title}>Atividade</Text></View>
     {!authenticated ? <EmptyState icon="○" title="Entre para ver suas contribuições" description="Seus preços enviados ficam organizados neste histórico." />
@@ -19,7 +21,7 @@ export function ActivityScreen({ authenticated, items, loading, error, onSignIn,
   </SafeAreaView>
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, paddingBottom: 82, backgroundColor: colors.graphite },
   header: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] },
   eyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
