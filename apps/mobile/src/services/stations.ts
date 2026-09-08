@@ -5,6 +5,7 @@ type Relation<T> = T | T[] | null
 type StationRow = { id: string; name: string; latitude: number; longitude: number; address: string | null; station_brands: Relation<{ name: string }> }
 type PriceRow = { id: string; station_id: string; price: number; created_at: string; user_trust_score_snapshot: number; fuel_types: Relation<{ code: string }> }
 type ServiceRow = { station_id: string; services: Relation<{ code: string; name: string }> }
+type StationFuelRow = { station_id: string; fuel_types: Relation<{ code: string }> }
 type NearbyRow = StationRow & { brand: string | null; distance_m: number }
 export type MapCenter = { latitude: number; longitude: number }
 
@@ -18,17 +19,19 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
   const nearby = (stationResult.data ?? []) as NearbyRow[]
   const stationIds = nearby.map((station) => station.id)
   if (!stationIds.length) return []
-  const [priceResult, serviceResult] = await Promise.all([
+  const [priceResult, serviceResult, fuelResult] = await Promise.all([
     supabase.from('price_submissions').select('id,station_id,price,created_at,user_trust_score_snapshot,fuel_types(code)').in('station_id', stationIds).gte('created_at', recentLimit).order('created_at', { ascending: false }),
     supabase.from('station_services').select('station_id,services(code,name)').in('station_id', stationIds).neq('status', 'rejected'),
+    supabase.from('station_fuels').select('station_id,fuel_types(code)').in('station_id', stationIds),
   ])
   if (priceResult.error) throw priceResult.error
   if (serviceResult.error) throw serviceResult.error
+  if (fuelResult.error) throw fuelResult.error
 
   const grouped = new Map<string, PriceRow[]>()
   for (const row of (priceResult.data ?? []) as PriceRow[]) {
     const code = first(row.fuel_types)?.code
-    if (!code || !['gasolina', 'etanol', 'diesel_s10'].includes(code)) continue
+    if (!code || !['gasolina', 'gasolina_aditivada', 'gasolina_premium', 'etanol', 'etanol_aditivado', 'diesel_s10', 'diesel_s10_aditivado', 'diesel_s500', 'diesel_s500_aditivado', 'gnv'].includes(code)) continue
     const key = `${row.station_id}:${code}:${Number(row.price).toFixed(2)}`
     grouped.set(key, [...(grouped.get(key) ?? []), row])
   }
@@ -50,16 +53,21 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
     current.electric ||= service.code === 'recarga_ac' || service.code === 'recarga_dc'
     services.set(row.station_id, current)
   }
+  const stationFuels = new Map<string, FuelCode[]>()
+  for (const row of (fuelResult.data ?? []) as StationFuelRow[]) {
+    const code = first(row.fuel_types)?.code as FuelCode | undefined
+    if (code) stationFuels.set(row.station_id, [...(stationFuels.get(row.station_id) ?? []), code])
+  }
 
   return nearby.map((row) => {
     const prices: Station['prices'] = {}
-    for (const fuel of ['gasolina', 'etanol', 'diesel_s10'] as FuelCode[]) {
+    for (const fuel of ['gasolina', 'gasolina_aditivada', 'gasolina_premium', 'etanol', 'etanol_aditivado', 'diesel_s10', 'diesel_s10_aditivado', 'diesel_s500', 'diesel_s500_aditivado', 'gnv'] as FuelCode[]) {
       const reports = winners.get(`${row.id}:${fuel}`)
       if (!reports?.length) continue
       const averageTrust = reports.reduce((sum, report) => sum + Math.min(100, report.user_trust_score_snapshot), 0) / reports.length
       prices[fuel] = { value: Number(reports[0].price), confidence: Math.round(Math.min(99, 20 + Math.log1p(reports.length) * 18 + averageTrust * .35)), reports: reports.length, updatedAt: reports[0].created_at }
     }
-    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], prices }
+    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }
   })
 }
 

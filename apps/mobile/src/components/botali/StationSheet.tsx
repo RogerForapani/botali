@@ -44,7 +44,7 @@ export function StationSheet({ station, mode, favorite, onToggleFavorite, onClos
     {expanded ? <View style={styles.expandedContent}>
       <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
       <View style={styles.allPrices}>
-        {(['gasolina', 'etanol', 'diesel_s10'] as const).map((code) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code === 'diesel_s10' ? 'DIESEL' : code.toUpperCase()}</Text><Text style={styles.fuelValue}>{station.prices[code] ? `R$ ${station.prices[code]!.value.toFixed(2).replace('.', ',')}` : '—'}</Text></View>)}
+        {(Object.entries(station.prices) as [string, { value: number }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text></View>)}
       </View>
       {station.services?.length ? <View style={styles.detailRow}><Text style={styles.detailLabel}>SERVIÇOS</Text><Text style={styles.detailValue}>{station.services.join(' · ')}</Text></View> : null}
       <Text style={styles.dragHint}>Arraste para baixo para recolher</Text>
@@ -75,8 +75,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   detailRow: { padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
   detailLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: .8 },
   detailValue: { color: colors.offWhite, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  allPrices: { flexDirection: 'row', gap: spacing[2] },
-  fuelPrice: { flex: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
+  allPrices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  fuelPrice: { minWidth: '30%', flexGrow: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
   fuelLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '900' },
   fuelValue: { color: colors.offWhite, fontSize: 14, fontWeight: '900', marginTop: 4 },
   dragHint: { color: colors.textMuted, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },
