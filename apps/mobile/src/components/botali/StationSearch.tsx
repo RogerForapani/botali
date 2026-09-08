@@ -13,9 +13,10 @@ type Props = {
   onRadiusChange: (value: number) => void
   onClose: () => void
   onSelect: (station: Station) => void
+  onAddStation: () => void
 }
 
-export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect }: Props) {
+export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation }: Props) {
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
   const results = stations
     .filter((station) => station.distanceKm <= radiusKm)
@@ -40,6 +41,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
         </Pressable>
       })}
       {!results.length ? <Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text> : null}
+      <Pressable style={styles.addButton} onPress={onAddStation}><Text style={styles.addText}>+ Cadastrar um posto ausente</Text></Pressable>
     </ScrollView>
   </View>
 }
@@ -67,4 +69,6 @@ const styles = StyleSheet.create({
   meta: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
   price: { color: colors.offWhite, fontSize: typography.h3, fontWeight: '900', marginLeft: spacing[3] },
   empty: { color: colors.textMuted, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
+  addButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md },
+  addText: { color: colors.brand, fontWeight: '900' },
 })

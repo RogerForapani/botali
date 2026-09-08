@@ -60,8 +60,50 @@ export async function loadStations(): Promise<Station[]> {
 
 export async function submitPrice(input: { stationId: string; fuel: FuelCode; price: number; userId: string }) {
   if (!supabase) throw new Error('Supabase não configurado.')
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.stationId)) throw new Error('Não foi possível identificar este posto. Atualize a lista e tente novamente.')
   const { data: fuelType, error: fuelError } = await supabase.from('fuel_types').select('id').eq('code', input.fuel).single()
   if (fuelError) throw fuelError
   const { error } = await supabase.from('price_submissions').insert({ station_id: input.stationId, fuel_type_id: fuelType.id, user_id: input.userId, price: input.price, user_trust_score_snapshot: 0 })
   if (error) throw error
+}
+
+export type StationSuggestion = {
+  name: string
+  brand: string
+  address: string
+  neighborhood: string
+  city: string
+  state: string
+  postalCode: string
+  latitude: number
+  longitude: number
+  fuelCodes: string[]
+  serviceCodes: string[]
+  userId: string
+}
+
+export async function submitStation(input: StationSuggestion) {
+  if (!supabase) throw new Error('Supabase não configurado.')
+  const { data: brand, error: brandError } = await supabase.from('station_brands').select('id').eq('name', input.brand).single()
+  if (brandError) throw brandError
+  const { data: station, error: stationError } = await supabase.from('stations').insert({
+    name: input.name.trim(), brand_id: brand.id, address: input.address.trim(), neighborhood: input.neighborhood.trim(), city: input.city.trim(),
+    state: input.state.trim().toUpperCase(), postal_code: input.postalCode.trim(), latitude: input.latitude, longitude: input.longitude,
+    status: 'pending', created_by: input.userId,
+  }).select('id').single()
+  if (stationError) throw stationError
+
+  if (input.fuelCodes.length) {
+    const { data: fuels, error: fuelError } = await supabase.from('fuel_types').select('id,code').in('code', input.fuelCodes)
+    if (fuelError) throw fuelError
+    const { error } = await supabase.from('station_fuels').insert((fuels ?? []).map((fuel) => ({ station_id: station.id, fuel_type_id: fuel.id })))
+    if (error) throw error
+  }
+  if (input.serviceCodes.length) {
+    const { data: services, error: serviceError } = await supabase.from('services').select('id,code').in('code', input.serviceCodes)
+    if (serviceError) throw serviceError
+    const { error } = await supabase.from('station_services').insert((services ?? []).map((service) => ({ station_id: station.id, service_id: service.id, status: 'reported', created_by: input.userId })))
+    if (error) throw error
+  }
+  return station.id as string
 }

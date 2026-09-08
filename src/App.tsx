@@ -11,7 +11,6 @@ import { StationPresenceActions } from './components/StationPresenceActions'
 import { StationCard } from './components/StationCard'
 import { FlexRatioBadge } from './components/botali/FlexRatioBadge'
 import { SegmentedControl } from './components/ui/SegmentedControl'
-import { stations as demoStations } from './data/stations'
 import { supabase } from './lib/supabase'
 import { loadStations } from './services/stations'
 import type { FuelCode, MapView, Station } from './types'
@@ -32,7 +31,7 @@ function App() {
   const [radius, setRadius] = useState(10)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Station | null>(null)
-  const [stations, setStations] = useState(demoStations)
+  const [stations, setStations] = useState<Station[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [showAuth, setShowAuth] = useState(false)
   const [showAddStation, setShowAddStation] = useState(false)
@@ -44,13 +43,13 @@ function App() {
   const selectedFlexRatio = selected ? getEthanolGasolineRatio(selected) : null
 
   const refreshStations = useCallback(async () => {
-    try { const realStations = await loadStations(); if (realStations.length) setStations(realStations) }
-    catch { setNotice('Não foi possível atualizar os postos agora. Exibindo dados de demonstração.') }
+    try { setStations(await loadStations()) }
+    catch { setStations([]); setNotice('Não foi possível carregar os postos agora.') }
   }, [])
 
   useEffect(() => {
     let active = true
-    loadStations().then((realStations) => { if (active && realStations.length) setStations(realStations) }).catch(() => { if (active) setNotice('Não foi possível atualizar os postos agora. Exibindo dados de demonstração.') })
+    loadStations().then((realStations) => { if (active) setStations(realStations) }).catch(() => { if (active) { setStations([]); setNotice('Não foi possível carregar os postos agora.') } })
     if (!supabase) return
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
     const { data } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))

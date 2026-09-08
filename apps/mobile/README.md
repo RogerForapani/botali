@@ -7,7 +7,7 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - mapa nativo com filtros de gasolina, etanol, diesel e recarga
 - comparação flex nos marcadores
 - postos, serviços e consenso de preços carregados do Supabase
-- fallback demonstrativo quando o backend não estiver configurado
+- mapa e lista alimentados exclusivamente pelos dados reais do Supabase
 - cadastro e entrada por e-mail com sessão persistente
 - atualização rápida de preço para usuários autenticados
 - rota externa até o posto

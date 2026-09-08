@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
-import { stations as demoStations } from '../data/stations'
 import { loadStations } from '../services/stations'
+import type { Station } from '../types'
 
 export function useStations() {
-  const [stations, setStations] = useState(demoStations)
+  const [stations, setStations] = useState<Station[]>([])
   const [loading, setLoading] = useState(true)
-  const [usingDemo, setUsingDemo] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const rows = await loadStations()
-      if (rows.length) { setStations(rows); setUsingDemo(false) }
+      setStations(rows)
+    } catch {
+      setStations([])
+      setError('Não foi possível carregar os postos agora.')
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
-  return { stations, loading, usingDemo, refresh }
+  return { stations, loading, error, refresh }
 }

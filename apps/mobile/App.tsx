@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AuthModal } from './src/components/AuthModal'
 import { PriceModal } from './src/components/PriceModal'
+import { NewStationModal } from './src/components/NewStationModal'
 import { BottomNavigation, type AppTab } from './src/components/botali/BottomNavigation'
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
@@ -46,6 +47,7 @@ export default function App() {
   const [radiusKm, setRadiusKm] = useState(10)
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
+  const [showNewStation, setShowNewStation] = useState(false)
   const visibleStations = useMemo(() => stations.filter((station) => station.distanceKm <= radiusKm && (mode !== 'electric' || station.hasElectricCharging)), [mode, radiusKm, stations])
   const bestStationId = useMemo(() => {
     if (mode === 'electric') return null
@@ -81,6 +83,12 @@ export default function App() {
     mapRef.current?.animateToRegion({ latitude: station.latitude, longitude: station.longitude, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
   }
 
+  function openNewStation() {
+    setShowSearch(false)
+    if (user) setShowNewStation(true)
+    else setShowAuth(true)
+  }
+
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
@@ -90,16 +98,17 @@ export default function App() {
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
           <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.searchButton} onPress={() => setShowSearch(true)}><Text style={styles.searchIcon}>⌕</Text><View><Text style={styles.searchTitle}>Buscar postos</Text><Text style={styles.searchMeta}>Em um raio de {radiusKm} km</Text></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modes}>{modes.map((item) => <Chip key={item.value} label={item.label} selected={mode === item.value} onPress={() => { setMode(item.value); setSelected(null) }} />)}</ScrollView></>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={styles.locate} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch ? selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{mode === 'electric' ? `${visibleStations.length} ponto de recarga logo ali` : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>Compare valor, distância e confiança.</Text></View> : null}
+        {tab === 'explore' && !showSearch ? selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : <View style={styles.emptyHint}><Text style={styles.emptyTitle}>{stations.length === 0 ? 'Nenhum posto cadastrado nesta região' : mode === 'electric' ? 'Nenhum ponto de recarga neste raio' : 'Toque em um preço no mapa'}</Text><Text style={styles.emptyText}>{stations.length === 0 ? 'Ajude a construir o Botali cadastrando um posto real.' : 'Compare valor, distância e confiança.'}</Text>{stations.length === 0 ? <Pressable accessibilityRole="button" style={styles.emptyAction} onPress={openNewStation}><Text style={styles.emptyActionText}>Cadastrar posto</Text></Pressable> : null}</View> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={() => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); refresh(); activity.refresh() }} />
+        <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onSent={() => { setShowNewStation(false); setLocationMessage('Posto enviado! Agora ele aguarda validação.'); refresh() }} />
         <BottomNavigation value={tab} onChange={changeTab} />
       </View>
     </SafeAreaProvider>
@@ -127,6 +136,7 @@ const styles = StyleSheet.create({
   modeActive: { backgroundColor: colors.brand }, modeText: { color: colors.offWhite, fontWeight: '700', fontSize: typography.small }, modeTextActive: { color: colors.graphite },
   locate: { position: 'absolute', right: spacing[4], bottom: 248, width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.offWhite, alignItems: 'center', justifyContent: 'center', ...shadow.floating }, locateText: { color: colors.graphite, fontSize: 27, fontWeight: '800' },
   emptyHint: { position: 'absolute', left: spacing[4], right: spacing[4], bottom: 82, padding: spacing[4], borderRadius: radius.lg, backgroundColor: colors.graphite, ...shadow.floating }, emptyTitle: { color: colors.offWhite, fontWeight: '800', fontSize: typography.h3 }, emptyText: { color: colors.textMuted, marginTop: 3 },
+  emptyAction: { marginTop: spacing[3], minHeight: 42, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' }, emptyActionText: { color: colors.graphite, fontWeight: '900', fontSize: typography.small },
   toast: { position: 'absolute', alignSelf: 'center', top: 175, maxWidth: '85%', paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: colors.graphite }, toastText: { color: colors.offWhite, fontSize: typography.small },
   library: { flex: 1, paddingBottom: 82, backgroundColor: colors.graphite }, libraryHeader: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] }, libraryEyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, libraryTitle: { color: colors.offWhite, fontSize: typography.h1, fontWeight: '900', marginTop: spacing[1] }, stationList: { padding: spacing[4], gap: spacing[3] }, stationCard: { padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', gap: spacing[3] }, stationCardBrand: { color: colors.brand, fontSize: 10, fontWeight: '900' }, stationCardName: { color: colors.offWhite, fontSize: typography.body, fontWeight: '800', marginTop: 3 }, stationCardMeta: { maxWidth: 190, color: colors.textMuted, fontSize: 11, marginTop: 3 }, stationCardPrice: { marginLeft: 'auto', alignItems: 'flex-end', gap: spacing[2] }, stationCardValue: { color: colors.offWhite, fontSize: typography.h3, fontWeight: '900' }, libraryAction: { paddingHorizontal: spacing[5], paddingBottom: spacing[3] },
 })
