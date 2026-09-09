@@ -9,6 +9,7 @@ type Props = { visible: boolean; userId: string | null; onClose: () => void; onS
 export function NewStationModal({ visible, userId, onClose, onSent }: Props) {
   const [name, setName] = useState('')
   const [brand, setBrand] = useState('Independente')
+  const [customBrand, setCustomBrand] = useState('')
   const [address, setAddress] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
   const [city, setCity] = useState('')
@@ -44,12 +45,13 @@ export function NewStationModal({ visible, userId, onClose, onSent }: Props) {
   async function send() {
     if (!userId) return setMessage('Entre na sua conta para cadastrar um posto.')
     if (name.trim().length < 2 || !address.trim() || !city.trim() || state.trim().length !== 2) return setMessage('Preencha nome, endereço, cidade e UF.')
+    if (brand === 'Outra' && customBrand.trim().length < 2) return setMessage('Escreva o nome da bandeira do posto.')
     if (!coordinates) return setMessage('Use sua localização atual enquanto estiver no posto.')
     if (!fuelCodes.length && !serviceCodes.some((code) => code.startsWith('recarga_'))) return setMessage('Selecione ao menos um combustível ou tipo de recarga.')
     setBusy(true); setMessage('')
     try {
-      await submitStation({ name, brand, address, neighborhood, city, state, postalCode, ...coordinates, fuelCodes, serviceCodes, userId })
-      setName(''); setAddress(''); setNeighborhood(''); setPostalCode(''); setCoordinates(null)
+      await submitStation({ name, brand: brand === 'Outra' ? customBrand.trim() : brand, address, neighborhood, city, state, postalCode, ...coordinates, fuelCodes, serviceCodes, userId })
+      setName(''); setAddress(''); setNeighborhood(''); setPostalCode(''); setCustomBrand(''); setCoordinates(null)
       onSent()
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível cadastrar o posto.') }
     finally { setBusy(false) }
@@ -58,6 +60,7 @@ export function NewStationModal({ visible, userId, onClose, onSent }: Props) {
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.layer}><Pressable accessibilityRole="button" accessibilityLabel="Fechar" style={styles.scrim} onPress={onClose} /><View style={styles.card}><View style={styles.handle} /><Text style={styles.eyebrow}>NOVO POSTO</Text><Text style={styles.title}>Ajude a completar o mapa</Text><Text style={styles.description}>O cadastro ficará pendente até ser validado pela comunidade.</Text><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
     <Field label="Nome do posto" value={name} onChangeText={setName} placeholder="Ex.: Posto Avenida" />
     <Text style={styles.label}>BANDEIRA</Text><View style={styles.options}>{brands.map((item) => <Option key={item} label={item} active={brand === item} onPress={() => setBrand(item)} />)}</View>
+    {brand === 'Outra' ? <Field label="Nome da bandeira" value={customBrand} onChangeText={setCustomBrand} placeholder="Digite o nome que aparece no posto" /> : null}
     <Field label="Endereço" value={address} onChangeText={setAddress} placeholder="Rua e número" />
     <Field label="Bairro" value={neighborhood} onChangeText={setNeighborhood} placeholder="Bairro" />
     <View style={styles.row}><View style={styles.grow}><Field label="Cidade" value={city} onChangeText={setCity} placeholder="Cidade" /></View><View style={styles.uf}><Field label="UF" value={state} onChangeText={(value) => setState(value.slice(0, 2))} placeholder="MG" /></View></View>
