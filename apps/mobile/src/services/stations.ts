@@ -84,13 +84,21 @@ export async function loadStationOptions() {
   return { brands: brands.data ?? [], fuels: fuels.data ?? [], services: services.data ?? [] }
 }
 
-export async function submitPrice(input: { stationId: string; fuel: FuelCode; price: number; userId: string }) {
+export async function submitPrices(input: { stationId: string; prices: { fuel: FuelCode; price: number }[]; userId: string }) {
   if (!supabase) throw new Error('Supabase não configurado.')
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.stationId)) throw new Error('Não foi possível identificar este posto. Atualize a lista e tente novamente.')
-  const { data: fuelType, error: fuelError } = await supabase.from('fuel_types').select('id').eq('code', input.fuel).single()
+  const fuelCodes = input.prices.map((item) => item.fuel)
+  const { data: fuelTypes, error: fuelError } = await supabase.from('fuel_types').select('id,code').in('code', fuelCodes)
   if (fuelError) throw fuelError
-  const { error } = await supabase.from('price_submissions').insert({ station_id: input.stationId, fuel_type_id: fuelType.id, user_id: input.userId, price: input.price, user_trust_score_snapshot: 0 })
+  const fuelIds = new Map((fuelTypes ?? []).map((item) => [item.code, item.id]))
+  if (fuelIds.size !== input.prices.length) throw new Error('Um dos combustíveis selecionados não está disponível.')
+  const submissions = input.prices.map((item) => ({ station_id: input.stationId, fuel_type_id: fuelIds.get(item.fuel), user_id: input.userId, price: item.price, user_trust_score_snapshot: 0 }))
+  const { error } = await supabase.from('price_submissions').insert(submissions)
   if (error) throw error
+}
+
+export async function submitPrice(input: { stationId: string; fuel: FuelCode; price: number; userId: string }) {
+  return submitPrices({ stationId: input.stationId, prices: [{ fuel: input.fuel, price: input.price }], userId: input.userId })
 }
 
 export type StationSuggestion = {
