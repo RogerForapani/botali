@@ -7,8 +7,8 @@ O botali é uma plataforma de tecnologia e mobilidade, não uma rede de postos. 
 ## Cores oficiais
 
 - Verde botali: `#22C55E` — ação principal, localização, recomendação e sucesso.
-- Grafite: `#111827` — estrutura, navegação e fundos principais.
-- Off-white: `#F8FAFC` — conteúdo, textos em fundo escuro e superfícies claras.
+- Grafite neutro: `#171717` — estrutura, navegação e fundos principais.
+- Off-white: `#FAFAF7` — conteúdo, textos em fundo escuro e superfícies claras.
 - Âmbar: `#FBBF24` — atenção, avaliação e reputação.
 - Informação: `#3B82F6`.
 - Erro: `#EF4444`.
@@ -19,7 +19,7 @@ O aplicativo oferece temas claro e escuro. O modo claro é o padrão inicial; a 
 
 ## Tipografia e forma
 
-- Fonte: `Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`.
+- Fonte: `Inter` (pesos 400, 600, 700 e 900), com a fonte nativa do sistema apenas como contingência.
 - Escala de espaçamento baseada em múltiplos de 4 px.
 - Raios: 8, 12, 16 e 20 px; pills em 999 px.
 - Área mínima de toque: 44 × 44 px.
@@ -47,6 +47,8 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - Modais de autenticação e atualização rápida de preço.
+
+Os controles usam a família Material Community Icons. Símbolos de texto ou emojis não devem substituir ícones de interface, pois variam visualmente entre Android e iOS.
 
 Novas telas mobile devem compor esses componentes e os tokens de `apps/mobile/src/theme/tokens.ts`, sem duplicar cores ou medidas localmente.
 

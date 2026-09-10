@@ -14,6 +14,13 @@ module.exports = () => ({
       isIosBackgroundLocationEnabled: true,
     }],
     'expo-notifications',
+    'expo-font',
+    ['expo-splash-screen', {
+      backgroundColor: '#F7F7F5',
+      image: './assets/splash-icon.png',
+      imageWidth: 180,
+      dark: { backgroundColor: '#111111', image: './assets/splash-icon.png' },
+    }],
   ],
   ios: {
     supportsTablet: true,
@@ -22,7 +29,7 @@ module.exports = () => ({
     infoPlist: {},
   },
   android: {
-    adaptiveIcon: { backgroundColor: '#111827', foregroundImage: './assets/android-icon-foreground.png' },
+    adaptiveIcon: { backgroundColor: '#171717', foregroundImage: './assets/android-icon-foreground.png', monochromeImage: './assets/android-icon-monochrome.png' },
     predictiveBackGestureEnabled: false,
     package: 'com.botali.app',
     permissions: [

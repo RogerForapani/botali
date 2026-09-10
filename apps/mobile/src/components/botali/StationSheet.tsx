@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useMemo, useState } from 'react'
 import { Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -32,13 +33,13 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
       <View style={styles.title}>
         <Text style={styles.eyebrow}>{station.brand.toUpperCase()}{station.status === 'pending' ? ' · AGUARDANDO REVISÃO' : ''}</Text>
         <Text style={styles.stationName}>{station.name}</Text>
-        <Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km · {station.rating ? `★ ${station.rating.toFixed(1)}` : station.address}</Text>
+        <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : station.address ? <><Text style={styles.stationMetaSeparator}>·</Text><Text numberOfLines={1} style={[styles.stationMeta, styles.stationAddress]}>{station.address}</Text></> : null}</View>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} onPress={onToggleFavorite} style={styles.close}><Text style={styles.favorite}>{favorite ? '♥' : '♡'}</Text></Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Fechar detalhes" onPress={onClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} onPress={onToggleFavorite} style={styles.close}><MaterialCommunityIcons name={favorite ? 'heart' : 'heart-outline'} size={22} color={colors.brandText} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Fechar detalhes" onPress={onClose} style={styles.close}><MaterialCommunityIcons name="close" size={23} color={colors.offWhite} /></Pressable>
     </View>
     <ScrollView style={expanded ? styles.bodyExpanded : undefined} contentContainerStyle={styles.bodyContent} scrollEnabled={expanded} showsVerticalScrollIndicator={expanded}>
-      {mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><Text style={styles.confidence}>Serviço confirmado</Text></View> : <>
+      {mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><View style={styles.electricStatus}><MaterialCommunityIcons name="check-decagram" size={17} color={colors.brandText} /><Text style={styles.confidence}>Serviço confirmado</Text></View></View> : <>
         <View style={styles.priceRow}><View><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={styles.priceValue}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text>{price ? <Text style={styles.priceMeta}>{price.reports ?? 0} {(price.reports ?? 0) === 1 ? 'pessoa' : 'pessoas'} · {price.confirmations ?? 0} confirmações</Text> : null}</View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
         {flexRatio ? <View style={styles.flexBadge}><FlexRatioBadge percentage={flexRatio} /></View> : null}
         {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
@@ -63,38 +64,40 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   handle: { width: 48, height: 5, borderRadius: radius.full, backgroundColor: colors.textMuted },
   head: { flexDirection: 'row', gap: spacing[2] },
   title: { flex: 1 },
-  eyebrow: { color: colors.brandText, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
-  stationName: { color: colors.offWhite, fontSize: typography.h2, fontWeight: '800', marginTop: 3 },
-  stationMeta: { color: colors.textMuted, fontSize: typography.small, marginTop: 4 },
+  eyebrow: { color: colors.brandText, fontFamily: typography.black, fontSize: 10, letterSpacing: 1.2 },
+  stationName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: typography.h2, marginTop: 3 },
+  stationMetaRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing[1], marginTop: 4 },
+  stationMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small },
+  stationMetaSeparator: { color: colors.textMuted, fontFamily: typography.regular },
+  stationAddress: { flex: 1 },
   close: { width: 38, height: 38, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: colors.offWhite, fontSize: 24 },
-  favorite: { color: colors.brandText, fontSize: 22 },
   priceRow: { marginTop: spacing[4], padding: spacing[4], borderRadius: radius.md, backgroundColor: colors.surfaceAlt, flexDirection: 'row', alignItems: 'center' },
-  priceLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: .8 },
-  priceValue: { color: colors.offWhite, fontSize: 25, fontWeight: '900', marginTop: 2 },
-  priceMeta: { color: colors.textMuted, fontSize: 10, marginTop: 3 },
-  confidence: { marginLeft: 'auto', color: colors.brandText, fontWeight: '800', fontSize: 11 },
+  priceLabel: { color: colors.textMuted, fontFamily: typography.bold, fontSize: 9, letterSpacing: .8 },
+  priceValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 25, marginTop: 2 },
+  priceMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: 3 },
+  electricStatus: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
+  confidence: { color: colors.brandText, fontFamily: typography.bold, fontSize: 11 },
   bodyExpanded: { flex: 1 },
   bodyContent: { paddingBottom: spacing[1] },
   flexBadge: { marginTop: spacing[2] },
   confirmCard: { marginTop: spacing[2], padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
-  confirmTitle: { color: colors.offWhite, fontSize: 13, fontWeight: '900' },
-  confirmCopy: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  confirmTitle: { color: colors.offWhite, fontFamily: typography.black, fontSize: 13 },
+  confirmCopy: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: 2 },
   confirmActions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] },
   confirmButton: { minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   confirmGood: { backgroundColor: colors.brand },
   confirmChanged: { borderWidth: 1, borderColor: colors.amber },
-  confirmGoodText: { color: colors.onBrand, fontSize: 12, fontWeight: '900' },
-  confirmChangedText: { color: colors.warningText, fontSize: 12, fontWeight: '900' },
+  confirmGoodText: { color: colors.onBrand, fontFamily: typography.black, fontSize: 12 },
+  confirmChangedText: { color: colors.warningText, fontFamily: typography.black, fontSize: 12 },
   expandedContent: { marginTop: spacing[3], gap: spacing[3] },
   detailRow: { padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
-  detailLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: .8 },
-  detailValue: { color: colors.offWhite, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  detailLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 9, letterSpacing: .8 },
+  detailValue: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 13, lineHeight: 18, marginTop: 4 },
   allPrices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   fuelPrice: { minWidth: '30%', flexGrow: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
-  fuelLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '900' },
-  fuelValue: { color: colors.offWhite, fontSize: 14, fontWeight: '900', marginTop: 4 },
-  dragHint: { color: colors.textMuted, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },
+  fuelLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 8 },
+  fuelValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 14, marginTop: 4 },
+  dragHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },
   actions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] },
   action: { flex: 1 },
 })

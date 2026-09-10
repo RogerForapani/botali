@@ -1,10 +1,18 @@
-import { registerRootComponent } from 'expo';
-import { createElement } from 'react';
+import { registerRootComponent } from 'expo'
+import { createElement, useEffect } from 'react'
+import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold, Inter_900Black } from '@expo-google-fonts/inter'
+import * as SplashScreen from 'expo-splash-screen'
 
-import App from './App';
-import { ThemeProvider } from './src/theme/ThemeProvider';
+import App from './App'
+import { ThemeProvider } from './src/theme/ThemeProvider'
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(() => createElement(ThemeProvider, null, createElement(App)));
+SplashScreen.preventAutoHideAsync().catch(() => undefined)
+
+function Root() {
+  const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold, Inter_900Black })
+  useEffect(() => { if (fontsLoaded || fontError) SplashScreen.hideAsync() }, [fontsLoaded, fontError])
+  if (!fontsLoaded && !fontError) return null
+  return createElement(ThemeProvider, null, createElement(App))
+}
+
+registerRootComponent(Root)
