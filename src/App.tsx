@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import './App.css'
 import './forms.css'
 import './components.css'
+import './legacy.css'
 import { AddStationModal } from './components/AddStationModal'
 import { AuthModal } from './components/AuthModal'
 import { PriceSubmissionModal } from './components/PriceSubmissionModal'
@@ -57,13 +58,12 @@ function App() {
   }, [])
 
   function requestContribution(kind: 'station' | 'price') {
-    if (!user) { setShowAuth(true); setNotice(kind === 'price' ? 'Entre para informar um preço.' : 'Entre para cadastrar um posto.'); return }
-    if (kind === 'station') setShowAddStation(true)
-    else if (selected) setShowPriceSubmission(true)
+    setNotice(kind === 'price' ? 'A atualização de preços agora é feita somente no aplicativo Botali.' : 'O cadastro de postos agora é feito somente no aplicativo Botali.')
   }
 
   return <div className="app-shell">
     <header className="topbar"><div className="identity"><div className="logo">b</div><div><h1>botali</h1><p>O melhor posto tá ali.</p></div></div><button className="profile" onClick={() => user ? supabase?.auth.signOut() : setShowAuth(true)}><span>{user?.email?.[0].toUpperCase() ?? '○'}</span><div><b>{user ? 'Minha conta' : 'Entrar'}</b><small>{user ? 'Sair da conta' : 'Para contribuir'}</small></div></button></header>
+    <div className="legacy-banner" role="status"><b>Versão legado</b><span>Esta página permanece disponível somente para consulta. O produto atual é o aplicativo Botali para Android e iOS.</span></div>
     <main>
       <aside className="sidebar">
         <section className="filters"><label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Posto, bairro ou bandeira" /></label><SegmentedControl label="Informação exibida no mapa" value={mapView} options={mapViews} onChange={setMapView} /><div className="selects radius-select"><select value={radius} onChange={(event) => setRadius(Number(event.target.value))}>{[2, 5, 10, 25, 50, 100].map((value) => <option key={value} value={value}>Até {value} km</option>)}</select></div><p className="map-view-hint">{mapView === 'electric' ? 'Mostrando somente postos com recarga elétrica.' : 'O percentual compara etanol com gasolina. Até 70% indica vantagem do etanol.'}</p></section>

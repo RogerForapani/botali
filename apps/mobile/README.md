@@ -15,6 +15,10 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - navegação inferior entre Explorar, Favoritos, Contribuir, Atividade e Perfil
 - favoritos persistidos localmente
 - histórico real dos preços enviados pelo usuário autenticado
+- cache local dos postos para consulta temporária sem internet
+- restauração da última região e do raio, armazenados somente no aparelho com coordenadas arredondadas
+- reconexão com atualização automática e estados claros de carregamento, erro e dados salvos
+- testes automatizados das regras de filtro e seleção do menor preço
 - componentes reutilizáveis alinhados ao Design System oficial
 - perfis EAS para builds de desenvolvimento, preview e produção
 

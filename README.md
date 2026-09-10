@@ -2,7 +2,7 @@
 
 **O melhor posto tá ali.**
 
-Aplicativo Android/iOS para encontrar postos próximos, comparar preços de combustíveis informados pela comunidade e avaliar a confiança de cada informação. O frontend web atual é um protótipo funcional usado durante a migração para React Native.
+Aplicativo Android/iOS para encontrar postos próximos, comparar preços de combustíveis informados pela comunidade e avaliar a confiança de cada informação. O frontend web está congelado como versão legada e permanece somente para consulta.
 
 ## Estado atual
 
@@ -45,7 +45,7 @@ npm run android
 
 O desenvolvimento de iOS exige macOS para builds locais. Builds remotos poderão ser configurados posteriormente com EAS.
 
-### Protótipo web
+### Site legado
 
 ```powershell
 npm install
@@ -53,6 +53,8 @@ npm run dev
 ```
 
 Abra o endereço exibido pelo Vite, normalmente `http://localhost:5173`.
+
+O site não recebe novas funcionalidades e bloqueia novos cadastros e atualizações de preço. O produto principal é o aplicativo em `apps/mobile`.
 
 ## Configurar o Supabase
 

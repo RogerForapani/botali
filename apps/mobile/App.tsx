@@ -22,10 +22,13 @@ import { useFavorites } from './src/hooks/useFavorites'
 import { useActivity } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
+import { useConnectivity } from './src/hooks/useConnectivity'
 import { confirmPriceAtStation, loadStationOptions } from './src/services/stations'
+import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
+import { filterStations, findBestPriceStationId } from './src/utils/stationFilters'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
 const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
@@ -35,8 +38,10 @@ export default function App() {
   const { colors, mode: themeMode, toggle } = useTheme()
   const styles = useMemo(() => createStyles(colors), [colors])
   const mapRef = useRef<MapView>(null)
+  const wasOffline = useRef(false)
   const { user } = useSession()
-  const { stations, refresh } = useStations(initialCenter, 10)
+  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, refresh } = useStations(initialCenter, 10)
+  const isOnline = useConnectivity()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
   const [tab, setTab] = useState<AppTab>('explore')
@@ -59,20 +64,30 @@ export default function App() {
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   useEffect(() => { loadStationOptions().then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) }).catch(() => undefined) }, [])
-  const visibleStations = useMemo(() => stations.filter((station) => {
-    const supportsSelectedMode = mode === 'electric' ? station.hasElectricCharging : station.fuelCodes?.includes(mode) || Boolean(station.prices[mode])
-    const offersSelectedServices = selectedServices.every((code) => station.serviceCodes?.includes(code))
-    return station.distanceKm <= radiusKm && supportsSelectedMode && offersSelectedServices
-  }), [mode, radiusKm, selectedServices, stations])
-  const bestStationId = useMemo(() => {
-    if (mode === 'electric') return null
-    return visibleStations.reduce<{ id: string; price: number } | null>((best, station) => {
-      const price = station.prices[mode]?.value
-      return price != null && (!best || price < best.price) ? { id: station.id, price } : best
-    }, null)?.id ?? null
-  }, [mode, visibleStations])
+  const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm, serviceCodes: selectedServices }), [mode, radiusKm, selectedServices, stations])
+  const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const selectedModeLabel = mode === 'electric' ? 'Recarga elétrica' : fuelOptions.find((item) => item.code === mode)?.name ?? mode.replaceAll('_', ' ')
+  const cacheTime = cachedAt ? new Date(cachedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null
+
+  useEffect(() => {
+    let active = true
+    loadMapPreferences().then((preferences) => {
+      if (!active || !preferences) return
+      setMapCenter(preferences.center); setPendingCenter(preferences.center); setRadiusKm(preferences.radiusKm)
+      mapRef.current?.animateToRegion({ ...preferences.center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 0)
+      refresh(preferences.center, preferences.radiusKm)
+    })
+    return () => { active = false }
+  }, [refresh])
+
+  useEffect(() => {
+    if (isOnline === false) wasOffline.current = true
+    else if (isOnline && wasOffline.current) {
+      wasOffline.current = false
+      refresh(mapCenter, radiusKm)
+    }
+  }, [isOnline, mapCenter, radiusKm, refresh])
 
   function changeTab(next: AppTab) {
     if (next === 'profile') { setShowAuth(true); return }
@@ -91,6 +106,7 @@ export default function App() {
     const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
     const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
     setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
+    saveMapPreferences({ center, radiusKm }).catch(() => undefined)
     mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
     await refresh(center, radiusKm)
     setLocationMessage('Mapa centralizado na sua localização.')
@@ -137,17 +153,18 @@ export default function App() {
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
         {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
-        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
+        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null); refresh(mapCenter, value) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><View style={styles.headerSpacer} /><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.iconButton} onPress={() => { setShowFilters(false); setShowSearch(true) }}><Text style={styles.searchIcon}>⌕</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={themeMode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'} style={styles.themeButton} onPress={toggle}><Text style={styles.themeText}>{themeMode === 'light' ? '☾' : '☀'}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
           <View style={styles.mapActions}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters }} style={[styles.filterButton, showFilters && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><Text style={[styles.filterIcon, showFilters && styles.filterTextActive]}>≡</Text><Text numberOfLines={1} style={[styles.filterText, showFilters && styles.filterTextActive]}>Filtros · {selectedModeLabel}{selectedServices.length ? ` · ${selectedServices.length}` : ''}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><Text style={styles.addStationIcon}>＋</Text><Text style={styles.addStationText}>Posto</Text></Pressable></View>
-          {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelected(null) }} onToggleService={(code) => { setSelected(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setSelectedServices([]); setSelected(null) }} /> : null}</>}
+          {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelected(null) }} onToggleService={(code) => { setSelected(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setSelectedServices([]); setSelected(null) }} /> : null}
+          {stationsLoading || stationsError || isOnline === false ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => refresh(mapCenter, radiusKm)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? 'Atualizando postos…' : isOnline === false || stale ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : `${stationsError} · Toque para tentar novamente`}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
-        {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
+        {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onOpenModeration={() => setShowModeration(true)} />
@@ -182,6 +199,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   filterButton: { minHeight: 44, maxWidth: '72%', flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating },
   filterButtonActive: { backgroundColor: colors.brand }, filterIcon: { color: colors.brandText, fontSize: 21, fontWeight: '900', marginRight: spacing[2], transform: [{ rotate: '90deg' }] }, filterText: { color: colors.text, fontSize: typography.small, fontWeight: '900' }, filterTextActive: { color: colors.onBrand },
   addStationButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderRadius: radius.full, backgroundColor: colors.brand, ...shadow.floating }, addStationIcon: { color: colors.onBrand, fontSize: 23, fontWeight: '900', marginRight: 2 }, addStationText: { color: colors.onBrand, fontSize: typography.small, fontWeight: '900' },
+  mapStatus: { alignSelf: 'center', maxWidth: '90%', marginTop: spacing[2], paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating }, mapStatusOffline: { borderWidth: 1, borderColor: colors.amber }, mapStatusText: { color: colors.text, fontSize: 11, fontWeight: '800', textAlign: 'center' },
   locate: { position: 'absolute', right: spacing[4], width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.offWhite, alignItems: 'center', justifyContent: 'center', ...shadow.floating }, locateWithSheet: { bottom: 248 }, locateFree: { bottom: 92 }, locateText: { color: colors.graphite, fontSize: 27, fontWeight: '800' },
   searchArea: { position: 'absolute', alignSelf: 'center', top: 166, minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating }, searchAreaText: { color: colors.text, fontSize: typography.small, fontWeight: '900' },
   toast: { position: 'absolute', alignSelf: 'center', top: 175, maxWidth: '85%', paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface }, toastText: { color: colors.text, fontSize: typography.small },

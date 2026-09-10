@@ -1,14 +1,42 @@
-const baseConfig = require("./app.json");
-
 module.exports = () => ({
-  ...baseConfig.expo,
-  android: {
-    ...baseConfig.expo.android,
-    config: {
-      ...baseConfig.expo.android.config,
-      googleMaps: {
-        apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? "",
-      },
-    },
+  name: 'Botali',
+  slug: 'botali',
+  version: '1.0.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  scheme: 'botali',
+  userInterfaceStyle: 'automatic',
+  plugins: [
+    ['expo-location', {
+      locationWhenInUsePermission: 'O Botali usa sua localização para mostrar postos e preços próximos.',
+      locationAlwaysAndWhenInUsePermission: 'O Botali usa geofences para reconhecer visitas a postos e sugerir confirmações úteis, mesmo com o app fechado.',
+      isAndroidBackgroundLocationEnabled: true,
+      isIosBackgroundLocationEnabled: true,
+    }],
+    'expo-notifications',
+  ],
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: 'com.botali.app',
+    icon: { light: './assets/icon-light.png', dark: './assets/icon-dark.png' },
+    infoPlist: {},
   },
+  android: {
+    adaptiveIcon: { backgroundColor: '#111827', foregroundImage: './assets/android-icon-foreground.png' },
+    predictiveBackGestureEnabled: false,
+    package: 'com.botali.app',
+    permissions: [
+      'ACCESS_COARSE_LOCATION',
+      'ACCESS_FINE_LOCATION',
+      'ACCESS_BACKGROUND_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_BACKGROUND_LOCATION',
+      'android.permission.FOREGROUND_SERVICE',
+      'android.permission.FOREGROUND_SERVICE_LOCATION',
+    ],
+    config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? '' } },
+  },
+  web: { favicon: './assets/favicon.png' },
+  extra: { eas: { projectId: 'fc640c3a-b4f6-411c-84c7-511dc68b7626' } },
 });

@@ -6,18 +6,18 @@ import { radius, spacing, typography, type ThemeColors } from '../../theme/token
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 
-type Props = { authenticated: boolean; items: ActivityItem[]; loading: boolean; error: string; onSignIn: () => void; onExplore: () => void }
+type Props = { authenticated: boolean; items: ActivityItem[]; loading: boolean; error: string; onRetry: () => void; onSignIn: () => void; onExplore: () => void }
 
-export function ActivityScreen({ authenticated, items, loading, error, onSignIn, onExplore }: Props) {
+export function ActivityScreen({ authenticated, items, loading, error, onRetry, onSignIn, onExplore }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   return <SafeAreaView style={styles.screen}>
     <View style={styles.header}><Text style={styles.eyebrow}>BOTALI</Text><Text style={styles.title}>Atividade</Text></View>
     {!authenticated ? <EmptyState icon="○" title="Entre para ver suas contribuições" description="Seus preços enviados ficam organizados neste histórico." />
       : loading ? <EmptyState icon="◷" title="Carregando sua atividade" description="Buscando suas contribuições mais recentes." />
-      : error ? <EmptyState icon="!" title="Atividade indisponível" description={error} />
+      : error ? <EmptyState icon="!" title="Atividade indisponível" description={`${error} Use o botão abaixo para tentar novamente.`} />
       : items.length ? <ScrollView contentContainerStyle={styles.list}>{items.map((item) => <View key={item.id} style={styles.card}><View style={styles.cardCopy}><Text style={styles.fuel}>{item.fuelName.toUpperCase()}</Text><Text style={styles.station}>{item.stationName}</Text><Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</Text></View><Text style={styles.price}>R$ {item.price.toFixed(2).replace('.', ',')}</Text></View>)}</ScrollView>
       : <EmptyState icon="◷" title="Sua atividade vai aparecer aqui" description="Os preços que você enviar serão organizados neste histórico." />}
-    <View style={styles.action}><Button onPress={authenticated ? onExplore : onSignIn}>{authenticated ? 'Explorar mapa' : 'Entrar'}</Button></View>
+    <View style={styles.action}><Button onPress={!authenticated ? onSignIn : error ? onRetry : onExplore}>{!authenticated ? 'Entrar' : error ? 'Tentar novamente' : 'Explorar mapa'}</Button></View>
   </SafeAreaView>
 }
 

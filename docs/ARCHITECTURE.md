@@ -25,6 +25,8 @@
 - Tabelas brutas de preços, confirmações e perfis não são legíveis por visitantes anônimos.
 - A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
 - O aplicativo consulta `user_roles` ao abrir o perfil e apresenta a fila de moderação somente a `moderator` e `admin`; a autorização definitiva continua no PostgreSQL.
+- O mobile mantém somente o último resultado agregado de postos em cache local por até sete dias; ao reconectar, o Supabase volta a ser a fonte de verdade e atualiza o cache.
+- A última região do mapa é persistida apenas no aparelho, com latitude e longitude arredondadas para três casas decimais.
 
 ## Organização evolutiva
 
