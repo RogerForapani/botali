@@ -61,6 +61,8 @@
 - Localização em segundo plano é opcional e desligada até uma adesão clara do usuário.
 - Uma geofence indica visita provável, não confirmação automática de combustível ou preço.
 - Exija permanência mínima e precisão aceitável para evitar contar quem apenas passou pela via.
+- O sinal de saída da geofence só gera visita e lembrete quando houver posição recente com precisão de até 100 metros e o PostGIS validar distância de até 200 metros.
+- Ao tocar em um lembrete de visita, o aplicativo deve abrir o posto correspondente, nunca apenas a tela inicial genérica.
 - Não mostrar formulários recorrentes. Sugestões de confirmação devem usar ações rápidas e limite de frequência.
 - Não solicitar confirmação quando o preço já tiver consenso forte e recente; priorize preços antigos, divergentes ou com poucos relatos.
 

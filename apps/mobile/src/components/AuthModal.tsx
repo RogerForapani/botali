@@ -40,7 +40,7 @@ export function AuthModal({ visible, user, stations, onClose, onOpenModeration, 
     onClose()
   }
 
-  async function signOut() { await supabase?.auth.signOut(); onClose() }
+  async function signOut() { await disableSmartVisits(); await supabase?.auth.signOut(); onClose() }
   async function toggleSmartVisits() {
     setBusy(true); setMessage('')
     try {

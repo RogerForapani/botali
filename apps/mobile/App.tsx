@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as Location from 'expo-location'
+import * as Notifications from 'expo-notifications'
 import { StatusBar } from 'expo-status-bar'
 import './src/services/smartVisits'
 import MapView, { type Region } from 'react-native-maps'
@@ -28,6 +29,7 @@ import { useStations } from './src/hooks/useStations'
 import { useConnectivity } from './src/hooks/useConnectivity'
 import { confirmPriceAtStation, loadStationOptions } from './src/services/stations'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
+import { syncSmartVisitStations } from './src/services/smartVisits'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
@@ -93,6 +95,29 @@ export default function App() {
       refresh(mapCenter, radiusKm)
     }
   }, [isOnline, mapCenter, radiusKm, refresh])
+
+  useEffect(() => { syncSmartVisitStations(stations).catch(() => undefined) }, [stations])
+
+  useEffect(() => {
+    let active = true
+    const openVisitedStation = async (response: Notifications.NotificationResponse | null) => {
+      if (!active || !response) return
+      const data = response.notification.request.content.data ?? {}
+      const stationId = typeof data.stationId === 'string' ? data.stationId : null
+      const latitude = Number(data.latitude); const longitude = Number(data.longitude)
+      if (!stationId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+      await Notifications.clearLastNotificationResponseAsync()
+      const center = { latitude, longitude }
+      setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false); setMapCenter(center); setPendingCenter(center)
+      const rows = await refresh(center, radiusKm)
+      if (!active) return
+      setSelected(rows.find((station) => station.id === stationId) ?? null)
+      mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
+    }
+    Notifications.getLastNotificationResponseAsync().then(openVisitedStation)
+    const subscription = Notifications.addNotificationResponseReceivedListener(openVisitedStation)
+    return () => { active = false; subscription.remove() }
+  }, [radiusKm, refresh])
 
   function changeTab(next: AppTab) {
     if (next === 'profile') { setShowAuth(true); return }
