@@ -19,9 +19,10 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 ## Experiência principal
 
 - Consultar postos próximos sem login.
-- Filtrar por combustível, raio e serviços.
+- Filtrar por combustível, raio e serviços usando o mesmo catálogo ativo do cadastro de postos.
 - Comparar preço, distância e confiança.
 - Abrir detalhes e solicitar rota.
+- Buscar em um painel expansível e classificar resultados por distância, preço ou confiança.
 - Contribuir com preços sem tornar foto obrigatória.
 - Cadastrar postos ausentes após autenticação.
 

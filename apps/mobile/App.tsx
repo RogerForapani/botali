@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar'
 import './src/services/smartVisits'
 import MapView, { type Region } from 'react-native-maps'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AuthModal } from './src/components/AuthModal'
 import { PriceModal } from './src/components/PriceModal'
@@ -12,27 +12,23 @@ import { BottomNavigation, type AppTab } from './src/components/botali/BottomNav
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
 import { StationMarker } from './src/components/botali/StationMarker'
+import { StationFilters } from './src/components/botali/StationFilters'
 import { StationSearch } from './src/components/botali/StationSearch'
 import { StationSheet } from './src/components/botali/StationSheet'
-import { Chip } from './src/components/ui/Chip'
 import { EmptyState } from './src/components/ui/EmptyState'
 import { Button } from './src/components/ui/Button'
 import { useFavorites } from './src/hooks/useFavorites'
 import { useActivity } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
+import { loadStationOptions } from './src/services/stations'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
 const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
-const modes: { value: MapMode; label: string }[] = [
-  { value: 'gasolina', label: 'Gasolina' },
-  { value: 'etanol', label: 'Etanol' },
-  { value: 'diesel_s10', label: 'Diesel' },
-  { value: 'electric', label: '⚡ Recarga' },
-]
+const fallbackFuels = [{ code: 'gasolina', name: 'Gasolina comum' }, { code: 'etanol', name: 'Etanol' }, { code: 'diesel_s10', name: 'Diesel S10' }]
 
 export default function App() {
   const { colors, mode: themeMode, toggle } = useTheme()
@@ -56,7 +52,15 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showNewStation, setShowNewStation] = useState(false)
-  const visibleStations = useMemo(() => stations.filter((station) => station.distanceKm <= radiusKm && (mode !== 'electric' || station.hasElectricCharging)), [mode, radiusKm, stations])
+  const [fuelOptions, setFuelOptions] = useState(fallbackFuels)
+  const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  useEffect(() => { loadStationOptions().then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) }).catch(() => undefined) }, [])
+  const visibleStations = useMemo(() => stations.filter((station) => {
+    const supportsSelectedMode = mode === 'electric' ? station.hasElectricCharging : station.fuelCodes?.includes(mode) || Boolean(station.prices[mode])
+    const offersSelectedServices = selectedServices.every((code) => station.serviceCodes?.includes(code))
+    return station.distanceKm <= radiusKm && supportsSelectedMode && offersSelectedServices
+  }), [mode, radiusKm, selectedServices, stations])
   const bestStationId = useMemo(() => {
     if (mode === 'electric') return null
     return visibleStations.reduce<{ id: string; price: number } | null>((best, station) => {
@@ -65,6 +69,7 @@ export default function App() {
     }, null)?.id ?? null
   }, [mode, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
+  const selectedModeLabel = mode === 'electric' ? 'Recarga elétrica' : fuelOptions.find((item) => item.code === mode)?.name ?? mode.replaceAll('_', ' ')
 
   function changeTab(next: AppTab) {
     if (next === 'profile') { setShowAuth(true); return }
@@ -105,15 +110,15 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
+        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
           {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null); refresh(mapCenter, value) }} onClose={() => setShowSearch(false)} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
-          <View style={styles.header}><View style={styles.logo}><Text style={styles.logoText}>b</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.searchButton} onPress={() => { setShowFilters(false); setShowSearch(true) }}><Text style={styles.searchIcon}>⌕</Text><View><Text style={styles.searchTitle}>Buscar postos</Text><Text style={styles.searchMeta}>Em um raio de {radiusKm} km</Text></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel={themeMode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'} style={styles.themeButton} onPress={toggle}><Text style={styles.themeText}>{themeMode === 'light' ? '☾' : '☀'}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
-          <View style={styles.mapActions}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar combustível exibido" accessibilityState={{ expanded: showFilters }} style={[styles.filterButton, showFilters && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><Text style={[styles.filterIcon, showFilters && styles.filterTextActive]}>≡</Text><Text style={[styles.filterText, showFilters && styles.filterTextActive]}>Filtros · {modes.find((item) => item.value === mode)?.label}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><Text style={styles.addStationIcon}>＋</Text><Text style={styles.addStationText}>Posto</Text></Pressable></View>
-          {showFilters ? <View style={styles.filterPanel}><Text style={styles.filterLabel}>EXIBIR NO MAPA</Text><View style={styles.filterOptions}>{modes.map((item) => <Chip key={item.value} label={item.label} selected={mode === item.value} onPress={() => { setMode(item.value); setSelected(null); setShowFilters(false) }} />)}</View></View> : null}</>}
+          <View style={styles.header}><View style={styles.logo}><Image source={require('./assets/icon.png')} style={styles.logoImage} resizeMode="cover" /></View><View style={styles.headerSpacer} /><Pressable accessibilityRole="button" accessibilityLabel="Buscar postos" style={styles.iconButton} onPress={() => { setShowFilters(false); setShowSearch(true) }}><Text style={styles.searchIcon}>⌕</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={themeMode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'} style={styles.themeButton} onPress={toggle}><Text style={styles.themeText}>{themeMode === 'light' ? '☾' : '☀'}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}><Text style={styles.avatarText}>{user?.email?.[0].toUpperCase() ?? '○'}</Text></Pressable></View>
+          <View style={styles.mapActions}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters }} style={[styles.filterButton, showFilters && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><Text style={[styles.filterIcon, showFilters && styles.filterTextActive]}>≡</Text><Text numberOfLines={1} style={[styles.filterText, showFilters && styles.filterTextActive]}>Filtros · {selectedModeLabel}{selectedServices.length ? ` · ${selectedServices.length}` : ''}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><Text style={styles.addStationIcon}>＋</Text><Text style={styles.addStationText}>Posto</Text></Pressable></View>
+          {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelected(null) }} onToggleService={(code) => { setSelected(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setSelectedServices([]); setSelected(null) }} /> : null}</>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
@@ -139,22 +144,35 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topArea: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   header: { marginHorizontal: spacing[4], marginTop: spacing[2], padding: spacing[3], borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', ...shadow.floating },
-  logo: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginRight: spacing[3] },
-  logoText: { color: colors.graphite, fontSize: 26, fontWeight: '900' },
-  searchButton: { flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
-  searchIcon: { color: colors.brand, fontSize: 23, marginRight: spacing[2] },
-  searchTitle: { color: colors.text, fontSize: typography.small, fontWeight: '800' },
-  searchMeta: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
+  logo: { width: 44, height: 44, borderRadius: radius.md, overflow: 'hidden' },
+  logoImage: { width: '100%', height: '100%' },
+  headerSpacer: { flex: 1 },
+  iconButton: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  searchIcon: { color: colors.brandText, fontSize: 25, fontWeight: '900' },
   avatar: { marginLeft: 'auto', width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   themeButton: { marginLeft: spacing[2], width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }, themeText: { color: colors.text, fontSize: 19, fontWeight: '800' },
   avatarText: { color: colors.text, fontSize: 22 },
   mapActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: spacing[4], marginTop: spacing[3], gap: spacing[2] },
-  filterButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating },
-  filterButtonActive: { backgroundColor: colors.brand }, filterIcon: { color: colors.brand, fontSize: 21, fontWeight: '900', marginRight: spacing[2], transform: [{ rotate: '90deg' }] }, filterText: { color: colors.text, fontSize: typography.small, fontWeight: '900' }, filterTextActive: { color: colors.onBrand },
+  filterButton: { minHeight: 44, maxWidth: '72%', flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating },
+  filterButtonActive: { backgroundColor: colors.brand }, filterIcon: { color: colors.brandText, fontSize: 21, fontWeight: '900', marginRight: spacing[2], transform: [{ rotate: '90deg' }] }, filterText: { color: colors.text, fontSize: typography.small, fontWeight: '900' }, filterTextActive: { color: colors.onBrand },
   addStationButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderRadius: radius.full, backgroundColor: colors.brand, ...shadow.floating }, addStationIcon: { color: colors.onBrand, fontSize: 23, fontWeight: '900', marginRight: 2 }, addStationText: { color: colors.onBrand, fontSize: typography.small, fontWeight: '900' },
-  filterPanel: { marginHorizontal: spacing[4], marginTop: spacing[2], padding: spacing[3], borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.floating }, filterLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: .8, marginBottom: spacing[2] }, filterOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   locate: { position: 'absolute', right: spacing[4], width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.offWhite, alignItems: 'center', justifyContent: 'center', ...shadow.floating }, locateWithSheet: { bottom: 248 }, locateFree: { bottom: 92 }, locateText: { color: colors.graphite, fontSize: 27, fontWeight: '800' },
   searchArea: { position: 'absolute', alignSelf: 'center', top: 166, minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing[4], borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating }, searchAreaText: { color: colors.text, fontSize: typography.small, fontWeight: '900' },
   toast: { position: 'absolute', alignSelf: 'center', top: 175, maxWidth: '85%', paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface }, toastText: { color: colors.text, fontSize: typography.small },
-  library: { flex: 1, paddingBottom: 82, backgroundColor: colors.background }, libraryHeader: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] }, libraryEyebrow: { color: colors.brand, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, libraryTitle: { color: colors.text, fontSize: typography.h1, fontWeight: '900', marginTop: spacing[1] }, stationList: { padding: spacing[4], gap: spacing[3] }, stationCard: { padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', gap: spacing[3] }, stationCardBrand: { color: colors.brand, fontSize: 10, fontWeight: '900' }, stationCardName: { color: colors.text, fontSize: typography.body, fontWeight: '800', marginTop: 3 }, stationCardMeta: { maxWidth: 190, color: colors.textMuted, fontSize: 11, marginTop: 3 }, stationCardPrice: { marginLeft: 'auto', alignItems: 'flex-end', gap: spacing[2] }, stationCardValue: { color: colors.text, fontSize: typography.h3, fontWeight: '900' }, libraryAction: { paddingHorizontal: spacing[5], paddingBottom: spacing[3] },
+  library: { flex: 1, paddingBottom: 82, backgroundColor: colors.background }, libraryHeader: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] }, libraryEyebrow: { color: colors.brandText, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, libraryTitle: { color: colors.text, fontSize: typography.h1, fontWeight: '900', marginTop: spacing[1] }, stationList: { padding: spacing[4], gap: spacing[3] }, stationCard: { padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', gap: spacing[3] }, stationCardBrand: { color: colors.brandText, fontSize: 10, fontWeight: '900' }, stationCardName: { color: colors.text, fontSize: typography.body, fontWeight: '800', marginTop: 3 }, stationCardMeta: { maxWidth: 190, color: colors.textMuted, fontSize: 11, marginTop: 3 }, stationCardPrice: { marginLeft: 'auto', alignItems: 'flex-end', gap: spacing[2] }, stationCardValue: { color: colors.text, fontSize: typography.h3, fontWeight: '900' }, libraryAction: { paddingHorizontal: spacing[5], paddingBottom: spacing[3] },
 })
+
+const darkMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#202020' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#F8FAFC' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#111111' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#525252' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#252525' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#292929' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#26352B' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#3A3A3A' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#242424' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#525252' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#303030' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#151515' }] },
+]

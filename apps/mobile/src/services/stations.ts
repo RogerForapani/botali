@@ -31,7 +31,7 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
   const grouped = new Map<string, PriceRow[]>()
   for (const row of (priceResult.data ?? []) as PriceRow[]) {
     const code = first(row.fuel_types)?.code
-    if (!code || !['gasolina', 'gasolina_aditivada', 'gasolina_premium', 'etanol', 'etanol_aditivado', 'diesel_s10', 'diesel_s10_aditivado', 'diesel_s500', 'diesel_s500_aditivado', 'gnv'].includes(code)) continue
+    if (!code) continue
     const key = `${row.station_id}:${code}:${Number(row.price).toFixed(2)}`
     grouped.set(key, [...(grouped.get(key) ?? []), row])
   }
@@ -44,12 +44,13 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
     if (!current || score(rows) > score(current)) winners.set(winnerKey, rows)
   }
 
-  const services = new Map<string, { names: string[]; electric: boolean }>()
+  const services = new Map<string, { names: string[]; codes: string[]; electric: boolean }>()
   for (const row of (serviceResult.data ?? []) as ServiceRow[]) {
     const service = first(row.services)
     if (!service) continue
-    const current = services.get(row.station_id) ?? { names: [], electric: false }
+    const current = services.get(row.station_id) ?? { names: [], codes: [], electric: false }
     current.names.push(service.name)
+    current.codes.push(service.code)
     current.electric ||= service.code === 'recarga_ac' || service.code === 'recarga_dc'
     services.set(row.station_id, current)
   }
@@ -61,13 +62,14 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
 
   return nearby.map((row) => {
     const prices: Station['prices'] = {}
-    for (const fuel of ['gasolina', 'gasolina_aditivada', 'gasolina_premium', 'etanol', 'etanol_aditivado', 'diesel_s10', 'diesel_s10_aditivado', 'diesel_s500', 'diesel_s500_aditivado', 'gnv'] as FuelCode[]) {
-      const reports = winners.get(`${row.id}:${fuel}`)
-      if (!reports?.length) continue
+    for (const [winnerKey, reports] of winners) {
+      const separator = winnerKey.indexOf(':')
+      if (winnerKey.slice(0, separator) !== row.id || !reports.length) continue
+      const fuel = winnerKey.slice(separator + 1)
       const averageTrust = reports.reduce((sum, report) => sum + Math.min(100, report.user_trust_score_snapshot), 0) / reports.length
       prices[fuel] = { value: Number(reports[0].price), confidence: Math.round(Math.min(99, 20 + Math.log1p(reports.length) * 18 + averageTrust * .35)), reports: reports.length, updatedAt: reports[0].created_at }
     }
-    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }
+    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], serviceCodes: services.get(row.id)?.codes ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }
   })
 }
 

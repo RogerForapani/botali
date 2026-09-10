@@ -20,6 +20,7 @@
 - PostgreSQL + PostGIS para persistência e consultas geoespaciais.
 - RLS habilitado e validado antes de exposição em produção.
 - Busca por proximidade, raio e duplicidade pertence ao PostGIS, não ao componente de mapa.
+- Filtros e cadastro consomem o mesmo catálogo ativo de `fuel_types` e `services`; novos tipos não devem exigir listas duplicadas no aplicativo.
 
 ## Organização evolutiva
 

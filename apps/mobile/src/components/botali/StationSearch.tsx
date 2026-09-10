@@ -1,9 +1,12 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useState } from 'react'
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
 
 const radiusOptions = [2, 5, 10, 25, 50, 100]
+const sortOptions = [{ value: 'distance', label: 'Mais próximos' }, { value: 'price', label: 'Menor preço' }, { value: 'confidence', label: 'Mais confiáveis' }] as const
+type SortMode = typeof sortOptions[number]['value']
 
 type Props = {
   query: string
@@ -19,13 +22,19 @@ type Props = {
 
 export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
+  const { height } = useWindowDimensions()
+  const [sort, setSort] = useState<SortMode>('distance')
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
   const results = stations
     .filter((station) => station.distanceKm <= radiusKm)
     .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
-    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .sort((a, b) => {
+      if (sort === 'price' && mode !== 'electric') return (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || a.distanceKm - b.distanceKm
+      if (sort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || a.distanceKm - b.distanceKm
+      return a.distanceKm - b.distanceKm
+    })
 
-  return <View style={styles.panel}>
+  return <View style={[styles.panel, { height: Math.max(360, height * .62) }]}>
     <View style={styles.searchRow}>
       <Text style={styles.searchIcon}>⌕</Text>
       <TextInput autoFocus accessibilityLabel="Buscar posto" placeholder="Nome, bandeira ou endereço" placeholderTextColor={colors.textMuted} value={query} onChangeText={onQueryChange} style={styles.input} />
@@ -33,6 +42,8 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
     </View>
     <Text style={styles.label}>DISTÂNCIA MÁXIMA</Text>
     <View style={styles.radiusRow}>{radiusOptions.map((value) => <Pressable key={value} onPress={() => onRadiusChange(value)} style={[styles.radius, radiusKm === value && styles.radiusActive]}><Text style={[styles.radiusText, radiusKm === value && styles.radiusTextActive]}>{value} km</Text></Pressable>)}</View>
+    <Text style={styles.label}>CLASSIFICAR POR</Text>
+    <View style={styles.sortRow}>{sortOptions.map((item) => <Pressable key={item.value} onPress={() => setSort(item.value)} style={[styles.sort, sort === item.value && styles.sortActive]}><Text style={[styles.sortText, sort === item.value && styles.sortTextActive]}>{item.label}</Text></Pressable>)}</View>
     <Text style={styles.count}>{results.length} {results.length === 1 ? 'posto encontrado' : 'postos encontrados'}</Text>
     <ScrollView keyboardShouldPersistTaps="handled" style={styles.list} contentContainerStyle={styles.listContent}>
       {results.map((station) => {
@@ -49,28 +60,33 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  panel: { maxHeight: '72%', paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[4], borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, backgroundColor: colors.graphite, ...shadow.sheet },
-  searchRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  searchIcon: { color: colors.brand, fontSize: 24, marginRight: spacing[2] },
+  panel: { maxHeight: '78%', paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[4], borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, backgroundColor: colors.graphite, ...shadow.sheet },
+  searchRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  searchIcon: { color: colors.brandText, fontSize: 24, marginRight: spacing[2] },
   input: { flex: 1, color: colors.offWhite, fontSize: typography.body },
   close: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   closeText: { color: colors.offWhite, fontSize: 25 },
   label: { marginTop: spacing[4], color: colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   radiusRow: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] },
-  radius: { minHeight: 38, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.surface },
+  radius: { minHeight: 38, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.surfaceAlt },
   radiusActive: { backgroundColor: colors.brand },
   radiusText: { color: colors.offWhite, fontSize: 12, fontWeight: '800' },
   radiusTextActive: { color: colors.graphite },
+  sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] },
+  sort: { minHeight: 38, justifyContent: 'center', paddingHorizontal: spacing[3], borderRadius: radius.full, backgroundColor: colors.surfaceAlt },
+  sortActive: { backgroundColor: colors.brand },
+  sortText: { color: colors.offWhite, fontSize: 11, fontWeight: '800' },
+  sortTextActive: { color: colors.onBrand },
   count: { color: colors.textMuted, fontSize: typography.caption, marginTop: spacing[4] },
   list: { marginTop: spacing[2] },
   listContent: { gap: spacing[2], paddingBottom: spacing[3] },
-  card: { minHeight: 70, flexDirection: 'row', alignItems: 'center', padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface },
+  card: { minHeight: 70, flexDirection: 'row', alignItems: 'center', padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   cardCopy: { flex: 1 },
-  brand: { color: colors.brand, fontSize: 9, fontWeight: '900' },
+  brand: { color: colors.brandText, fontSize: 9, fontWeight: '900' },
   name: { color: colors.offWhite, fontWeight: '800', marginTop: 2 },
   meta: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
   price: { color: colors.offWhite, fontSize: typography.h3, fontWeight: '900', marginLeft: spacing[3] },
   empty: { color: colors.textMuted, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
   addButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md },
-  addText: { color: colors.brand, fontWeight: '900' },
+  addText: { color: colors.brandText, fontWeight: '900' },
 })
