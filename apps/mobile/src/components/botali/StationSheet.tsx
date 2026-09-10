@@ -8,9 +8,9 @@ import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { FlexRatioBadge } from './FlexRatioBadge'
 
-type Props = { station: Station; mode: MapMode; favorite: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void }
+type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onConfirmPrice: (agrees: boolean) => void }
 
-export function StationSheet({ station, mode, favorite, onToggleFavorite, onClose, onContribute }: Props) {
+export function StationSheet({ station, mode, favorite, confirmingPrice, onToggleFavorite, onClose, onContribute, onConfirmPrice }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
   const fuel = mode === 'electric' ? 'gasolina' : mode
@@ -30,7 +30,7 @@ export function StationSheet({ station, mode, favorite, onToggleFavorite, onClos
     <Pressable {...panResponder.panHandlers} accessibilityRole="button" accessibilityLabel={expanded ? 'Recolher detalhes' : 'Expandir detalhes'} accessibilityHint="Toque ou arraste verticalmente" onPress={() => setExpanded((value) => !value)} style={styles.handleButton}><View style={styles.handle} /></Pressable>
     <View style={styles.head}>
       <View style={styles.title}>
-        <Text style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>
+        <Text style={styles.eyebrow}>{station.brand.toUpperCase()}{station.status === 'pending' ? ' · AGUARDANDO REVISÃO' : ''}</Text>
         <Text style={styles.stationName}>{station.name}</Text>
         <Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km · {station.rating ? `★ ${station.rating.toFixed(1)}` : station.address}</Text>
       </View>
@@ -39,8 +39,9 @@ export function StationSheet({ station, mode, favorite, onToggleFavorite, onClos
     </View>
     <ScrollView style={expanded ? styles.bodyExpanded : undefined} contentContainerStyle={styles.bodyContent} scrollEnabled={expanded} showsVerticalScrollIndicator={expanded}>
       {mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><Text style={styles.confidence}>Serviço confirmado</Text></View> : <>
-        <View style={styles.priceRow}><View><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={styles.priceValue}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text></View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
+        <View style={styles.priceRow}><View><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={styles.priceValue}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text>{price ? <Text style={styles.priceMeta}>{price.reports ?? 0} {(price.reports ?? 0) === 1 ? 'pessoa' : 'pessoas'} · {price.confirmations ?? 0} confirmações</Text> : null}</View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
         {flexRatio ? <View style={styles.flexBadge}><FlexRatioBadge percentage={flexRatio} /></View> : null}
+        {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
       </>}
       {expanded ? <View style={styles.expandedContent}>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
@@ -71,10 +72,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   priceRow: { marginTop: spacing[4], padding: spacing[4], borderRadius: radius.md, backgroundColor: colors.surfaceAlt, flexDirection: 'row', alignItems: 'center' },
   priceLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: .8 },
   priceValue: { color: colors.offWhite, fontSize: 25, fontWeight: '900', marginTop: 2 },
+  priceMeta: { color: colors.textMuted, fontSize: 10, marginTop: 3 },
   confidence: { marginLeft: 'auto', color: colors.brandText, fontWeight: '800', fontSize: 11 },
   bodyExpanded: { flex: 1 },
   bodyContent: { paddingBottom: spacing[1] },
   flexBadge: { marginTop: spacing[2] },
+  confirmCard: { marginTop: spacing[2], padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  confirmTitle: { color: colors.offWhite, fontSize: 13, fontWeight: '900' },
+  confirmCopy: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  confirmActions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] },
+  confirmButton: { minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
+  confirmGood: { backgroundColor: colors.brand },
+  confirmChanged: { borderWidth: 1, borderColor: colors.amber },
+  confirmGoodText: { color: colors.onBrand, fontSize: 12, fontWeight: '900' },
+  confirmChangedText: { color: colors.warningText, fontSize: 12, fontWeight: '900' },
   expandedContent: { marginTop: spacing[3], gap: spacing[3] },
   detailRow: { padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   detailLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: .8 },

@@ -28,8 +28,10 @@
 ## Postos
 
 - Novos cadastros entram como `pending`.
+- Um posto `pending` fica visível somente para quem o cadastrou e para moderadores; a consulta pública mostra apenas postos `verified`.
 - Cadastro deve usar localização válida.
 - Postos diferentes podem coexistir próximos. O bloqueio de duplicidade do MVP ocorre somente quando já existe um posto com o mesmo nome normalizado em um raio de 100 metros.
+- Ao aprovar um posto, os serviços relatados no mesmo cadastro também passam a `confirmed`; na rejeição, passam a `rejected`.
 
 ## Confiança e reputação
 
@@ -37,9 +39,12 @@
 - Divergências, dados antigos e correções reduzem confiança.
 - Evoluções do algoritmo devem ser documentadas e auditáveis antes de alterar os limites oficiais.
 - O preço comunitário considera relatos das últimas 48 horas agrupados pelo mesmo valor em centavos.
-- O volume de relatos independentes é o sinal principal; reputação, confirmações e divergências ajustam o resultado.
+- Cada usuário contribui no máximo com um relato por posto e combustível dentro da janela de consenso; um novo envio substitui o relato anterior dessa pessoa no cálculo.
+- O volume de colaboradores distintos é o sinal principal; reputação, confirmações e divergências ajustam o resultado.
 - A pontuação inicial de um grupo é `100 × relatos + 0,25 × reputação + 30 × confirmações ponderadas − 40 × divergências ponderadas`.
 - Assim, vários usuários com o mesmo preço podem superar um relato isolado, mesmo quando esse autor tem reputação alta.
+- O autor não pode confirmar o próprio relato. Uma pessoa que já participa do grupo de preço também não acrescenta um segundo peso como confirmação.
+- O aplicativo consome o consenso calculado no PostgreSQL; clientes não recalculam ou acessam contribuições brutas de outros usuários.
 
 ## Presença e localização
 
@@ -48,6 +53,7 @@
 - A coordenada exata não é armazenada no histórico de visitas; persistem somente posto, usuário, dia e distância aproximada.
 - Cada usuário conta no máximo uma vez por posto por dia para métricas de visitação.
 - Métricas públicas devem ser agregadas e nunca expor quais usuários visitaram o posto.
+- Contagens públicas diárias só aparecem a partir de três visitas, reduzindo a possibilidade de identificar indivíduos em locais com pouco movimento.
 - Localização em segundo plano é opcional e desligada até uma adesão clara do usuário.
 - Uma geofence indica visita provável, não confirmação automática de combustível ou preço.
 - Exija permanência mínima e precisão aceitável para evitar contar quem apenas passou pela via.

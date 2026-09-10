@@ -12,13 +12,15 @@ Aplicativo Android/iOS para encontrar postos próximos, comparar preços de comb
 - alternância dos marcadores entre gasolina, etanol, diesel e recarga elétrica
 - comparação flex com percentual do etanol sobre a gasolina
 - detalhes e confiança separados por combustível
-- dados demonstrativos isolados em `src/data/stations.ts`
+- dados reais carregados do Supabase; o projeto não mantém postos demonstrativos no código
 - Supabase Auth e cliente preparado em `src/lib/supabase.ts`
 - migração PostgreSQL/PostGIS em `supabase/migrations/`
 - cadastro de postos com localização e bloqueio de duplicidade em 100 metros
 - novos postos entram com status `pending`
 - envio autenticado de preços por combustível, com localização opcional
-- consenso por volume de relatos, reputação e confirmações recentes
+- consenso calculado no PostgreSQL por colaboradores distintos, reputação, confirmações e divergências recentes
+- contribuições brutas e identidades protegidas; o mapa recebe apenas resultados agregados
+- postos pendentes visíveis apenas ao autor e a moderadores até a revisão
 - check-in voluntário por GPS, validado em até 200 metros e armazenado sem coordenada exata
 - aplicativo Expo em `apps/mobile`, com autenticação e dados reais do Supabase
 

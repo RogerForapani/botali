@@ -13,9 +13,11 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     try {
       const rows = await loadStations(center, radiusKm)
       setStations(rows)
+      return rows
     } catch {
       setStations([])
       setError('Não foi possível carregar os postos agora.')
+      return []
     } finally {
       setLoading(false)
     }

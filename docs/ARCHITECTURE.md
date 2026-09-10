@@ -21,6 +21,9 @@
 - RLS habilitado e validado antes de exposição em produção.
 - Busca por proximidade, raio e duplicidade pertence ao PostGIS, não ao componente de mapa.
 - Filtros e cadastro consomem o mesmo catálogo ativo de `fuel_types` e `services`; novos tipos não devem exigir listas duplicadas no aplicativo.
+- O preço comunitário é calculado por `community_prices_for_stations`; aplicativos recebem somente preço consolidado, confiança e contagens agregadas.
+- Tabelas brutas de preços, confirmações e perfis não são legíveis por visitantes anônimos.
+- A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
 
 ## Organização evolutiva
 

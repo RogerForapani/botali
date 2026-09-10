@@ -21,7 +21,7 @@ import { useFavorites } from './src/hooks/useFavorites'
 import { useActivity } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
-import { loadStationOptions } from './src/services/stations'
+import { confirmPriceAtStation, loadStationOptions } from './src/services/stations'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
@@ -52,6 +52,7 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showNewStation, setShowNewStation] = useState(false)
+  const [confirmingPrice, setConfirmingPrice] = useState(false)
   const [fuelOptions, setFuelOptions] = useState(fallbackFuels)
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
@@ -106,6 +107,28 @@ export default function App() {
     else setShowAuth(true)
   }
 
+  async function confirmSelectedPrice(agrees: boolean) {
+    if (!selected || mode === 'electric') return
+    const currentPrice = selected.prices[mode]
+    if (!currentPrice?.submissionId) return
+    if (!user) { setShowAuth(true); return }
+    setConfirmingPrice(true)
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync()
+      if (!permission.granted) { setLocationMessage('Permita a localização para confirmar o preço no posto.'); return }
+      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+      const distance = await confirmPriceAtStation({ submissionId: currentPrice.submissionId, latitude: current.coords.latitude, longitude: current.coords.longitude, agrees })
+      const updated = await refresh(mapCenter, radiusKm)
+      setSelected(updated.find((station) => station.id === selected.id) ?? selected)
+      setLocationMessage(agrees ? `Preço confirmado a ${distance} m do posto. Obrigado!` : `Preço marcado como diferente a ${distance} m. Informe o valor atual.`)
+      if (!agrees) setShowPrice(true)
+    } catch (error) {
+      setLocationMessage(error instanceof Error ? error.message : 'Não foi possível confirmar este preço.')
+    } finally {
+      setConfirmingPrice(false)
+    }
+  }
+
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
@@ -124,10 +147,10 @@ export default function App() {
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><Text style={styles.locateText}>⌖</Text></Pressable> : null}
         {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} /> : null}
+        {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
-        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={() => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); refresh(); activity.refresh() }} />
-        <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente.'); refresh() }} />
+        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); const updated = await refresh(mapCenter, radiusKm); setSelected((current) => current ? updated.find((station) => station.id === current.id) ?? current : null); activity.refresh() }} />
+        <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refresh(mapCenter, radiusKm) }} />
         <BottomNavigation value={tab} onChange={changeTab} />
       </View>
     </SafeAreaProvider>
