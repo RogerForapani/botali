@@ -8,6 +8,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AuthModal } from './src/components/AuthModal'
 import { PriceModal } from './src/components/PriceModal'
 import { NewStationModal } from './src/components/NewStationModal'
+import { ModerationModal } from './src/components/ModerationModal'
 import { BottomNavigation, type AppTab } from './src/components/botali/BottomNavigation'
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
@@ -52,6 +53,7 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showNewStation, setShowNewStation] = useState(false)
+  const [showModeration, setShowModeration] = useState(false)
   const [confirmingPrice, setConfirmingPrice] = useState(false)
   const [fuelOptions, setFuelOptions] = useState(fallbackFuels)
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
@@ -148,7 +150,8 @@ export default function App() {
         {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} />
+        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onOpenModeration={() => setShowModeration(true)} />
+        <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onModerated={() => { refresh(mapCenter, radiusKm); setSelected(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); const updated = await refresh(mapCenter, radiusKm); setSelected((current) => current ? updated.find((station) => station.id === current.id) ?? current : null); activity.refresh() }} />
         <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refresh(mapCenter, radiusKm) }} />
         <BottomNavigation value={tab} onChange={changeTab} />

@@ -24,6 +24,7 @@
 - O preço comunitário é calculado por `community_prices_for_stations`; aplicativos recebem somente preço consolidado, confiança e contagens agregadas.
 - Tabelas brutas de preços, confirmações e perfis não são legíveis por visitantes anônimos.
 - A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
+- O aplicativo consulta `user_roles` ao abrir o perfil e apresenta a fila de moderação somente a `moderator` e `admin`; a autorização definitiva continua no PostgreSQL.
 
 ## Organização evolutiva
 
