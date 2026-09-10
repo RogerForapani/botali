@@ -3,10 +3,12 @@ import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar'
 import './src/services/smartVisits'
 import MapView, { type Region } from 'react-native-maps'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AuthModal } from './src/components/AuthModal'
+import { EditStationModal } from './src/components/EditStationModal'
+import { EditModerationModal } from './src/components/EditModerationModal'
 import { PriceModal } from './src/components/PriceModal'
 import { NewStationModal } from './src/components/NewStationModal'
 import { ModerationModal } from './src/components/ModerationModal'
@@ -58,8 +60,10 @@ export default function App() {
   const [showSearchArea, setShowSearchArea] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
+  const [showEditStation, setShowEditStation] = useState(false)
   const [showNewStation, setShowNewStation] = useState(false)
   const [showModeration, setShowModeration] = useState(false)
+  const [showEditModeration, setShowEditModeration] = useState(false)
   const [confirmingPrice, setConfirmingPrice] = useState(false)
   const [fuelOptions, setFuelOptions] = useState(fallbackFuels)
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
@@ -167,10 +171,12 @@ export default function App() {
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {tab === 'explore' && showSearchArea && !showSearch ? <Pressable accessibilityRole="button" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><Text style={styles.searchAreaText}>Buscar nesta área</Text></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onOpenModeration={() => setShowModeration(true)} />
+        {tab === 'explore' && !showSearch && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
+        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
         <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onModerated={() => { refresh(mapCenter, radiusKm); setSelected(null) }} />
+        <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onModerated={() => { refresh(mapCenter, radiusKm); setSelected(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); const updated = await refresh(mapCenter, radiusKm); setSelected((current) => current ? updated.find((station) => station.id === current.id) ?? current : null); activity.refresh() }} />
+        <EditStationModal visible={showEditStation} station={selected} onClose={() => setShowEditStation(false)} onSent={() => { setShowEditStation(false); setLocationMessage('Correção enviada para revisão. Obrigado!'); activity.refresh() }} />
         <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refresh(mapCenter, radiusKm) }} />
         <BottomNavigation value={tab} onChange={changeTab} />
       </View>

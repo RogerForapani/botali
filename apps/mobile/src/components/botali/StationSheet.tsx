@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useMemo, useState } from 'react'
 import { Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -9,9 +9,9 @@ import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { FlexRatioBadge } from './FlexRatioBadge'
 
-type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onConfirmPrice: (agrees: boolean) => void }
+type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
 
-export function StationSheet({ station, mode, favorite, confirmingPrice, onToggleFavorite, onClose, onContribute, onConfirmPrice }: Props) {
+export function StationSheet({ station, mode, favorite, confirmingPrice, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
   const fuel = mode === 'electric' ? 'gasolina' : mode
@@ -50,6 +50,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
           {(Object.entries(station.prices) as [string, { value: number }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text></View>)}
         </View>
         {station.services?.length ? <View style={styles.detailRow}><Text style={styles.detailLabel}>SERVIÇOS</Text><Text style={styles.detailValue}>{station.services.join(' · ')}</Text></View> : null}
+        {station.status !== 'pending' ? <Pressable accessibilityRole="button" onPress={onEdit} style={styles.editButton}><MaterialCommunityIcons name="pencil-outline" size={18} color={colors.brandText} /><Text style={styles.editText}>Sugerir correção deste posto</Text></Pressable> : null}
         <Text style={styles.dragHint}>Role para ver tudo · arraste a alça para baixo para recolher</Text>
       </View> : <Text style={styles.dragHint}>Toque ou arraste a alça para cima para ver mais</Text>}
     </ScrollView>
@@ -97,6 +98,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   fuelPrice: { minWidth: '30%', flexGrow: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   fuelLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 8 },
   fuelValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 14, marginTop: 4 },
+  editButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+  editText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 12 },
   dragHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },
   actions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] },
   action: { flex: 1 },

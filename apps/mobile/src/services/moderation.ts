@@ -81,3 +81,36 @@ export async function moderateStation(input: { stationId: string; decision: Mode
   })
   if (error) throw error
 }
+
+type EditPayload = { name?: string; brand?: string; address?: string; fuel_codes?: string[]; service_codes?: string[] }
+type PendingEditRow = { id: string; created_at: string; old_value: EditPayload; new_value: EditPayload; stations: Relation<{ name: string }> }
+export type EditModerationDecision = 'approved' | 'rejected'
+export type PendingStationEdit = { id: string; stationName: string; createdAt: string; before: EditPayload; after: EditPayload }
+
+export async function loadPendingStationEdits(): Promise<PendingStationEdit[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('station_edit_requests')
+    .select('id,created_at,old_value,new_value,stations(name)')
+    .eq('status', 'pending')
+    .eq('field_name', 'station_profile')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return ((data ?? []) as unknown as PendingEditRow[]).map((row) => ({
+    id: row.id,
+    stationName: first(row.stations)?.name ?? 'Posto',
+    createdAt: row.created_at,
+    before: row.old_value ?? {},
+    after: row.new_value ?? {},
+  }))
+}
+
+export async function moderateStationEdit(input: { requestId: string; decision: EditModerationDecision; reason?: string }) {
+  if (!supabase) throw new Error('Supabase não configurado.')
+  const { error } = await supabase.rpc('moderate_station_edit_request', {
+    target_request_id: input.requestId,
+    decision: input.decision,
+    reason: input.reason?.trim() || null,
+  })
+  if (error) throw error
+}

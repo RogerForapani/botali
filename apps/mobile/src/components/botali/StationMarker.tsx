@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { Marker } from 'react-native-maps'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'

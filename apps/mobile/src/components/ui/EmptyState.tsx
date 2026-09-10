@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useTheme } from '../../theme/ThemeProvider'
 import { spacing, typography, type ThemeColors } from '../../theme/tokens'
 

@@ -125,3 +125,26 @@ export async function submitStation(input: StationSuggestion) {
   if (error) throw error
   return data as string
 }
+
+export type StationEditSuggestion = {
+  stationId: string
+  name: string
+  brand: string
+  address: string
+  fuelCodes: string[]
+  serviceCodes: string[]
+}
+
+export async function submitStationEdit(input: StationEditSuggestion) {
+  if (!supabase) throw new Error('Supabase não configurado.')
+  const { data, error } = await supabase.rpc('create_station_edit_suggestion', {
+    target_station_id: input.stationId,
+    proposed_name: input.name.trim(),
+    proposed_brand: input.brand.trim(),
+    proposed_address: input.address.trim(),
+    fuel_codes: input.fuelCodes,
+    service_codes: input.serviceCodes,
+  })
+  if (error) throw error
+  return data as string
+}

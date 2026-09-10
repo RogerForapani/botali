@@ -32,6 +32,10 @@
 - Cadastro deve usar localização válida.
 - Postos diferentes podem coexistir próximos. O bloqueio de duplicidade do MVP ocorre somente quando já existe um posto com o mesmo nome normalizado em um raio de 100 metros.
 - Ao aprovar um posto, os serviços relatados no mesmo cadastro também passam a `confirmed`; na rejeição, passam a `rejected`.
+- Um usuário não altera diretamente um posto publicado: ele envia uma sugestão com o retrato anterior e os novos dados.
+- Cada usuário pode manter somente uma correção pendente por posto; uma nova sugestão só é aceita após a anterior ser resolvida.
+- Correções são aplicadas apenas após revisão de moderador. Aprovação e rejeição ficam registradas em uma trilha de auditoria.
+- A tela de revisão deve mostrar claramente os dados anteriores e os propostos antes da decisão.
 
 ## Confiança e reputação
 

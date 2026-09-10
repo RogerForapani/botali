@@ -22,6 +22,8 @@ Aplicativo Android/iOS para encontrar postos próximos, comparar preços de comb
 - contribuições brutas e identidades protegidas; o mapa recebe apenas resultados agregados
 - postos pendentes visíveis apenas ao autor e a moderadores até a revisão
 - área de moderação no perfil para revisar, aprovar ou rejeitar postos com justificativa e confirmação da decisão
+- sugestões de correção para postos publicados, com comparação antes/depois, revisão de moderador e trilha de auditoria
+- histórico unificado de preços, novos postos e correções, incluindo o estado da revisão
 - check-in voluntário por GPS, validado em até 200 metros e armazenado sem coordenada exata
 - aplicativo Expo em `apps/mobile`, com autenticação e dados reais do Supabase
 
