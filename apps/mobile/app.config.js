@@ -1,11 +1,19 @@
 module.exports = () => ({
   name: 'Botali',
   slug: 'botali',
+  owner: 'ningas',
+  description: 'Encontre postos próximos, compare preços da comunidade e escolha com mais confiança.',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'botali',
   userInterfaceStyle: 'automatic',
+  runtimeVersion: { policy: 'appVersion' },
+  updates: {
+    url: 'https://u.expo.dev/fc640c3a-b4f6-411c-84c7-511dc68b7626',
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+  },
   plugins: [
     ['expo-location', {
       locationWhenInUsePermission: 'O Botali usa sua localização para mostrar postos e preços próximos.',
@@ -26,22 +34,13 @@ module.exports = () => ({
     supportsTablet: true,
     bundleIdentifier: 'com.botali.app',
     icon: { light: './assets/icon-light.png', dark: './assets/icon-dark.png' },
+    config: { googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_API_KEY ?? '' },
     infoPlist: {},
   },
   android: {
     adaptiveIcon: { backgroundColor: '#171717', foregroundImage: './assets/android-icon-foreground.png', monochromeImage: './assets/android-icon-monochrome.png' },
     predictiveBackGestureEnabled: false,
     package: 'com.botali.app',
-    permissions: [
-      'ACCESS_COARSE_LOCATION',
-      'ACCESS_FINE_LOCATION',
-      'ACCESS_BACKGROUND_LOCATION',
-      'android.permission.ACCESS_COARSE_LOCATION',
-      'android.permission.ACCESS_FINE_LOCATION',
-      'android.permission.ACCESS_BACKGROUND_LOCATION',
-      'android.permission.FOREGROUND_SERVICE',
-      'android.permission.FOREGROUND_SERVICE_LOCATION',
-    ],
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? '' } },
   },
   web: { favicon: './assets/favicon.png' },

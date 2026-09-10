@@ -3,7 +3,7 @@ import * as Location from 'expo-location'
 import * as Notifications from 'expo-notifications'
 import { StatusBar } from 'expo-status-bar'
 import './src/services/smartVisits'
-import MapView, { type Region } from 'react-native-maps'
+import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
@@ -181,7 +181,7 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView ref={mapRef} style={StyleSheet.absoluteFill} initialRegion={initialRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
+        {tab === 'explore' ? <MapView ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={initialRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => setShowAuth(true)} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
 
