@@ -23,6 +23,7 @@ module.exports = () => ({
     }],
     'expo-notifications',
     'expo-font',
+    'expo-web-browser',
     ['expo-splash-screen', {
       backgroundColor: '#F7F7F5',
       image: './assets/splash-icon.png',

@@ -82,7 +82,7 @@ export async function moderateStation(input: { stationId: string; decision: Mode
   if (error) throw error
 }
 
-type EditPayload = { name?: string; brand?: string; address?: string; fuel_codes?: string[]; service_codes?: string[] }
+type EditPayload = { name?: string; brand?: string; address?: string; neighborhood?: string; city?: string; state?: string; postal_code?: string; fuel_codes?: string[]; service_codes?: string[] }
 type PendingEditRow = { id: string; created_at: string; old_value: EditPayload; new_value: EditPayload; stations: Relation<{ name: string }> }
 export type EditModerationDecision = 'approved' | 'rejected'
 export type PendingStationEdit = { id: string; stationName: string; createdAt: string; before: EditPayload; after: EditPayload }

@@ -7,7 +7,7 @@ import { loadPendingStations, moderateStation, type ModerationDecision, type Pen
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 
-export function ModerationModal({ visible, onClose, onModerated }: { visible: boolean; onClose: () => void; onModerated: () => void }) {
+export function ModerationModal({ visible, onClose, onBack, onModerated }: { visible: boolean; onClose: () => void; onBack?: () => void; onModerated: () => void }) {
   const { colors } = useTheme()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [stations, setStations] = useState<PendingStation[]>([])
@@ -57,7 +57,7 @@ export function ModerationModal({ visible, onClose, onModerated }: { visible: bo
     } finally { setBusy(false) }
   }
 
-  return <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+  return <Modal visible={visible} animationType="slide" onRequestClose={onBack ?? onClose}>
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View><Text style={styles.eyebrow}>MODERAÇÃO BOTALI</Text><Text style={styles.title}>Postos pendentes</Text></View>

@@ -75,6 +75,31 @@ export async function loadStationOptions() {
   return { brands: brands.data ?? [], fuels: fuels.data ?? [], services: services.data ?? [] }
 }
 
+export type StationProfile = {
+  address: string
+  neighborhood: string
+  city: string
+  state: string
+  postalCode: string
+}
+
+export async function loadStationProfile(stationId: string): Promise<StationProfile> {
+  if (!supabase) return { address: '', neighborhood: '', city: '', state: '', postalCode: '' }
+  const { data, error } = await supabase
+    .from('stations')
+    .select('address,neighborhood,city,state,postal_code')
+    .eq('id', stationId)
+    .single()
+  if (error) throw error
+  return {
+    address: data.address ?? '',
+    neighborhood: data.neighborhood ?? '',
+    city: data.city ?? '',
+    state: data.state ?? '',
+    postalCode: data.postal_code ?? '',
+  }
+}
+
 export async function submitPrices(input: { stationId: string; prices: { fuel: FuelCode; price: number }[]; userId: string }) {
   if (!supabase) throw new Error('Supabase não configurado.')
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.stationId)) throw new Error('Não foi possível identificar este posto. Atualize a lista e tente novamente.')
@@ -131,17 +156,25 @@ export type StationEditSuggestion = {
   name: string
   brand: string
   address: string
+  neighborhood: string
+  city: string
+  state: string
+  postalCode: string
   fuelCodes: string[]
   serviceCodes: string[]
 }
 
 export async function submitStationEdit(input: StationEditSuggestion) {
   if (!supabase) throw new Error('Supabase não configurado.')
-  const { data, error } = await supabase.rpc('create_station_edit_suggestion', {
+  const { data, error } = await supabase.rpc('create_station_edit_suggestion_v2', {
     target_station_id: input.stationId,
     proposed_name: input.name.trim(),
     proposed_brand: input.brand.trim(),
     proposed_address: input.address.trim(),
+    proposed_neighborhood: input.neighborhood.trim(),
+    proposed_city: input.city.trim(),
+    proposed_state: input.state.trim().toUpperCase(),
+    proposed_postal_code: input.postalCode.trim(),
     fuel_codes: input.fuelCodes,
     service_codes: input.serviceCodes,
   })

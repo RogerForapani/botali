@@ -29,7 +29,7 @@
 
 - Novos cadastros entram como `pending`.
 - Um posto `pending` fica visível somente para quem o cadastrou e para moderadores; a consulta pública mostra apenas postos `verified`.
-- Cadastro deve usar localização válida.
+- Cadastro deve usar coordenadas válidas, obtidas pelo GPS ou pela conversão explícita do endereço informado. O usuário não precisa estar fisicamente no posto.
 - Postos diferentes podem coexistir próximos. O bloqueio de duplicidade do MVP ocorre somente quando já existe um posto com o mesmo nome normalizado em um raio de 100 metros.
 - Ao aprovar um posto, os serviços relatados no mesmo cadastro também passam a `confirmed`; na rejeição, passam a `rejected`.
 - Um usuário não altera diretamente um posto publicado: ele envia uma sugestão com o retrato anterior e os novos dados.

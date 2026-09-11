@@ -35,7 +35,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
       return a.distanceKm - b.distanceKm
     })
 
-  return <View style={[styles.panel, { height: Math.max(360, height * .62) }]}>
+  return <View style={[styles.panel, { height: Math.min(height - spacing[3], Math.max(520, height * .88)) }]}>
     <View style={styles.searchRow}>
       <MaterialCommunityIcons name="magnify" size={23} color={colors.brandText} style={styles.searchIcon} />
       <TextInput autoFocus accessibilityLabel="Buscar posto" placeholder="Nome, bandeira ou endereço" placeholderTextColor={colors.textMuted} value={query} onChangeText={onQueryChange} style={styles.input} />

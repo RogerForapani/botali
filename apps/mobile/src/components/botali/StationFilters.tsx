@@ -17,8 +17,9 @@ type Props = {
 
 export function StationFilters({ fuels, services, mode, selectedServices, onModeChange, onToggleService, onClear }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
+  const hasFilters = mode !== 'gasolina' || selectedServices.length > 0
   return <View style={styles.panel}>
-    <View style={styles.heading}><View><Text style={styles.eyebrow}>FILTROS DO MAPA</Text><Text style={styles.title}>O que você procura?</Text></View>{selectedServices.length ? <Pressable accessibilityRole="button" onPress={onClear} style={styles.clear}><Text style={styles.clearText}>Limpar</Text></Pressable> : null}</View>
+    <View style={styles.heading}><View><Text style={styles.eyebrow}>FILTROS DO MAPA</Text><Text style={styles.title}>O que você procura?</Text></View>{hasFilters ? <Pressable accessibilityRole="button" onPress={onClear} style={styles.clear}><Text style={styles.clearText}>Limpar filtros</Text></Pressable> : null}</View>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator>
       <Text style={styles.label}>COMBUSTÍVEL EXIBIDO</Text>
       <View style={styles.options}>{fuels.map((item) => <Chip key={item.code} label={item.name} selected={mode === item.code} onPress={() => onModeChange(item.code)} />)}<Chip icon="ev-station" label="Recarga elétrica" selected={mode === 'electric'} onPress={() => onModeChange('electric')} /></View>

@@ -8,7 +8,8 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - comparação flex nos marcadores
 - postos, serviços e consenso de preços carregados do Supabase
 - mapa e lista alimentados exclusivamente pelos dados reais do Supabase
-- cadastro e entrada por e-mail com sessão persistente
+- tela inicial de autenticação com Google, e-mail e acesso sem conta
+- sessão autenticada persistente e consulta pública preservada para visitantes
 - atualização rápida de preço para usuários autenticados
 - rota externa até o posto
 - lembretes inteligentes opcionais com geofencing, permanência mínima, precisão mínima e limite de frequência
@@ -52,6 +53,18 @@ Copie `.env.example` para `.env.local` e configure somente as chaves públicas:
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
+
+### Login com Google
+
+No Supabase, habilite o provedor Google em **Authentication → Providers → Google** usando um Client ID e Client Secret OAuth do Google Cloud. No Google Cloud, cadastre como URI autorizada de redirecionamento a URL de callback exibida pelo próprio Supabase.
+
+Em **Authentication → URL Configuration → Redirect URLs**, adicione:
+
+```text
+botali://auth/callback
+```
+
+O Client Secret do Google deve permanecer somente no Supabase/Google Cloud e nunca ser incluído no aplicativo ou no repositório.
 
 ## Localização
 

@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -19,16 +19,24 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
   const flexRatio = station.prices.gasolina && station.prices.etanol
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8,
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    onPanResponderTerminationRequest: () => false,
     onPanResponderRelease: (_, gesture) => {
-      if (gesture.dy < -20) setExpanded(true)
-      if (gesture.dy > 20) setExpanded(false)
+      if (gesture.dy < -24) setExpanded(true)
+      if (gesture.dy > 32) onClose()
     },
-  }), [])
+  })
+
+  function toggleExpanded() {
+    setExpanded((value) => !value)
+  }
 
   return <SafeAreaView edges={['bottom']} style={[styles.sheet, expanded && styles.sheetExpanded]}>
-    <Pressable {...panResponder.panHandlers} accessibilityRole="button" accessibilityLabel={expanded ? 'Recolher detalhes' : 'Expandir detalhes'} accessibilityHint="Toque ou arraste verticalmente" onPress={() => setExpanded((value) => !value)} style={styles.handleButton}><View style={styles.handle} /></Pressable>
+    <View {...panResponder.panHandlers} style={styles.handleGestureArea}>
+      <Pressable accessibilityRole="button" accessibilityLabel={expanded ? 'Recolher detalhes' : 'Expandir detalhes'} accessibilityHint="Toque para alternar, arraste para cima para expandir ou para baixo para fechar" onPress={toggleExpanded} style={styles.handleButton}><View style={styles.handle} /></Pressable>
+    </View>
     <View style={styles.head}>
       <View style={styles.title}>
         <Text style={styles.eyebrow}>{station.brand.toUpperCase()}{station.status === 'pending' ? ' · AGUARDANDO REVISÃO' : ''}</Text>
@@ -51,17 +59,18 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
         </View>
         {station.services?.length ? <View style={styles.detailRow}><Text style={styles.detailLabel}>SERVIÇOS</Text><Text style={styles.detailValue}>{station.services.join(' · ')}</Text></View> : null}
         {station.status !== 'pending' ? <Pressable accessibilityRole="button" onPress={onEdit} style={styles.editButton}><MaterialCommunityIcons name="pencil-outline" size={18} color={colors.brandText} /><Text style={styles.editText}>Sugerir correção deste posto</Text></Pressable> : null}
-        <Text style={styles.dragHint}>Role para ver tudo · arraste a alça para baixo para recolher</Text>
-      </View> : <Text style={styles.dragHint}>Toque ou arraste a alça para cima para ver mais</Text>}
+        <Text style={styles.dragHint}>Role para ver tudo · arraste a alça para baixo para fechar</Text>
+      </View> : <Text style={styles.dragHint}>Toque ou arraste a alça para cima para ver mais · arraste para baixo para fechar</Text>}
     </ScrollView>
     <View style={styles.actions}><View style={styles.action}><Button variant="secondary" onPress={onContribute}>Atualizar preço</Button></View><View style={styles.action}><Button onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`)}>Ver rota</Button></View></View>
   </SafeAreaView>
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  sheet: { position: 'absolute', left: spacing[3], right: spacing[3], bottom: 76, maxHeight: '55%', paddingHorizontal: spacing[5], paddingTop: spacing[1], paddingBottom: spacing[4], borderRadius: radius.xl, backgroundColor: colors.graphite, overflow: 'hidden', ...shadow.sheet },
+  sheet: { position: 'absolute', zIndex: 30, left: spacing[3], right: spacing[3], bottom: 76, maxHeight: '55%', paddingHorizontal: spacing[5], paddingTop: spacing[1], paddingBottom: spacing[4], borderRadius: radius.xl, backgroundColor: colors.graphite, overflow: 'hidden', ...shadow.sheet, elevation: 30 },
   sheetExpanded: { height: '78%', maxHeight: '78%' },
-  handleButton: { minHeight: 32, alignItems: 'center', justifyContent: 'center' },
+  handleGestureArea: { marginHorizontal: -spacing[2] },
+  handleButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   handle: { width: 48, height: 5, borderRadius: radius.full, backgroundColor: colors.textMuted },
   head: { flexDirection: 'row', gap: spacing[2] },
   title: { flex: 1 },

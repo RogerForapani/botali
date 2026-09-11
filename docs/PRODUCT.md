@@ -24,7 +24,7 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Abrir detalhes e solicitar rota.
 - Buscar em um painel expansível e classificar resultados por distância, preço ou confiança.
 - Contribuir com preços sem tornar foto obrigatória.
-- Cadastrar postos ausentes após autenticação.
+- Cadastrar postos ausentes após autenticação, usando o GPS como atalho ou localizando manualmente o endereço quando o usuário estiver distante.
 - Sugerir correções de nome, bandeira, endereço, combustíveis e serviços de um posto publicado.
 - Acompanhar na aba Atividade o estado de cadastros e correções enviados.
 
