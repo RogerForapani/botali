@@ -4,6 +4,7 @@ import { describeAppError, diagnosticForError, userMessageForError } from './app
 describe('tratamento de erros do aplicativo', () => {
   it('diferencia falha de conexão de uma lista vazia', () => {
     expect(userMessageForError(new TypeError('Network request failed'), 'Falha')).toContain('Sem conexão')
+    expect(userMessageForError(new TypeError('fetch failed: java.net.UnknownHostException'), 'Falha')).toContain('Sem conexão')
   })
 
   it('traduz sessão expirada e falta de permissão', () => {

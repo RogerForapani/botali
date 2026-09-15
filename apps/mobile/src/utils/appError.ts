@@ -4,7 +4,7 @@ type ErrorDetails = {
   status: number | null
 }
 
-const NETWORK_PATTERN = /network request failed|failed to fetch|networkerror|socket|offline|internet|connection/i
+const NETWORK_PATTERN = /network request failed|failed to fetch|fetch failed|networkerror|java\.net|socket|offline|internet|connection/i
 const TIMEOUT_PATTERN = /timeout|timed out|tempo limite/i
 const AUTH_PATTERN = /jwt|token.*expired|invalid.*token|auth session missing/i
 const FORBIDDEN_PATTERN = /permission denied|row-level security|rls|not allowed|forbidden/i
