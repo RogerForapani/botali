@@ -16,7 +16,7 @@ export function StationMarker({ station, mode, selected, featured, onPress }: Pr
 
   return <Marker coordinate={{ latitude: station.latitude, longitude: station.longitude }} onPress={onPress} tracksViewChanges={false}>
     <View style={[styles.marker, featured && styles.featured, selected && styles.selected, mode === 'electric' && styles.electric]}>
-      {mode === 'electric' ? <View style={styles.electricRow}><MaterialCommunityIcons name="ev-station" size={14} color="#FFFFFF" /><Text style={styles.electricText}>Recarga</Text></View> : <Text style={[styles.price, featured && styles.coloredMarkerText]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço'}</Text>}
+      {mode === 'electric' ? <View style={styles.electricRow}><MaterialCommunityIcons name="ev-station" size={14} color="#FFFFFF" /><Text style={styles.electricText}>Recarga</Text></View> : <Text style={[styles.price, !price && styles.noPrice, featured && styles.coloredMarkerText]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
       {ratio && mode !== 'electric' ? <Text style={[styles.ratio, ratio <= 70 && styles.goodRatio, featured && styles.featuredRatio]}>Etanol {ratio}%</Text> : null}
     </View>
   </Marker>
@@ -28,6 +28,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   selected: { borderColor: colors.amber, transform: [{ scale: 1.08 }] },
   electric: { backgroundColor: colors.info },
   price: { color: colors.offWhite, fontFamily: typography.black, fontSize: 13 },
+  noPrice: { fontSize: 10 },
   coloredMarkerText: { color: colors.onBrand },
   ratio: { color: colors.textMuted, fontFamily: typography.bold, fontSize: 9, marginTop: 2 },
   goodRatio: { color: colors.brandText },

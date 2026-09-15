@@ -51,7 +51,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
         const price = mode === 'electric' ? null : station.prices[mode]
         return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
           <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{station.distanceKm.toFixed(1).replace('.', ',')} km{station.address ? ` · ${station.address}` : ''}</Text></View>
-          {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <Text style={styles.price}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : '—'}</Text>}
+          {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
         </Pressable>
       })}
       {!results.length ? <Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text> : null}
@@ -86,6 +86,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   name: { color: colors.offWhite, fontFamily: typography.bold, marginTop: 2 },
   meta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: 3 },
   price: { color: colors.offWhite, fontFamily: typography.black, fontSize: typography.h3, marginLeft: spacing[3] },
+  noPrice: { maxWidth: 72, color: colors.textMuted, fontSize: 10, textAlign: 'right' },
   priceIcon: { marginLeft: spacing[3] },
   empty: { color: colors.textMuted, fontFamily: typography.regular, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
   addButton: { minHeight: 48, flexDirection: 'row', gap: spacing[2], alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md },
