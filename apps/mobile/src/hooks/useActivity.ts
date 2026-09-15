@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { recordAppFailure } from '../services/diagnostics'
+import { userMessageForError } from '../utils/appError'
 
 export type ActivityItem = {
   id: string
@@ -27,22 +29,33 @@ export function useActivity(userId?: string) {
   const [items, setItems] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const requestId = useRef(0)
 
   const refresh = useCallback(async () => {
-    if (!userId || !supabase) { setItems([]); setError(''); return }
+    const currentRequest = ++requestId.current
+    if (!userId) { setItems([]); setError(''); return }
+    if (!supabase) { setItems([]); setError('Serviço de dados não configurado neste aplicativo.'); return }
     setLoading(true)
-    const [prices, stations, edits] = await Promise.all([
-      supabase.from('price_submissions').select('id,price,created_at,stations(name),fuel_types(name)').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
-      supabase.from('stations').select('id,name,status,created_at,station_moderation_actions(decision,reason,created_at)').eq('created_by', userId).order('created_at', { ascending: false }).limit(30),
-      supabase.from('station_edit_requests').select('id,status,created_at,stations(name),station_edit_moderation_actions(decision,reason,created_at)').eq('user_id', userId).order('created_at', { ascending: false }).limit(30),
-    ])
-    setLoading(false)
-    if (prices.error || stations.error || edits.error) { setError('Não foi possível carregar sua atividade.'); return }
-    setError('')
-    const priceItems: ActivityItem[] = ((prices.data ?? []) as ActivityRow[]).map((row) => ({ id: `price-${row.id}`, kind: 'price', price: row.price, createdAt: row.created_at, stationName: relationName(row.stations, 'Posto'), detail: relationName(row.fuel_types, 'Combustível') }))
-    const stationItems: ActivityItem[] = ((stations.data ?? []) as unknown as StationActivityRow[]).map((row) => { const action = latestAction(row.station_moderation_actions); return { id: `station-${row.id}`, kind: 'station', status: row.status, createdAt: row.created_at, stationName: row.name, detail: 'Cadastro de posto', reason: action?.reason ?? undefined, resolvedAt: action?.created_at } })
-    const editItems: ActivityItem[] = ((edits.data ?? []) as unknown as EditActivityRow[]).map((row) => { const action = latestAction(row.station_edit_moderation_actions); return { id: `edit-${row.id}`, kind: 'edit', status: row.status, createdAt: row.created_at, stationName: relationName(row.stations, 'Posto'), detail: 'Correção de dados', reason: action?.reason ?? undefined, resolvedAt: action?.created_at } })
-    setItems([...priceItems, ...stationItems, ...editItems].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    try {
+      const [prices, stations, edits] = await Promise.all([
+        supabase.from('price_submissions').select('id,price,created_at,stations(name),fuel_types(name)').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
+        supabase.from('stations').select('id,name,status,created_at,station_moderation_actions(decision,reason,created_at)').eq('created_by', userId).order('created_at', { ascending: false }).limit(30),
+        supabase.from('station_edit_requests').select('id,status,created_at,stations(name),station_edit_moderation_actions(decision,reason,created_at)').eq('user_id', userId).order('created_at', { ascending: false }).limit(30),
+      ])
+      const requestError = prices.error || stations.error || edits.error
+      if (requestError) throw requestError
+      if (currentRequest !== requestId.current) return
+      setError('')
+      const priceItems: ActivityItem[] = ((prices.data ?? []) as ActivityRow[]).map((row) => ({ id: `price-${row.id}`, kind: 'price', price: row.price, createdAt: row.created_at, stationName: relationName(row.stations, 'Posto'), detail: relationName(row.fuel_types, 'Combustível') }))
+      const stationItems: ActivityItem[] = ((stations.data ?? []) as unknown as StationActivityRow[]).map((row) => { const action = latestAction(row.station_moderation_actions); return { id: `station-${row.id}`, kind: 'station', status: row.status, createdAt: row.created_at, stationName: row.name, detail: 'Cadastro de posto', reason: action?.reason ?? undefined, resolvedAt: action?.created_at } })
+      const editItems: ActivityItem[] = ((edits.data ?? []) as unknown as EditActivityRow[]).map((row) => { const action = latestAction(row.station_edit_moderation_actions); return { id: `edit-${row.id}`, kind: 'edit', status: row.status, createdAt: row.created_at, stationName: relationName(row.stations, 'Posto'), detail: 'Correção de dados', reason: action?.reason ?? undefined, resolvedAt: action?.created_at } })
+      setItems([...priceItems, ...stationItems, ...editItems].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    } catch (loadError) {
+      recordAppFailure('activity.load', loadError).catch(() => undefined)
+      if (currentRequest === requestId.current) setError(userMessageForError(loadError, 'Não foi possível carregar sua atividade.'))
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false)
+    }
   }, [userId])
 
   useEffect(() => { refresh() }, [refresh])

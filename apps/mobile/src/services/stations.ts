@@ -11,7 +11,7 @@ export type MapCenter = { latitude: number; longitude: number }
 const first = <T,>(relation: Relation<T>) => Array.isArray(relation) ? relation[0] : relation
 
 export async function loadStations(center: MapCenter, radiusKm = 10): Promise<Station[]> {
-  if (!supabase) return []
+  if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
   const stationResult = await supabase.rpc('nearby_stations_v2', { lat: center.latitude, long: center.longitude, radius_m: Math.round(radiusKm * 1000) })
   if (stationResult.error) throw stationResult.error
   const nearby = (stationResult.data ?? []) as NearbyRow[]

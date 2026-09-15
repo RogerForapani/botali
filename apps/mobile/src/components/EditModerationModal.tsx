@@ -3,9 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { loadPendingStationEdits, moderateStationEdit, type EditModerationDecision, type PendingStationEdit } from '../services/moderation'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import { EmptyState } from './ui/EmptyState'
+import { userMessageForError } from '../utils/appError'
 
 export function EditModerationModal({ visible, onClose, onBack, onModerated }: { visible: boolean; onClose: () => void; onBack?: () => void; onModerated: () => void }) {
   const { colors } = useTheme(); const styles = useMemo(() => createStyles(colors), [colors])
@@ -28,7 +30,7 @@ export function EditModerationModal({ visible, onClose, onBack, onModerated }: {
       try {
         const rows = await loadPendingStationEdits()
         if (active) { setItems(rows); setSelectedId(rows[0]?.id ?? null) }
-      } catch (error) { if (active) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar as correções.') }
+      } catch (error) { recordAppFailure('moderation.edits.load', error).catch(() => undefined); if (active) setMessage(userMessageForError(error, 'Não foi possível carregar as correções.')) }
       finally { if (active) setLoading(false) }
     })
     return () => { active = false }
@@ -42,7 +44,7 @@ export function EditModerationModal({ visible, onClose, onBack, onModerated }: {
       await moderateStationEdit({ requestId: selected.id, decision, reason })
       setItems((current) => current.filter((item) => item.id !== selected.id)); setSelectedId(null); setDecision(null); setReason('')
       onModerated()
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível revisar a correção.') }
+    } catch (error) { recordAppFailure('moderation.edits.submit', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível revisar a correção.')) }
     finally { setBusy(false) }
   }
 

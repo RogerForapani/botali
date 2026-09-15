@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import * as Location from 'expo-location'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { loadStationOptions, submitStation } from '../services/stations'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
+import { userMessageForError } from '../utils/appError'
 
 type Props = { visible: boolean; userId: string | null; onClose: () => void; onBack?: () => void; onSent: () => void }
 
@@ -39,7 +41,7 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
         if (next !== 'Outra') setName(next)
         return next
       })
-    }).catch(() => setMessage('Não foi possível carregar as opções do cadastro.'))
+    }).catch((error) => { recordAppFailure('stations.options', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível carregar as opções do cadastro.')) })
   }, [visible])
 
   function toggle(value: string, current: string[], update: (values: string[]) => void) { update(current.includes(value) ? current.filter((item) => item !== value) : [...current, value]) }
@@ -63,7 +65,8 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
         if (place.postalCode) setPostalCode(place.postalCode)
         setMessage('Localização capturada e endereço preenchido. Revise antes de enviar.')
       } else setMessage('Localização capturada. Complete apenas os dados de endereço que faltarem.')
-    } catch {
+    } catch (error) {
+      recordAppFailure('location.current', error).catch(() => undefined)
       setMessage('Não foi possível obter sua localização. Confira se o GPS está ativo e tente novamente.')
     } finally { setLocating(false) }
   }
@@ -85,7 +88,8 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
       if (!result) return setMessage('Não encontramos esse endereço. Revise os dados ou use o GPS quando estiver no posto.')
       setCoordinates({ latitude: result.latitude, longitude: result.longitude }); setCoordinateSource('address'); setResolvedAddressKey(addressKey())
       setMessage('Endereço localizado. Você pode cadastrar o posto mesmo estando distante.')
-    } catch {
+    } catch (error) {
+      recordAppFailure('location.geocode', error).catch(() => undefined)
       setMessage('Não foi possível localizar esse endereço agora. Revise os dados e tente novamente.')
     } finally { setLocating(false) }
   }
@@ -102,7 +106,7 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
       await submitStation({ name, brand: brand === 'Outra' ? name.trim() : brand, address: fullAddress, neighborhood, city, state, postalCode, ...coordinates, fuelCodes, serviceCodes, userId })
       setName(brand === 'Outra' ? '' : brand); setAddress(''); setAddressNumber(''); setNeighborhood(''); setPostalCode(''); setCoordinates(null); setCoordinateSource(null); setResolvedAddressKey('')
       onSent()
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível cadastrar o posto.') }
+    } catch (error) { recordAppFailure('stations.submit', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível cadastrar o posto.')) }
     finally { setBusy(false) }
   }
 

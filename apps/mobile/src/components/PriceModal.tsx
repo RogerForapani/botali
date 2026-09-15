@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { submitPrices } from '../services/stations'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import type { FuelCode, Station } from '../types'
+import { userMessageForError } from '../utils/appError'
 
 const labels: Partial<Record<FuelCode, string>> = { gasolina: 'Gasolina comum', gasolina_aditivada: 'Gasolina aditivada', gasolina_premium: 'Gasolina premium', etanol: 'Etanol', etanol_aditivado: 'Etanol aditivado', diesel_s10: 'Diesel S10', diesel_s10_aditivado: 'Diesel S10 aditivado', diesel_s500: 'Diesel S500', diesel_s500_aditivado: 'Diesel S500 aditivado', gnv: 'GNV' }
 const fuelLabel = (code: FuelCode) => labels[code] ?? code.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase())
@@ -38,7 +40,7 @@ export function PriceModal({ visible, station, initialFuel, userId, onClose, onB
       await submitPrices({ stationId: station.id, prices: completed.map((code) => ({ fuel: code, price: Number((drafts[code] ?? '').replace(',', '.')) })), userId })
       setDrafts({}); onSent()
     }
-    catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível enviar o preço.') }
+    catch (error) { recordAppFailure('prices.submit', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível enviar o preço.')) }
     finally { setBusy(false) }
   }
 

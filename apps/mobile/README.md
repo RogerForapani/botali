@@ -20,7 +20,9 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - cache local dos postos para consulta temporária sem internet
 - restauração da última região e do raio, armazenados somente no aparelho com coordenadas arredondadas
 - reconexão com atualização automática e estados claros de carregamento, erro e dados salvos
-- testes automatizados das regras de filtro e seleção do menor preço
+- mensagens diferentes para lista vazia, falta de conexão, sessão expirada, permissão e indisponibilidade do servidor
+- diagnóstico técnico local e sanitizado, compartilhável pelo Perfil sem incluir conta, localização ou contribuições
+- testes automatizados de filtros, conectividade, tratamento de erros e contratos de confiança/privacidade das migrações
 - componentes reutilizáveis alinhados ao Design System oficial
 - perfis EAS para builds de desenvolvimento, preview e produção
 
@@ -43,6 +45,12 @@ Para verificar os tipos:
 
 ```powershell
 npm run typecheck
+```
+
+Para executar a suíte automatizada:
+
+```powershell
+npm run test
 ```
 
 ## Supabase

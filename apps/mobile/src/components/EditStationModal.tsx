@@ -2,9 +2,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useEffect, useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { loadStationOptions, loadStationProfile, submitStationEdit, type StationProfile } from '../services/stations'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import type { Station } from '../types'
+import { userMessageForError } from '../utils/appError'
 import { Chip } from './ui/Chip'
 
 type CatalogOption = { code: string; name: string }
@@ -43,7 +45,7 @@ export function EditStationModal({ visible, station, onClose, onBack, onSent }: 
         setBrands(options.brands.map((item) => item.name)); setFuels(options.fuels as CatalogOption[]); setServices(options.services as CatalogOption[])
         const parsed = splitAddress(profile.address)
         setAddress(parsed.street); setAddressNumber(parsed.number); setNeighborhood(profile.neighborhood); setCity(profile.city); setState(profile.state); setPostalCode(profile.postalCode); setOriginalProfile(profile)
-      } catch { if (active) setMessage('Não foi possível carregar todas as opções.') }
+      } catch (error) { recordAppFailure('station-edit.options', error).catch(() => undefined); if (active) setMessage(userMessageForError(error, 'Não foi possível carregar todas as opções.')) }
     })
     return () => { active = false }
   }, [visible, station])
@@ -61,7 +63,7 @@ export function EditStationModal({ visible, station, onClose, onBack, onSent }: 
     try {
       await submitStationEdit({ stationId: station.id, name, brand, address: fullAddress, neighborhood, city, state, postalCode, fuelCodes, serviceCodes })
       onSent()
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a correção.') }
+    } catch (error) { recordAppFailure('station-edit.submit', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível enviar a correção.')) }
     finally { setBusy(false) }
   }
 

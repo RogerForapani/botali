@@ -4,8 +4,10 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, Text
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { EmptyState } from './ui/EmptyState'
 import { loadPendingStations, moderateStation, type ModerationDecision, type PendingStation } from '../services/moderation'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
+import { userMessageForError } from '../utils/appError'
 
 export function ModerationModal({ visible, onClose, onBack, onModerated }: { visible: boolean; onClose: () => void; onBack?: () => void; onModerated: () => void }) {
   const { colors } = useTheme()
@@ -33,7 +35,8 @@ export function ModerationModal({ visible, onClose, onBack, onModerated }: { vis
         setStations(rows)
         setSelectedId((current) => rows.some((station) => station.id === current) ? current : rows[0]?.id ?? null)
       } catch (error) {
-        if (active) setLoadError(error instanceof Error ? error.message : 'Não foi possível carregar os postos pendentes.')
+        recordAppFailure('moderation.stations.load', error).catch(() => undefined)
+        if (active) setLoadError(userMessageForError(error, 'Não foi possível carregar os postos pendentes.'))
       } finally { if (active) setLoading(false) }
     })
     return () => { active = false }
@@ -53,7 +56,8 @@ export function ModerationModal({ visible, onClose, onBack, onModerated }: { vis
       setMessage(decision === 'verified' ? 'Posto aprovado e publicado no mapa.' : 'Posto rejeitado.')
       onModerated()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível concluir a revisão.')
+      recordAppFailure('moderation.stations.submit', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível concluir a revisão.'))
     } finally { setBusy(false) }
   }
 

@@ -32,10 +32,12 @@ import { useConnectivity } from './src/hooks/useConnectivity'
 import { confirmPriceAtStation, loadStationOptions } from './src/services/stations'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { syncSmartVisitStations } from './src/services/smartVisits'
+import { recordAppFailure } from './src/services/diagnostics'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
 import { filterStations, findBestPriceStationId } from './src/utils/stationFilters'
+import { userMessageForError } from './src/utils/appError'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
 const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
@@ -76,7 +78,7 @@ export default function App() {
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [seenDecisionIds, setSeenDecisionIds] = useState<string[]>([])
-  useEffect(() => { loadStationOptions().then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) }).catch(() => undefined) }, [])
+  useEffect(() => { loadStationOptions().then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) }).catch((error) => recordAppFailure('stations.options', error)) }, [])
   const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm, serviceCodes: selectedServices }), [mode, radiusKm, selectedServices, stations])
   const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
@@ -189,15 +191,20 @@ export default function App() {
   }
 
   async function locate() {
-    const permission = await Location.requestForegroundPermissionsAsync()
-    if (!permission.granted) return setLocationMessage('Ative a localização para ver postos perto de você.')
-    const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-    const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
-    setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
-    saveMapPreferences({ center, radiusKm }).catch(() => undefined)
-    mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
-    await refresh(center, radiusKm)
-    setLocationMessage('Mapa centralizado na sua localização.')
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync()
+      if (!permission.granted) return setLocationMessage('Ative a localização para ver postos perto de você.')
+      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
+      setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
+      saveMapPreferences({ center, radiusKm }).catch(() => undefined)
+      mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
+      await refresh(center, radiusKm)
+      setLocationMessage('Mapa centralizado na sua localização.')
+    } catch (error) {
+      recordAppFailure('location.map', error).catch(() => undefined)
+      setLocationMessage(userMessageForError(error, 'Não foi possível obter sua localização. Confira se o GPS está ativo.'))
+    }
   }
 
   function selectFromSearch(station: Station) {
@@ -233,7 +240,8 @@ export default function App() {
       setLocationMessage(agrees ? `Preço confirmado a ${distance} m do posto. Obrigado!` : `Preço marcado como diferente a ${distance} m. Informe o valor atual.`)
       if (!agrees) setShowPrice(true)
     } catch (error) {
-      setLocationMessage(error instanceof Error ? error.message : 'Não foi possível confirmar este preço.')
+      recordAppFailure('prices.confirm', error).catch(() => undefined)
+      setLocationMessage(userMessageForError(error, 'Não foi possível confirmar este preço.'))
     } finally {
       setConfirmingPrice(false)
     }
@@ -256,7 +264,7 @@ export default function App() {
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
           <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
           {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelected(null) }} onToggleService={(code) => { setSelected(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelected(null) }} /> : null}
-          {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refresh(mapCenter, radiusKm) : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? 'Atualizando postos…' : isOnline === false || stale ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : stationsError ? `${stationsError} · Toque para tentar novamente` : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
+          {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refresh(mapCenter, radiusKm) : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
