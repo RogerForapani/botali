@@ -20,7 +20,8 @@ export function filterStations(stations: Station[], input: { mode: MapMode; radi
 export function findBestPriceStationId(stations: Station[], mode: MapMode) {
   if (mode === 'electric') return null
   return stations.reduce<{ id: string; price: number } | null>((best, station) => {
-    const price = station.prices[mode]?.value
+    const selectedPrice = station.prices[mode]
+    const price = selectedPrice?.stale ? undefined : selectedPrice?.value
     return price != null && (!best || price < best.price) ? { id: station.id, price } : best
   }, null)?.id ?? null
 }

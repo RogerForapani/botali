@@ -16,7 +16,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
   const [expanded, setExpanded] = useState(false)
   const fuel = mode === 'electric' ? 'gasolina' : mode
   const price = station.prices[fuel]
-  const flexRatio = station.prices.gasolina && station.prices.etanol
+  const flexRatio = station.prices.gasolina && station.prices.etanol && !station.prices.gasolina.stale && !station.prices.etanol.stale
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
   const panResponder = PanResponder.create({
@@ -48,14 +48,14 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
     </View>
     <ScrollView style={expanded ? styles.bodyExpanded : undefined} contentContainerStyle={styles.bodyContent} scrollEnabled={expanded} showsVerticalScrollIndicator={expanded}>
       {mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><View style={styles.electricStatus}><MaterialCommunityIcons name="check-decagram" size={17} color={colors.brandText} /><Text style={styles.confidence}>Serviço confirmado</Text></View></View> : <>
-        <View style={styles.priceRow}><View style={styles.priceCopy}><Text style={styles.priceLabel}>PREÇO DA COMUNIDADE</Text><Text style={[styles.priceValue, !price && styles.noPriceValue]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>{price ? <Text style={styles.priceMeta}>{price.reports ?? 0} {(price.reports ?? 0) === 1 ? 'pessoa' : 'pessoas'} · {price.confirmations ?? 0} confirmações</Text> : <Text style={styles.priceMeta}>Nenhum relato nas últimas 48 horas. Atualize se souber o valor.</Text>}</View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
+        <View style={styles.priceRow}><View style={styles.priceCopy}><Text style={styles.priceLabel}>{price?.stale ? 'ÚLTIMO PREÇO INFORMADO' : 'PREÇO DA COMUNIDADE'}</Text><Text style={[styles.priceValue, !price && styles.noPriceValue]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.staleMessage}>Este posto não teve atualização de preço nos últimos 5 dias.</Text> : price ? <Text style={styles.priceMeta}>{price.reports ?? 0} {(price.reports ?? 0) === 1 ? 'pessoa' : 'pessoas'} · {price.confirmations ?? 0} confirmações</Text> : <Text style={styles.priceMeta}>Se souber o valor, envie a primeira atualização.</Text>}</View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
         {flexRatio ? <View style={styles.flexBadge}><FlexRatioBadge percentage={flexRatio} /></View> : null}
         {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
       </>}
       {expanded ? <View style={styles.expandedContent}>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
         <View style={styles.allPrices}>
-          {(Object.entries(station.prices) as [string, { value: number }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text></View>)}
+          {(Object.entries(station.prices) as [string, { value: number; stale?: boolean }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text>{item.stale ? <Text style={styles.fuelStale}>Sem atualização há 5 dias</Text> : null}</View>)}
         </View>
         {station.services?.length ? <View style={styles.detailRow}><Text style={styles.detailLabel}>SERVIÇOS</Text><Text style={styles.detailValue}>{station.services.join(' · ')}</Text></View> : null}
         {station.status !== 'pending' ? <Pressable accessibilityRole="button" onPress={onEdit} style={styles.editButton}><MaterialCommunityIcons name="pencil-outline" size={18} color={colors.brandText} /><Text style={styles.editText}>Sugerir correção deste posto</Text></Pressable> : null}
@@ -87,6 +87,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   priceValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 25, marginTop: 2 },
   noPriceValue: { fontSize: 19 },
   priceMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: 3 },
+  staleMessage: { maxWidth: 220, color: colors.warningText, fontFamily: typography.semibold, fontSize: 10, lineHeight: 14, marginTop: 4 },
   electricStatus: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
   confidence: { color: colors.brandText, fontFamily: typography.bold, fontSize: 11 },
   bodyExpanded: { flex: 1 },
@@ -109,6 +110,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   fuelPrice: { minWidth: '30%', flexGrow: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   fuelLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 8 },
   fuelValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 14, marginTop: 4 },
+  fuelStale: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 8, marginTop: 3 },
   editButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
   editText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 12 },
   dragHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },

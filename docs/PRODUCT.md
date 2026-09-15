@@ -33,6 +33,7 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Aplicativo nativo para Android e iOS; a experiência web atual é somente um protótipo funcional.
 - Mobile-first e orientado às capacidades reais do aparelho.
 - Preço e confiança sempre caminham juntos.
+- O último preço conhecido permanece disponível quando envelhece, sempre acompanhado de um aviso claro após 5 dias sem atualização.
 - Contribuição simples e comunitária.
 - Mapa desacoplado das regras de negócio.
 - Evolução incremental sem aprisionamento ao provedor de mapas.

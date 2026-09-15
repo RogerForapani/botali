@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 const currentDirectory = fileURLToPath(new URL('.', import.meta.url))
 const trustMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609100001_trust_privacy_and_moderation.sql'), 'utf8')
+const freshnessMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609150001_price_freshness_five_days.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -35,5 +36,16 @@ describe('contratos de confiança e privacidade do PostgreSQL', () => {
     expect(trustMigration).toContain('if visit_distance > 200')
     expect(trustMigration).toContain('having count(*) >= 3')
     expect(trustMigration).toContain("America/Sao_Paulo")
+  })
+})
+
+describe('contrato de atualidade dos preços', () => {
+  it('usa cinco dias para consenso e confirmação', () => {
+    expect(freshnessMigration.match(/interval '5 days'/g)?.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('mantém o último preço conhecido com confiança baixa e sem confirmação', () => {
+    expect(freshnessMigration).toContain('latest_known as')
+    expect(freshnessMigration).toMatch(/latest_known\.normalized_price,[\s\S]*10,[\s\S]*null::uuid/)
   })
 })

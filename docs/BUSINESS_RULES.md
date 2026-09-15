@@ -42,7 +42,8 @@
 - Confirmações recentes e contribuições consistentes aumentam confiança.
 - Divergências, dados antigos e correções reduzem confiança.
 - Evoluções do algoritmo devem ser documentadas e auditáveis antes de alterar os limites oficiais.
-- O preço comunitário considera relatos das últimas 48 horas agrupados pelo mesmo valor em centavos.
+- O preço comunitário considera relatos dos últimos 5 dias agrupados pelo mesmo valor em centavos.
+- Quando não houver relato nos últimos 5 dias, o último preço conhecido continua visível, com confiança baixa e aviso explícito de que está desatualizado.
 - Cada usuário contribui no máximo com um relato por posto e combustível dentro da janela de consenso; um novo envio substitui o relato anterior dessa pessoa no cálculo.
 - O volume de colaboradores distintos é o sinal principal; reputação, confirmações e divergências ajustam o resultado.
 - A pontuação inicial de um grupo é `100 × relatos + 0,25 × reputação + 30 × confirmações ponderadas − 40 × divergências ponderadas`.

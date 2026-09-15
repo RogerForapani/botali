@@ -30,7 +30,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
     .filter((station) => station.distanceKm <= radiusKm)
     .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
     .sort((a, b) => {
-      if (sort === 'price' && mode !== 'electric') return (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || a.distanceKm - b.distanceKm
+      if (sort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || a.distanceKm - b.distanceKm
       if (sort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || a.distanceKm - b.distanceKm
       return a.distanceKm - b.distanceKm
     })
@@ -51,7 +51,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
         const price = mode === 'electric' ? null : station.prices[mode]
         return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
           <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{station.distanceKm.toFixed(1).replace('.', ',')} km{station.address ? ` · ${station.address}` : ''}</Text></View>
-          {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
+          {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <View style={styles.priceGroup}><Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.stalePrice}>Sem atualização há 5 dias</Text> : null}</View>}
         </Pressable>
       })}
       {!results.length ? <Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text> : null}
@@ -87,6 +87,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   meta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: 3 },
   price: { color: colors.offWhite, fontFamily: typography.black, fontSize: typography.h3, marginLeft: spacing[3] },
   noPrice: { maxWidth: 72, color: colors.textMuted, fontSize: 10, textAlign: 'right' },
+  priceGroup: { maxWidth: 96, alignItems: 'flex-end' },
+  stalePrice: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 8, textAlign: 'right', marginTop: 2 },
   priceIcon: { marginLeft: spacing[3] },
   empty: { color: colors.textMuted, fontFamily: typography.regular, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
   addButton: { minHeight: 48, flexDirection: 'row', gap: spacing[2], alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md },

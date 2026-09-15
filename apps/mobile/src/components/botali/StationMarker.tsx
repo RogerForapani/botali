@@ -10,14 +10,14 @@ type Props = { station: Station; mode: MapMode; selected: boolean; featured: boo
 export function StationMarker({ station, mode, selected, featured, onPress }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const price = mode === 'electric' ? null : station.prices[mode]
-  const ratio = station.prices.gasolina && station.prices.etanol
+  const ratio = station.prices.gasolina && station.prices.etanol && !station.prices.gasolina.stale && !station.prices.etanol.stale
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
 
   return <Marker coordinate={{ latitude: station.latitude, longitude: station.longitude }} onPress={onPress} tracksViewChanges={false}>
     <View style={[styles.marker, featured && styles.featured, selected && styles.selected, mode === 'electric' && styles.electric]}>
       {mode === 'electric' ? <View style={styles.electricRow}><MaterialCommunityIcons name="ev-station" size={14} color="#FFFFFF" /><Text style={styles.electricText}>Recarga</Text></View> : <Text style={[styles.price, !price && styles.noPrice, featured && styles.coloredMarkerText]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
-      {ratio && mode !== 'electric' ? <Text style={[styles.ratio, ratio <= 70 && styles.goodRatio, featured && styles.featuredRatio]}>Etanol {ratio}%</Text> : null}
+      {price?.stale ? <Text style={styles.stale}>Sem atualização há 5 dias</Text> : ratio && mode !== 'electric' ? <Text style={[styles.ratio, ratio <= 70 && styles.goodRatio, featured && styles.featuredRatio]}>Etanol {ratio}%</Text> : null}
     </View>
   </Marker>
 }
@@ -33,5 +33,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   ratio: { color: colors.textMuted, fontFamily: typography.bold, fontSize: 9, marginTop: 2 },
   goodRatio: { color: colors.brandText },
   featuredRatio: { color: colors.onBrand },
+  stale: { color: colors.amber, fontFamily: typography.bold, fontSize: 8, marginTop: 2 },
   electricRow: { flexDirection: 'row', alignItems: 'center', gap: 3 }, electricText: { color: '#FFFFFF', fontFamily: typography.bold, fontSize: 12 },
 })
