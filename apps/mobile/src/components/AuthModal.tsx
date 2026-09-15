@@ -36,13 +36,19 @@ export function AuthModal({ visible, user, stations, onClose, onBack, onSignedOu
     if (!supabase) return setMessage('Configure o Supabase no arquivo .env.local para entrar.')
     if (!email || password.length < 6) return setMessage('Informe o e-mail e uma senha com pelo menos 6 caracteres.')
     setBusy(true); setMessage('')
-    const result = mode === 'signin'
-      ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: 'botali://auth/callback', data: { full_name: name.trim() } } })
-    setBusy(false)
-    if (result.error) { recordAppFailure('auth.password', result.error).catch(() => undefined); return setMessage(userMessageForError(result.error, 'Não foi possível entrar.')) }
-    if (mode === 'signup' && !result.data.session) return setMessage('Confira seu e-mail para confirmar a conta.')
-    onClose()
+    try {
+      const result = mode === 'signin'
+        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: 'botali://auth/callback', data: { full_name: name.trim() } } })
+      if (result.error) throw result.error
+      if (mode === 'signup' && !result.data.session) return setMessage('Confira seu e-mail para confirmar a conta.')
+      onClose()
+    } catch (error) {
+      recordAppFailure('auth.password', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível entrar.'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function continueWithGoogle() {
@@ -59,7 +65,19 @@ export function AuthModal({ visible, user, stations, onClose, onBack, onSignedOu
     }
   }
 
-  async function signOut() { await disableSmartVisits(); await supabase?.auth.signOut(); onClose(); onSignedOut?.() }
+  async function signOut() {
+    setBusy(true); setMessage('')
+    try {
+      try { await disableSmartVisits() }
+      catch (error) { recordAppFailure('smart-visits.disable', error).catch(() => undefined) }
+      const { error } = await supabase?.auth.signOut() ?? { error: null }
+      if (error) throw error
+      onClose(); onSignedOut?.()
+    } catch (error) {
+      recordAppFailure('auth.signout', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível sair da conta.'))
+    } finally { setBusy(false) }
+  }
   async function deleteAccount() {
     if (!supabase || deleteText.trim().toUpperCase() !== 'EXCLUIR') return setMessage('Digite EXCLUIR para confirmar.')
     setBusy(true); setMessage('')

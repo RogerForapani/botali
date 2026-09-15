@@ -33,8 +33,8 @@ export function useActivity(userId?: string) {
 
   const refresh = useCallback(async () => {
     const currentRequest = ++requestId.current
-    if (!userId) { setItems([]); setError(''); return }
-    if (!supabase) { setItems([]); setError('Serviço de dados não configurado neste aplicativo.'); return }
+    if (!userId) { setItems([]); setError(''); setLoading(false); return }
+    if (!supabase) { setItems([]); setError('Serviço de dados não configurado neste aplicativo.'); setLoading(false); return }
     setLoading(true)
     try {
       const [prices, stations, edits] = await Promise.all([

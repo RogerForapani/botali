@@ -57,7 +57,7 @@ export async function loadStations(center: MapCenter, radiusKm = 10): Promise<St
         disagreements: Number(item.disagreements),
         updatedAt: item.updated_at,
         submissionId: item.submission_id ?? undefined,
-        stale: isPriceStale(item.updated_at),
+        stale: !item.submission_id || isPriceStale(item.updated_at),
       }
     }
     return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', status: row.status, address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], serviceCodes: services.get(row.id)?.codes ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }

@@ -4,29 +4,37 @@ import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase'
 import { authRedirectUrl, signInWithGoogle } from '../services/auth'
+import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
+import { userMessageForError } from '../utils/appError'
 
-export function AuthScreen({ onContinueAsGuest }: { onContinueAsGuest: () => void }) {
+export function AuthScreen({ onContinueAsGuest, initialMessage = '' }: { onContinueAsGuest: () => void; initialMessage?: string }) {
   const { colors, mode: themeMode } = useTheme()
   const styles = createStyles(colors)
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(initialMessage)
   const [busy, setBusy] = useState(false)
 
   async function submit() {
     if (!supabase) return setMessage('Não foi possível conectar ao serviço de login.')
     if (!email.trim() || password.length < 6) return setMessage('Informe o e-mail e uma senha com pelo menos 6 caracteres.')
     setBusy(true); setMessage('')
-    const result = mode === 'signin'
-      ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: authRedirectUrl, data: { full_name: name.trim() } } })
-    setBusy(false)
-    if (result.error) return setMessage(result.error.message)
-    if (mode === 'signup' && !result.data.session) setMessage('Confira seu e-mail para confirmar a conta.')
+    try {
+      const result = mode === 'signin'
+        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: authRedirectUrl, data: { full_name: name.trim() } } })
+      if (result.error) throw result.error
+      if (mode === 'signup' && !result.data.session) setMessage('Confira seu e-mail para confirmar a conta.')
+    } catch (error) {
+      recordAppFailure('auth.password', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível entrar. Tente novamente.'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function continueWithGoogle() {
@@ -35,7 +43,8 @@ export function AuthScreen({ onContinueAsGuest }: { onContinueAsGuest: () => voi
       const result = await signInWithGoogle()
       if (result === 'cancel' || result === 'dismiss') setMessage('Login cancelado.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível entrar com o Google.')
+      recordAppFailure('auth.google', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível entrar com o Google.'))
     } finally {
       setBusy(false)
     }

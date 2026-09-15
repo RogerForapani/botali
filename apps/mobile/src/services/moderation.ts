@@ -41,9 +41,9 @@ const first = <T,>(relation: Relation<T>) => Array.isArray(relation) ? relation[
 
 export async function loadMyRole(userId: string): Promise<AccountRole> {
   if (!supabase) return 'user'
-  const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', userId).single()
+  const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
   if (error) throw error
-  return (data.role as AccountRole) ?? 'user'
+  return (data?.role as AccountRole) ?? 'user'
 }
 
 export async function loadPendingStations(): Promise<PendingStation[]> {

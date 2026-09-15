@@ -7,7 +7,9 @@ export function useConnectivity() {
 
   useEffect(() => {
     let active = true
-    NetInfo.fetch().then((state) => { if (active) setIsOnline(isNetworkAvailable(state)) })
+    NetInfo.fetch()
+      .then((state) => { if (active) setIsOnline(isNetworkAvailable(state)) })
+      .catch(() => { if (active) setIsOnline(null) })
     const unsubscribe = NetInfo.addEventListener((state) => setIsOnline(isNetworkAvailable(state)))
     return () => { active = false; unsubscribe() }
   }, [])

@@ -48,14 +48,14 @@ export default function App() {
   const styles = useMemo(() => createStyles(colors), [colors])
   const mapRef = useRef<MapView>(null)
   const wasOffline = useRef(false)
-  const { user, loading: sessionLoading } = useSession()
+  const { user, loading: sessionLoading, error: sessionError } = useSession()
   const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, refresh } = useStations(initialCenter, 10)
   const isOnline = useConnectivity()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
   const [tab, setTab] = useState<AppTab>('explore')
   const [mode, setMode] = useState<MapMode>('gasolina')
-  const [selected, setSelected] = useState<Station | null>(stations[0])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [locationMessage, setLocationMessage] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -78,8 +78,12 @@ export default function App() {
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [seenDecisionIds, setSeenDecisionIds] = useState<string[]>([])
-  useEffect(() => { loadStationOptions().then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) }).catch((error) => recordAppFailure('stations.options', error)) }, [])
+  const reloadStationOptions = useCallback(() => loadStationOptions()
+    .then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) })
+    .catch((error) => recordAppFailure('stations.options', error)), [])
+  useEffect(() => { if (isOnline !== false) reloadStationOptions() }, [isOnline, reloadStationOptions])
   const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm, serviceCodes: selectedServices }), [mode, radiusKm, selectedServices, stations])
+  const selected = useMemo(() => selectedId ? stations.find((station) => station.id === selectedId) ?? null : null, [selectedId, stations])
   const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const filtersActive = mode !== 'gasolina' || selectedServices.length > 0
@@ -90,7 +94,7 @@ export default function App() {
 
   const returnToMap = useCallback(() => {
     setTab('explore')
-    setSelected(null)
+    setSelectedId(null)
     setShowSearch(false)
     setShowFilters(false)
     setShowSearchArea(false)
@@ -124,7 +128,7 @@ export default function App() {
     }
   }, [isOnline, mapCenter, radiusKm, refresh])
 
-  useEffect(() => { syncSmartVisitStations(stations).catch(() => undefined) }, [stations])
+  useEffect(() => { syncSmartVisitStations(stations).catch((error) => recordAppFailure('smart-visits.sync', error)) }, [stations])
 
   useEffect(() => {
     if (!locationMessage) return
@@ -165,7 +169,7 @@ export default function App() {
       setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false); setMapCenter(center); setPendingCenter(center)
       const rows = await refresh(center, radiusKm)
       if (!active) return
-      setSelected(rows.find((station) => station.id === stationId) ?? null)
+      setSelectedId(rows.find((station) => station.id === stationId)?.id ?? null)
       mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
     }
     Notifications.getLastNotificationResponseAsync().then(openVisitedStation)
@@ -208,7 +212,7 @@ export default function App() {
   }
 
   function selectFromSearch(station: Station) {
-    setSelected(station)
+    setSelectedId(station.id)
     setShowSearch(false)
     mapRef.current?.animateToRegion({ latitude: station.latitude, longitude: station.longitude, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
     if (contributionIntent) {
@@ -235,8 +239,7 @@ export default function App() {
       if (!permission.granted) { setLocationMessage('Permita a localização para confirmar o preço no posto.'); return }
       const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
       const distance = await confirmPriceAtStation({ submissionId: currentPrice.submissionId, latitude: current.coords.latitude, longitude: current.coords.longitude, agrees })
-      const updated = await refresh(mapCenter, radiusKm)
-      setSelected(updated.find((station) => station.id === selected.id) ?? selected)
+      await refresh(mapCenter, radiusKm)
       setLocationMessage(agrees ? `Preço confirmado a ${distance} m do posto. Obrigado!` : `Preço marcado como diferente a ${distance} m. Informe o valor atual.`)
       if (!agrees) setShowPrice(true)
     } catch (error) {
@@ -249,31 +252,31 @@ export default function App() {
 
   if (sessionLoading) return <SafeAreaProvider><View style={styles.authLoading}><StatusBar style={themeMode === 'light' ? 'dark' : 'light'} /><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.authLoadingLogo} /><Text style={styles.authLoadingText}>botali</Text></View></SafeAreaProvider>
 
-  if (!user && !continuedAsGuest) return <SafeAreaProvider><StatusBar style={themeMode === 'light' ? 'dark' : 'light'} /><AuthScreen onContinueAsGuest={() => setContinuedAsGuest(true)} /></SafeAreaProvider>
+  if (!user && !continuedAsGuest) return <SafeAreaProvider><StatusBar style={themeMode === 'light' ? 'dark' : 'light'} /><AuthScreen key={sessionError || 'auth'} initialMessage={sessionError} onContinueAsGuest={() => setContinuedAsGuest(true)} /></SafeAreaProvider>
 
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
         {tab === 'explore' ? <MapView key={`google-map-${themeMode}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
-          {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelected(station)} />)}
-        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelected(station); setTab('explore') }} />}
+          {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelectedId(station.id)} />)}
+        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelected(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
-          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelected(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
-          {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelected(null) }} onToggleService={(code) => { setSelected(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelected(null) }} /> : null}
+          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
+          {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelectedId(null) }} onToggleService={(code) => { setSelectedId(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelectedId(null) }} /> : null}
           {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refresh(mapCenter, radiusKm) : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelected(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
+        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
-        <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelected(null) }} />
-        <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelected(null) }} />
-        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); const updated = await refresh(mapCenter, radiusKm); setSelected((current) => current ? updated.find((station) => station.id === current.id) ?? current : null); activity.refresh() }} />
+        <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelectedId(null) }} />
+        <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelectedId(null) }} />
+        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refresh(mapCenter, radiusKm); activity.refresh() }} />
         <EditStationModal visible={showEditStation} station={selected} onClose={() => setShowEditStation(false)} onBack={returnToMap} onSent={() => { setShowEditStation(false); setLocationMessage('Correção enviada para revisão. Obrigado!'); activity.refresh() }} />
         <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onBack={returnToMap} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refresh(mapCenter, radiusKm) }} />
         <BottomNavigation value={tab} onChange={changeTab} notificationCount={unreadDecisionCount} />

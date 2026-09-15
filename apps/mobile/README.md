@@ -10,6 +10,7 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - mapa e lista alimentados exclusivamente pelos dados reais do Supabase
 - tela inicial de autenticação com Google, e-mail e acesso sem conta
 - sessão autenticada persistente e consulta pública preservada para visitantes
+- recuperação local da sessão salva, sem depender de uma chamada ao servidor para abrir o aplicativo
 - atualização rápida de preço para usuários autenticados
 - rota externa até o posto
 - lembretes inteligentes opcionais com geofencing, permanência mínima, precisão mínima e limite de frequência
@@ -25,6 +26,7 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - testes automatizados de filtros, conectividade, tratamento de erros e contratos de confiança/privacidade das migrações
 - componentes reutilizáveis alinhados ao Design System oficial
 - perfis EAS para builds de desenvolvimento, preview e produção
+- compatibilidade de atualizações remotas protegida pelo fingerprint das dependências nativas
 
 ## Executar
 

@@ -40,7 +40,12 @@ TaskManager.defineTask(TASK, async ({ data, error }) => {
   const globalPrompt = Number(await AsyncStorage.getItem('botali:prompt:last'))
   const stationPrompt = Number(await AsyncStorage.getItem(`botali:prompt:${region.identifier}`))
   if (Date.now() - globalPrompt < GLOBAL_COOLDOWN_MS || Date.now() - stationPrompt < STATION_COOLDOWN_MS) return
-  const stationMap = JSON.parse(await AsyncStorage.getItem(STATIONS_KEY) ?? '{}') as Record<string, MonitoredStation | string>
+  let stationMap: Record<string, MonitoredStation | string> = {}
+  try {
+    stationMap = JSON.parse(await AsyncStorage.getItem(STATIONS_KEY) ?? '{}') as Record<string, MonitoredStation | string>
+  } catch {
+    // A corrupted local cache must not abort a background visit task.
+  }
   const stored = stationMap[region.identifier]
   const stationName = typeof stored === 'string' ? stored : stored?.name ?? 'esse posto'
   await Notifications.scheduleNotificationAsync({ content: { title: 'Preço bom é preço confirmado', body: `Você passou pelo ${stationName}. O preço que viu estava certo?`, data: { stationId: region.identifier, latitude: region.latitude, longitude: region.longitude } }, trigger: null })
@@ -61,7 +66,12 @@ export async function enableSmartVisits(stations: Station[]) {
   if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync('visits', { name: 'Lembretes de visitas', importance: Notifications.AndroidImportance.DEFAULT })
 
   await AsyncStorage.setItem(ENABLED_KEY, 'true')
-  await syncSmartVisitStations(stations, true)
+  try {
+    await syncSmartVisitStations(stations, true)
+  } catch (error) {
+    await AsyncStorage.setItem(ENABLED_KEY, 'false')
+    throw error
+  }
 }
 
 export async function syncSmartVisitStations(stations: Station[], force = false) {
@@ -79,6 +89,9 @@ export async function syncSmartVisitStations(stations: Station[], force = false)
 }
 
 export async function disableSmartVisits() {
-  if (await Location.hasStartedGeofencingAsync(TASK)) await Location.stopGeofencingAsync(TASK)
-  await AsyncStorage.setItem(ENABLED_KEY, 'false')
+  try {
+    if (await Location.hasStartedGeofencingAsync(TASK)) await Location.stopGeofencingAsync(TASK)
+  } finally {
+    await AsyncStorage.setItem(ENABLED_KEY, 'false')
+  }
 }
