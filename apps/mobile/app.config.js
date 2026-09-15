@@ -8,7 +8,7 @@ module.exports = () => ({
   icon: './assets/icon.png',
   scheme: 'botali',
   userInterfaceStyle: 'automatic',
-  runtimeVersion: { policy: 'fingerprint' },
+  runtimeVersion: { policy: 'appVersion' },
   updates: {
     url: 'https://u.expo.dev/fc640c3a-b4f6-411c-84c7-511dc68b7626',
     checkAutomatically: 'ON_LOAD',
