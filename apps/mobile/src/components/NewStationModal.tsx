@@ -46,6 +46,15 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
 
   function toggle(value: string, current: string[], update: (values: string[]) => void) { update(current.includes(value) ? current.filter((item) => item !== value) : [...current, value]) }
 
+  function changeAddressField(update: (value: string) => void, value: string) {
+    update(value)
+    if (!coordinates) return
+    setCoordinates(null)
+    setCoordinateSource(null)
+    setResolvedAddressKey('')
+    setMessage('O endereço mudou. Localize-o novamente no mapa antes de cadastrar.')
+  }
+
   async function locate() {
     setLocating(true); setMessage('')
     try {
@@ -57,14 +66,17 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
       const [place] = await Location.reverseGeocodeAsync(coordinate)
       if (place) {
         const street = place.street ?? place.name ?? ''
-        if (street) setAddress(street)
-        if (place.streetNumber) setAddressNumber(place.streetNumber)
-        if (place.district || place.subregion) setNeighborhood(place.district ?? place.subregion ?? '')
-        if (place.city || place.subregion) setCity(place.city ?? place.subregion ?? '')
-        if (place.region) setState(toBrazilianStateCode(place.region))
-        if (place.postalCode) setPostalCode(place.postalCode)
-        setMessage('Localização capturada e endereço preenchido. Revise antes de enviar.')
-      } else setMessage('Localização capturada. Complete apenas os dados de endereço que faltarem.')
+        setAddress(street)
+        setAddressNumber(place.streetNumber ?? '')
+        setNeighborhood(place.district ?? place.subregion ?? '')
+        setCity(place.city ?? place.subregion ?? '')
+        setState(place.region ? toBrazilianStateCode(place.region) : '')
+        setPostalCode(place.postalCode ?? '')
+        setMessage('Localização capturada e endereço preenchido. Se editar o endereço, localize-o novamente no mapa.')
+      } else {
+        setAddress(''); setAddressNumber(''); setNeighborhood(''); setCity(''); setState(''); setPostalCode('')
+        setMessage('Localização capturada, mas o endereço não foi encontrado. Preencha os dados e localize o endereço no mapa antes de enviar.')
+      }
     } catch (error) {
       recordAppFailure('location.current', error).catch(() => undefined)
       setMessage('Não foi possível obter sua localização. Confira se o GPS está ativo e tente novamente.')
@@ -113,11 +125,11 @@ export function NewStationModal({ visible, userId, onClose, onBack, onSent }: Pr
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onBack ?? onClose}><KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.layer}><Pressable accessibilityRole="button" accessibilityLabel="Fechar" style={styles.scrim} onPress={onClose} /><View style={styles.card}><View style={styles.handle} /><Text style={styles.eyebrow}>NOVO POSTO</Text><Text style={styles.title}>Ajude a completar o mapa</Text><Text style={styles.description}>Cadastre pelo endereço, mesmo à distância, ou use o GPS como atalho quando estiver no posto.</Text><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
     <Text style={styles.label}>BANDEIRA</Text><View style={styles.options}>{brands.map((item) => <Option key={item} label={item} active={brand === item} onPress={() => { setBrand(item); setName(item === 'Outra' ? '' : item) }} />)}</View>
     <Field label="Nome do posto" value={name} onChangeText={setName} placeholder="Digite o nome que aparece no posto" editable={brand === 'Outra'} />
-    <Pressable accessibilityRole="button" disabled={locating} onPress={locate} style={[styles.locationButton, coordinates && styles.locationReady]}><MaterialCommunityIcons name={coordinates ? 'check-circle-outline' : 'crosshairs-gps'} size={20} color={colors.brandText} /><Text style={styles.locationText}>{locating ? 'Obtendo localização e endereço…' : coordinates ? 'Localização e endereço capturados' : 'Usar minha localização e preencher endereço'}</Text></Pressable>
-    <View style={styles.row}><View style={styles.grow}><Field label="Rua/Avenida" value={address} onChangeText={setAddress} placeholder="Nome da via" /></View><View style={styles.number}><Field label="Número" value={addressNumber} onChangeText={setAddressNumber} placeholder="123 ou S/N" /></View></View>
-    <Field label="Bairro" value={neighborhood} onChangeText={setNeighborhood} placeholder="Bairro" />
-    <View style={styles.row}><View style={styles.grow}><Field label="Cidade" value={city} onChangeText={setCity} placeholder="Cidade" /></View><View style={styles.uf}><Field label="UF" value={state} onChangeText={(value) => setState(value.slice(0, 2))} placeholder="MG" /></View></View>
-    <Field label="CEP" value={postalCode} onChangeText={setPostalCode} placeholder="00000-000" keyboardType="numeric" />
+    <Pressable accessibilityRole="button" disabled={locating} onPress={locate} style={[styles.locationButton, coordinateSource === 'gps' && styles.locationReady]}><MaterialCommunityIcons name={coordinateSource === 'gps' ? 'check-circle-outline' : 'crosshairs-gps'} size={20} color={colors.brandText} /><Text style={styles.locationText}>{locating ? 'Obtendo localização e endereço…' : coordinateSource === 'gps' ? 'Ponto definido pelo GPS' : 'Usar minha localização e preencher endereço'}</Text></Pressable>
+    <View style={styles.row}><View style={styles.grow}><Field label="Rua/Avenida" value={address} onChangeText={(value) => changeAddressField(setAddress, value)} placeholder="Nome da via" /></View><View style={styles.number}><Field label="Número" value={addressNumber} onChangeText={(value) => changeAddressField(setAddressNumber, value)} placeholder="123 ou S/N" /></View></View>
+    <Field label="Bairro" value={neighborhood} onChangeText={(value) => changeAddressField(setNeighborhood, value)} placeholder="Bairro" />
+    <View style={styles.row}><View style={styles.grow}><Field label="Cidade" value={city} onChangeText={(value) => changeAddressField(setCity, value)} placeholder="Cidade" /></View><View style={styles.uf}><Field label="UF" value={state} onChangeText={(value) => changeAddressField(setState, value.slice(0, 2))} placeholder="MG" /></View></View>
+    <Field label="CEP" value={postalCode} onChangeText={(value) => changeAddressField(setPostalCode, value)} placeholder="00000-000" keyboardType="numeric" />
     <Pressable accessibilityRole="button" disabled={locating} onPress={locateAddress} style={[styles.locationButton, coordinateSource === 'address' && styles.locationReady]}><MaterialCommunityIcons name={coordinateSource === 'address' ? 'map-marker-check-outline' : 'map-search-outline'} size={20} color={colors.brandText} /><Text style={styles.locationText}>{locating ? 'Localizando…' : coordinateSource === 'address' ? 'Endereço localizado no mapa' : 'Localizar endereço no mapa'}</Text></Pressable>
     <Text style={styles.label}>COMBUSTÍVEIS</Text><View style={styles.options}>{fuels.map((item) => <Option key={item.code} label={item.name} active={fuelCodes.includes(item.code)} onPress={() => toggle(item.code, fuelCodes, setFuelCodes)} />)}</View>
     <Text style={styles.label}>SERVIÇOS</Text><View style={styles.options}>{services.map((item) => <Option key={item.code} label={item.name} active={serviceCodes.includes(item.code)} onPress={() => toggle(item.code, serviceCodes, setServiceCodes)} />)}</View>
