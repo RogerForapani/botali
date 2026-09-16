@@ -83,13 +83,15 @@ export type StationProfile = {
   city: string
   state: string
   postalCode: string
+  latitude: number
+  longitude: number
 }
 
 export async function loadStationProfile(stationId: string): Promise<StationProfile> {
-  if (!supabase) return { address: '', neighborhood: '', city: '', state: '', postalCode: '' }
+  if (!supabase) return { address: '', neighborhood: '', city: '', state: '', postalCode: '', latitude: 0, longitude: 0 }
   const { data, error } = await supabase
     .from('stations')
-    .select('address,neighborhood,city,state,postal_code')
+    .select('address,neighborhood,city,state,postal_code,latitude,longitude')
     .eq('id', stationId)
     .single()
   if (error) throw error
@@ -99,6 +101,8 @@ export async function loadStationProfile(stationId: string): Promise<StationProf
     city: data.city ?? '',
     state: data.state ?? '',
     postalCode: data.postal_code ?? '',
+    latitude: Number(data.latitude),
+    longitude: Number(data.longitude),
   }
 }
 
@@ -162,13 +166,15 @@ export type StationEditSuggestion = {
   city: string
   state: string
   postalCode: string
+  latitude: number
+  longitude: number
   fuelCodes: string[]
   serviceCodes: string[]
 }
 
 export async function submitStationEdit(input: StationEditSuggestion) {
   if (!supabase) throw new Error('Supabase não configurado.')
-  const { data, error } = await supabase.rpc('create_station_edit_suggestion_v2', {
+  const { data, error } = await supabase.rpc('create_station_edit_suggestion_v3', {
     target_station_id: input.stationId,
     proposed_name: input.name.trim(),
     proposed_brand: input.brand.trim(),
@@ -177,6 +183,8 @@ export async function submitStationEdit(input: StationEditSuggestion) {
     proposed_city: input.city.trim(),
     proposed_state: input.state.trim().toUpperCase(),
     proposed_postal_code: input.postalCode.trim(),
+    proposed_latitude: input.latitude,
+    proposed_longitude: input.longitude,
     fuel_codes: input.fuelCodes,
     service_codes: input.serviceCodes,
   })

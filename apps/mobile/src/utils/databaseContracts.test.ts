@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 const currentDirectory = fileURLToPath(new URL('.', import.meta.url))
 const trustMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609100001_trust_privacy_and_moderation.sql'), 'utf8')
 const freshnessMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609150001_price_freshness_five_days.sql'), 'utf8')
+const locationEditMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609160001_station_location_edit_moderation.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -47,5 +48,25 @@ describe('contrato de atualidade dos preços', () => {
   it('mantém o último preço conhecido com confiança baixa e sem confirmação', () => {
     expect(freshnessMigration).toContain('latest_known as')
     expect(freshnessMigration).toMatch(/latest_known\.normalized_price,[\s\S]*10,[\s\S]*null::uuid/)
+  })
+})
+
+describe('contrato de correção da localização do posto', () => {
+  it('registra o ponto anterior e o ponto proposto para a moderação', () => {
+    expect(locationEditMigration).toContain("'latitude', target.latitude")
+    expect(locationEditMigration).toContain("'longitude', target.longitude")
+    expect(locationEditMigration).toContain("'latitude', proposed_latitude")
+    expect(locationEditMigration).toContain("'longitude', proposed_longitude")
+  })
+
+  it('valida os limites geográficos e só aplica o ponto durante a aprovação', () => {
+    expect(locationEditMigration).toContain('proposed_latitude not between -90 and 90')
+    expect(locationEditMigration).toContain('proposed_longitude not between -180 and 180')
+    expect(locationEditMigration).toMatch(/if decision = 'approved' then[\s\S]*latitude = next_latitude,[\s\S]*longitude = next_longitude/)
+  })
+
+  it('mantém a proteção contra postos iguais no mesmo local', () => {
+    expect(locationEditMigration).toContain('s.id <> target_station_id')
+    expect(locationEditMigration).toContain('extensions.st_dwithin')
   })
 })

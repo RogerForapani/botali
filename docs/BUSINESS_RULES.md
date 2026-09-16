@@ -35,6 +35,7 @@
 - Um usuário não altera diretamente um posto publicado: ele envia uma sugestão com o retrato anterior e os novos dados.
 - Cada usuário pode manter somente uma correção pendente por posto; uma nova sugestão só é aceita após a anterior ser resolvida.
 - Correções são aplicadas apenas após revisão de moderador. Aprovação e rejeição ficam registradas em uma trilha de auditoria.
+- A edição de endereço pode propor novas coordenadas. O ponto do posto no mapa só muda após aprovação do moderador, que deve ver a posição anterior, a nova posição e a distância aproximada do deslocamento.
 - A tela de revisão deve mostrar claramente os dados anteriores e os propostos antes da decisão.
 
 ## Confiança e reputação
