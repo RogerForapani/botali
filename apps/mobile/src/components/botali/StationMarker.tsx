@@ -16,6 +16,7 @@ export function StationMarker({ station, mode, selected, featured, onPress }: Pr
 
   return <Marker coordinate={{ latitude: station.latitude, longitude: station.longitude }} onPress={onPress} tracksViewChanges={false}>
     <View style={[styles.marker, featured && styles.featured, selected && styles.selected, mode === 'electric' && styles.electric]}>
+      <Text numberOfLines={1} style={[styles.brand, featured && styles.coloredMarkerText]}>{compactBrand(station.brand)}</Text>
       {mode === 'electric' ? <View style={styles.electricRow}><MaterialCommunityIcons name="ev-station" size={14} color="#FFFFFF" /><Text style={styles.electricText}>Recarga</Text></View> : <Text style={[styles.price, !price && styles.noPrice, featured && styles.coloredMarkerText]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
       {price?.stale ? <Text style={styles.stale}>Sem atualização há 5 dias</Text> : ratio && mode !== 'electric' ? <Text style={[styles.ratio, ratio <= 70 && styles.goodRatio, featured && styles.featuredRatio]}>Etanol {ratio}%</Text> : null}
     </View>
@@ -23,10 +24,11 @@ export function StationMarker({ station, mode, selected, featured, onPress }: Pr
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  marker: { minWidth: 86, paddingHorizontal: 9, paddingVertical: 6, borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite, alignItems: 'center', ...shadow.marker },
+  marker: { minWidth: 92, maxWidth: 118, paddingHorizontal: 9, paddingVertical: 6, borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite, alignItems: 'center', ...shadow.marker },
   featured: { backgroundColor: colors.brand },
   selected: { borderColor: colors.amber, transform: [{ scale: 1.08 }] },
   electric: { backgroundColor: colors.info },
+  brand: { maxWidth: 98, color: colors.brandText, fontFamily: typography.black, fontSize: 8, letterSpacing: .45, textTransform: 'uppercase', marginBottom: 2 },
   price: { color: colors.offWhite, fontFamily: typography.black, fontSize: 13 },
   noPrice: { fontSize: 10 },
   coloredMarkerText: { color: colors.onBrand },
@@ -36,3 +38,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   stale: { color: colors.amber, fontFamily: typography.bold, fontSize: 8, marginTop: 2 },
   electricRow: { flexDirection: 'row', alignItems: 'center', gap: 3 }, electricText: { color: '#FFFFFF', fontFamily: typography.bold, fontSize: 12 },
 })
+
+function compactBrand(value: string) {
+  const brand = value.trim() || 'Sem bandeira'
+  return brand.length <= 14 ? brand : `${brand.slice(0, 13).trim()}…`
+}

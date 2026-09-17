@@ -19,6 +19,7 @@ import { BottomNavigation, type AppTab } from './src/components/botali/BottomNav
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
 import { StationMarker } from './src/components/botali/StationMarker'
+import { StationClusterMarker } from './src/components/botali/StationClusterMarker'
 import { StationFilters } from './src/components/botali/StationFilters'
 import { StationSearch } from './src/components/botali/StationSearch'
 import { StationSheet } from './src/components/botali/StationSheet'
@@ -37,6 +38,7 @@ import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
 import { filterStations, findBestPriceStationId } from './src/utils/stationFilters'
+import { clusterStations, type StationClusterItem } from './src/utils/mapClustering'
 import { userMessageForError } from './src/utils/appError'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
@@ -49,7 +51,7 @@ export default function App() {
   const mapRef = useRef<MapView>(null)
   const wasOffline = useRef(false)
   const { user, loading: sessionLoading, error: sessionError } = useSession()
-  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, refresh } = useStations(initialCenter, 10)
+  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore } = useStations(initialCenter, 10)
   const isOnline = useConnectivity()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
@@ -85,6 +87,7 @@ export default function App() {
   const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm, serviceCodes: selectedServices }), [mode, radiusKm, selectedServices, stations])
   const selected = useMemo(() => selectedId ? stations.find((station) => station.id === selectedId) ?? null : null, [selectedId, stations])
   const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
+  const mapItems = useMemo(() => clusterStations(visibleStations, visibleRegion, selectedId), [selectedId, visibleRegion, visibleStations])
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const filtersActive = mode !== 'gasolina' || selectedServices.length > 0
   const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration
@@ -221,6 +224,19 @@ export default function App() {
     }
   }
 
+  function openCluster(cluster: StationClusterItem) {
+    const latitudes = cluster.stations.map((station) => station.latitude)
+    const longitudes = cluster.stations.map((station) => station.longitude)
+    const latitudeSpan = Math.max(...latitudes) - Math.min(...latitudes)
+    const longitudeSpan = Math.max(...longitudes) - Math.min(...longitudes)
+    mapRef.current?.animateToRegion({
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      latitudeDelta: Math.max(.0008, latitudeSpan * 2.4, visibleRegion.latitudeDelta * .45),
+      longitudeDelta: Math.max(.0008, longitudeSpan * 2.4, visibleRegion.longitudeDelta * .45),
+    }, 350)
+  }
+
   function openNewStation() {
     setShowSearch(false)
     setShowFilters(false)
@@ -259,13 +275,15 @@ export default function App() {
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
         {tab === 'explore' ? <MapView key={`google-map-${themeMode}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
-          {visibleStations.map((station) => <StationMarker key={`${station.id}-${mode}`} station={station} mode={mode} selected={selected?.id === station.id} featured={station.id === bestStationId} onPress={() => setSelectedId(station.id)} />)}
+          {mapItems.map((item) => item.kind === 'cluster'
+            ? <StationClusterMarker key={item.id} cluster={item} onPress={() => openCluster(item)} />
+            : <StationMarker key={`${item.station.id}-${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => loadMore(mapCenter, radiusKm)} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
-          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
+          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm, { merge: true }) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
           {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelectedId(null) }} onToggleService={(code) => { setSelectedId(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelectedId(null) }} /> : null}
           {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refresh(mapCenter, radiusKm) : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}

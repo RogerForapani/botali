@@ -14,14 +14,17 @@ type Props = {
   radiusKm: number
   mode: MapMode
   stations: Station[]
+  hasMore: boolean
+  loadingMore: boolean
   onQueryChange: (value: string) => void
   onRadiusChange: (value: number) => void
   onClose: () => void
   onSelect: (station: Station) => void
   onAddStation: () => void
+  onLoadMore: () => void
 }
 
-export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation }: Props) {
+export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadingMore, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation, onLoadMore }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const { height } = useWindowDimensions()
   const [sort, setSort] = useState<SortMode>('distance')
@@ -55,6 +58,7 @@ export function StationSearch({ query, radiusKm, mode, stations, onQueryChange, 
         </Pressable>
       })}
       {!results.length ? <Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text> : null}
+      {hasMore ? <Pressable accessibilityRole="button" disabled={loadingMore} style={styles.loadMoreButton} onPress={onLoadMore}><MaterialCommunityIcons name="database-plus-outline" size={20} color={colors.offWhite} /><Text style={styles.loadMoreText}>{loadingMore ? 'Carregando…' : 'Carregar mais postos desta área'}</Text></Pressable> : null}
       <Pressable accessibilityRole="button" style={styles.addButton} onPress={onAddStation}><MaterialCommunityIcons name="plus-circle-outline" size={20} color={colors.brandText} /><Text style={styles.addText}>Cadastrar um posto ausente</Text></Pressable>
     </ScrollView>
   </View>
@@ -91,6 +95,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   stalePrice: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 8, textAlign: 'right', marginTop: 2 },
   priceIcon: { marginLeft: spacing[3] },
   empty: { color: colors.textMuted, fontFamily: typography.regular, lineHeight: 20, paddingVertical: spacing[4], textAlign: 'center' },
+  loadMoreButton: { minHeight: 48, flexDirection: 'row', gap: spacing[2], alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  loadMoreText: { color: colors.offWhite, fontFamily: typography.bold },
   addButton: { minHeight: 48, flexDirection: 'row', gap: spacing[2], alignItems: 'center', justifyContent: 'center', marginTop: spacing[2], borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md },
   addText: { color: colors.brandText, fontFamily: typography.black },
 })

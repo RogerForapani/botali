@@ -41,9 +41,10 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `BottomNavigation`: Explorar, Favoritos, Contribuir, Atividade e Perfil.
 - `ConfidenceBadge`: confiança sempre expressa por texto, número e cor.
 - `FlexRatioBadge`: recomendação flex com percentual explícito.
-- `StationMarker`: preço, percentual flex e recarga no mapa com hierarquia compacta.
+- `StationMarker`: bandeira textual, preço, percentual flex e recarga no mapa com hierarquia compacta.
+- `StationClusterMarker`: quantidade de postos próximos; ao tocar, o mapa aproxima e separa progressivamente os marcadores.
 - `StationFilters`: catálogo dinâmico de combustíveis e serviços, aberto sob demanda para manter o mapa limpo.
-- `StationSearch`: busca expansível com raio e classificação por distância, preço e confiança.
+- `StationSearch`: busca expansível com raio, classificação por distância, preço e confiança e paginação adicional sob demanda.
 - `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - Modais de autenticação e atualização rápida de preço.

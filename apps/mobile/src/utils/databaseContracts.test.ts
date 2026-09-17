@@ -8,6 +8,7 @@ const currentDirectory = fileURLToPath(new URL('.', import.meta.url))
 const trustMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609100001_trust_privacy_and_moderation.sql'), 'utf8')
 const freshnessMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609150001_price_freshness_five_days.sql'), 'utf8')
 const locationEditMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609160001_station_location_edit_moderation.sql'), 'utf8')
+const stationSearchMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609170001_station_search_pagination.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -68,5 +69,18 @@ describe('contrato de correção da localização do posto', () => {
   it('mantém a proteção contra postos iguais no mesmo local', () => {
     expect(locationEditMigration).toContain('s.id <> target_station_id')
     expect(locationEditMigration).toContain('extensions.st_dwithin')
+  })
+})
+
+describe('contrato de paginação geográfica', () => {
+  it('impõe no banco o limite máximo de 200 postos por consulta', () => {
+    expect(stationSearchMigration).toContain('result_limit integer default 200')
+    expect(stationSearchMigration).toContain('limit least(greatest(result_limit, 1), 200)')
+  })
+
+  it('preserva busca PostGIS por distância e aceita deslocamento de página', () => {
+    expect(stationSearchMigration).toContain('extensions.st_dwithin')
+    expect(stationSearchMigration).toContain('operator(extensions.<->)')
+    expect(stationSearchMigration).toContain('offset least(greatest(result_offset, 0), 10000)')
   })
 })

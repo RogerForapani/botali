@@ -39,7 +39,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
     </View>
     <View style={styles.head}>
       <View style={styles.title}>
-        <Text style={styles.eyebrow}>{station.brand.toUpperCase()}{station.status === 'pending' ? ' · AGUARDANDO REVISÃO' : ''}</Text>
+        <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
         <Text style={styles.stationName}>{station.name}</Text>
         <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : station.address ? <><Text style={styles.stationMetaSeparator}>·</Text><Text numberOfLines={1} style={[styles.stationMeta, styles.stationAddress]}>{station.address}</Text></> : null}</View>
       </View>
@@ -74,7 +74,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   handle: { width: 48, height: 5, borderRadius: radius.full, backgroundColor: colors.textMuted },
   head: { flexDirection: 'row', gap: spacing[2] },
   title: { flex: 1 },
+  brandRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
   eyebrow: { color: colors.brandText, fontFamily: typography.black, fontSize: 10, letterSpacing: 1.2 },
+  pending: { color: colors.warningText, fontFamily: typography.black, fontSize: 8 },
   stationName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: typography.h2, marginTop: 3 },
   stationMetaRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing[1], marginTop: 4 },
   stationMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small },

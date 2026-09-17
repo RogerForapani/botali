@@ -9,6 +9,16 @@ export function distanceKmBetween(from: MapCenter, to: MapCenter) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+export function mergeStationPages(current: Station[], incoming: Station[], center: MapCenter, radiusKm: number, maxItems = 600) {
+  const unique = new Map(current.map((station) => [station.id, station]))
+  for (const station of incoming) unique.set(station.id, station)
+  return [...unique.values()]
+    .map((station) => ({ ...station, distanceKm: distanceKmBetween(center, station) }))
+    .filter((station) => station.distanceKm <= radiusKm)
+    .sort((left, right) => left.distanceKm - right.distanceKm)
+    .slice(0, maxItems)
+}
+
 export function filterStations(stations: Station[], input: { mode: MapMode; radiusKm: number; serviceCodes: string[] }) {
   return stations.filter((station) => {
     const supportsMode = input.mode === 'electric' ? station.hasElectricCharging : station.fuelCodes?.includes(input.mode) || Boolean(station.prices[input.mode])

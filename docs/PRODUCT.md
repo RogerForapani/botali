@@ -23,6 +23,8 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Comparar preço, distância e confiança.
 - Abrir detalhes e solicitar rota.
 - Buscar em um painel expansível e classificar resultados por distância, preço ou confiança.
+- Buscar novas áreas ao mover o mapa, mantendo resultados sem duplicidade e carregando páginas adicionais de até 200 postos.
+- Identificar a bandeira diretamente no marcador e agrupar postos próximos enquanto o mapa estiver afastado.
 - Contribuir com preços sem tornar foto obrigatória.
 - Cadastrar postos ausentes após autenticação, usando o GPS como atalho ou localizando manualmente o endereço quando o usuário estiver distante.
 - Sugerir correções de nome, bandeira, endereço, ponto no mapa, combustíveis e serviços de um posto publicado.

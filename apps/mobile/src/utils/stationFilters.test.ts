@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../types'
-import { distanceKmBetween, filterStations, findBestPriceStationId } from './stationFilters'
+import { distanceKmBetween, filterStations, findBestPriceStationId, mergeStationPages } from './stationFilters'
 
 const station = (overrides: Partial<Station>): Station => ({
   id: 'station', name: 'Posto', brand: 'Botali', latitude: 0, longitude: 0, distanceKm: 2, rating: 0,
@@ -38,5 +38,13 @@ describe('filtros de postos', () => {
 
   it('recalcula a distância de dados salvos para a região atual', () => {
     expect(distanceKmBetween({ latitude: 0, longitude: 0 }, { latitude: 0, longitude: 1 })).toBeCloseTo(111.2, 1)
+  })
+
+  it('combina páginas sem duplicar e descarta postos fora do raio atual', () => {
+    const current = [station({ id: 'same', latitude: 0, longitude: 0, name: 'Antigo' }), station({ id: 'far', latitude: 0, longitude: 2 })]
+    const incoming = [station({ id: 'same', latitude: 0, longitude: 0, name: 'Atualizado' }), station({ id: 'near', latitude: 0, longitude: .01 })]
+    const merged = mergeStationPages(current, incoming, { latitude: 0, longitude: 0 }, 10)
+    expect(merged.map((item) => item.id)).toEqual(['same', 'near'])
+    expect(merged[0].name).toBe('Atualizado')
   })
 })
