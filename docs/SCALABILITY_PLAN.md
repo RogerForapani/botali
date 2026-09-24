@@ -24,7 +24,7 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 ## Critérios
 
 - A busca continua disponível sem login.
-- O aplicativo nunca mantém marcadores duplicados ao combinar regiões.
+- Uma nova busca por área substitui os marcadores anteriores; somente páginas da mesma área são combinadas, sem duplicidade.
 - O raio e os filtros continuam usando o catálogo dinâmico existente.
 - Grupos devem se separar progressivamente conforme o usuário aproxima o mapa.
 - Logotipos oficiais de bandeiras só serão adicionados com ativos adequados e validação de uso; a interface funciona sem depender deles.

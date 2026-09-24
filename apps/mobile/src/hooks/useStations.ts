@@ -8,7 +8,6 @@ import { distanceKmBetween, mergeStationPages } from '../utils/stationFilters'
 
 const PAGE_SIZE = 200
 const MAX_ACCUMULATED_STATIONS = 600
-type RefreshOptions = { merge?: boolean }
 
 export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
   const [stations, setStations] = useState<Station[]>([])
@@ -22,14 +21,14 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
   const queryKeyRef = useRef('')
   const nextOffsetRef = useRef(0)
 
-  const refresh = useCallback(async (center = initialCenter, radiusKm = initialRadiusKm, options: RefreshOptions = {}) => {
+  const refresh = useCallback(async (center = initialCenter, radiusKm = initialRadiusKm) => {
     const currentRequest = ++requestId.current
     setLoading(true)
     setError(null)
     try {
       const rows = await loadStations(center, radiusKm, 0, PAGE_SIZE)
       if (currentRequest !== requestId.current) return rows
-      const next = mergeStationPages(options.merge ? stationsRef.current : [], rows, center, radiusKm, MAX_ACCUMULATED_STATIONS)
+      const next = mergeStationPages([], rows, center, radiusKm, MAX_ACCUMULATED_STATIONS)
       stationsRef.current = next
       setStations(next)
       queryKeyRef.current = queryKey(center, radiusKm)

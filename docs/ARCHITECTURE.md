@@ -20,7 +20,7 @@
 - PostgreSQL + PostGIS para persistência e consultas geoespaciais.
 - RLS habilitado e validado antes de exposição em produção.
 - Busca por proximidade, raio e duplicidade pertence ao PostGIS, não ao componente de mapa.
-- A busca do mapa retorna no máximo 200 postos por página. Novas regiões são combinadas por identificador no aparelho, limitadas ao raio atual e apresentadas com agrupamento visual conforme o nível de zoom.
+- A busca do mapa retorna no máximo 200 postos por página. Uma busca em nova região substitui os marcadores anteriores; somente páginas adicionais da mesma região são combinadas por identificador. Os resultados são limitados ao raio atual e apresentados com agrupamento visual conforme o nível de zoom.
 - Correções de coordenadas passam pelo mesmo fluxo protegido de moderação; clientes não atualizam latitude e longitude diretamente.
 - Filtros e cadastro consomem o mesmo catálogo ativo de `fuel_types` e `services`; novos tipos não devem exigir listas duplicadas no aplicativo.
 - O preço comunitário é calculado por `community_prices_for_stations`; aplicativos recebem somente preço consolidado, confiança e contagens agregadas.
