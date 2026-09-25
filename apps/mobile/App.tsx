@@ -30,7 +30,7 @@ import { useActivity } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
 import { useConnectivity } from './src/hooks/useConnectivity'
-import { confirmPriceAtStation, loadStationOptions } from './src/services/stations'
+import { confirmPriceAtStation, loadStationOptions, type MapBounds } from './src/services/stations'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { syncSmartVisitStations } from './src/services/smartVisits'
 import { recordAppFailure } from './src/services/diagnostics'
@@ -51,7 +51,7 @@ export default function App() {
   const mapRef = useRef<MapView>(null)
   const wasOffline = useRef(false)
   const { user, loading: sessionLoading, error: sessionError } = useSession()
-  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore } = useStations(initialCenter, 10)
+  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds } = useStations(initialCenter, 10)
   const isOnline = useConnectivity()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
@@ -66,6 +66,7 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState(initialCenter)
   const [pendingCenter, setPendingCenter] = useState(initialCenter)
   const [visibleRegion, setVisibleRegion] = useState<Region>(initialRegion)
+  const [activeBounds, setActiveBounds] = useState<MapBounds | null>(null)
   const [showSearchArea, setShowSearchArea] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [continuedAsGuest, setContinuedAsGuest] = useState(false)
@@ -84,7 +85,7 @@ export default function App() {
     .then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) })
     .catch((error) => recordAppFailure('stations.options', error)), [])
   useEffect(() => { if (isOnline !== false) reloadStationOptions() }, [isOnline, reloadStationOptions])
-  const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm, serviceCodes: selectedServices }), [mode, radiusKm, selectedServices, stations])
+  const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm: activeBounds ? Number.POSITIVE_INFINITY : radiusKm, serviceCodes: selectedServices }), [activeBounds, mode, radiusKm, selectedServices, stations])
   const selected = useMemo(() => selectedId ? stations.find((station) => station.id === selectedId) ?? null : null, [selectedId, stations])
   const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
   const mapItems = useMemo(() => clusterStations(visibleStations, visibleRegion, selectedId), [selectedId, visibleRegion, visibleStations])
@@ -94,6 +95,8 @@ export default function App() {
   const rejectionDecisionIds = useMemo(() => activity.items.filter((item) => item.status === 'rejected' && item.resolvedAt).map((item) => `${item.id}:${item.resolvedAt}`), [activity.items])
   const unreadDecisionCount = rejectionDecisionIds.filter((id) => !seenDecisionIds.includes(id)).length
   const cacheTime = cachedAt ? new Date(cachedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null
+
+  const refreshCurrentSearch = useCallback(() => activeBounds ? refreshBounds(activeBounds) : refresh(mapCenter, radiusKm), [activeBounds, mapCenter, radiusKm, refresh, refreshBounds])
 
   const returnToMap = useCallback(() => {
     setTab('explore')
@@ -116,6 +119,7 @@ export default function App() {
     let active = true
     loadMapPreferences().then((preferences) => {
       if (!active || !preferences) return
+      setActiveBounds(null)
       setMapCenter(preferences.center); setPendingCenter(preferences.center); setVisibleRegion({ ...preferences.center, latitudeDelta: 0.04, longitudeDelta: 0.04 }); setRadiusKm(preferences.radiusKm)
       mapRef.current?.animateToRegion({ ...preferences.center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 0)
       refresh(preferences.center, preferences.radiusKm)
@@ -127,9 +131,9 @@ export default function App() {
     if (isOnline === false) wasOffline.current = true
     else if (isOnline && wasOffline.current) {
       wasOffline.current = false
-      refresh(mapCenter, radiusKm)
+      refreshCurrentSearch()
     }
-  }, [isOnline, mapCenter, radiusKm, refresh])
+  }, [isOnline, refreshCurrentSearch])
 
   useEffect(() => { syncSmartVisitStations(stations).catch((error) => recordAppFailure('smart-visits.sync', error)) }, [stations])
 
@@ -169,6 +173,7 @@ export default function App() {
       if (!stationId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return
       await Notifications.clearLastNotificationResponseAsync()
       const center = { latitude, longitude }
+      setActiveBounds(null)
       setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false); setMapCenter(center); setPendingCenter(center)
       const rows = await refresh(center, radiusKm)
       if (!active) return
@@ -203,6 +208,7 @@ export default function App() {
       if (!permission.granted) return setLocationMessage('Ative a localização para ver postos perto de você.')
       const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
       const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
+      setActiveBounds(null)
       setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
       saveMapPreferences({ center, radiusKm }).catch(() => undefined)
       mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 500)
@@ -255,7 +261,7 @@ export default function App() {
       if (!permission.granted) { setLocationMessage('Permita a localização para confirmar o preço no posto.'); return }
       const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
       const distance = await confirmPriceAtStation({ submissionId: currentPrice.submissionId, latitude: current.coords.latitude, longitude: current.coords.longitude, agrees })
-      await refresh(mapCenter, radiusKm)
+      await refreshCurrentSearch()
       setLocationMessage(agrees ? `Preço confirmado a ${distance} m do posto. Obrigado!` : `Preço marcado como diferente a ${distance} m. Informe o valor atual.`)
       if (!agrees) setShowPrice(true)
     } catch (error) {
@@ -281,26 +287,35 @@ export default function App() {
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => loadMore(mapCenter, radiusKm)} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setActiveBounds(null); setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => activeBounds ? loadMoreBounds(activeBounds) : loadMore(mapCenter, radiusKm)} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
-          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refresh(pendingCenter, radiusKm) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
+          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { const bounds = regionToBounds(visibleRegion); setActiveBounds(bounds); setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refreshBounds(bounds) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
           {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelectedId(null) }} onToggleService={(code) => { setSelectedId(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelectedId(null) }} /> : null}
-          {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refresh(mapCenter, radiusKm) : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
+          {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refreshCurrentSearch() : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : activeBounds ? 'Nenhum posto encontrado nesta área · Mova o mapa para buscar novamente' : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
         <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
-        <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelectedId(null) }} />
-        <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refresh(mapCenter, radiusKm); setSelectedId(null) }} />
-        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refresh(mapCenter, radiusKm); activity.refresh() }} />
+        <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
+        <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
+        <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refreshCurrentSearch(); activity.refresh() }} />
         <EditStationModal visible={showEditStation} station={selected} onClose={() => setShowEditStation(false)} onBack={returnToMap} onSent={() => { setShowEditStation(false); setLocationMessage('Correção enviada para revisão. Obrigado!'); activity.refresh() }} />
-        <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onBack={returnToMap} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refresh(mapCenter, radiusKm) }} />
+        <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onBack={returnToMap} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refreshCurrentSearch() }} />
         <BottomNavigation value={tab} onChange={changeTab} notificationCount={unreadDecisionCount} />
       </View>
     </SafeAreaProvider>
   )
+}
+
+function regionToBounds(region: Region): MapBounds {
+  return {
+    north: Math.min(90, region.latitude + region.latitudeDelta / 2),
+    south: Math.max(-90, region.latitude - region.latitudeDelta / 2),
+    east: Math.min(180, region.longitude + region.longitudeDelta / 2),
+    west: Math.max(-180, region.longitude - region.longitudeDelta / 2),
+  }
 }
 
 function LibraryScreen({ stations, onExplore, onSelect }: { stations: Station[]; onExplore: () => void; onSelect: (station: Station) => void }) {

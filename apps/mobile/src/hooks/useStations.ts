@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadStations, type MapCenter } from '../services/stations'
+import { loadStations, loadStationsInBounds, type MapBounds, type MapCenter } from '../services/stations'
 import { loadStationSnapshot, saveStationSnapshot } from '../services/stationCache'
 import { recordAppFailure } from '../services/diagnostics'
 import type { Station } from '../types'
 import { userMessageForError } from '../utils/appError'
-import { distanceKmBetween, mergeStationPages } from '../utils/stationFilters'
+import { centerOfBounds, distanceKmBetween, isStationInBounds, mergeStationPages, mergeStationPagesInBounds } from '../utils/stationFilters'
 
 const PAGE_SIZE = 200
 const MAX_ACCUMULATED_STATIONS = 600
@@ -86,8 +86,80 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     }
   }, [hasMore, refresh])
 
+  const refreshBounds = useCallback(async (bounds: MapBounds) => {
+    const currentRequest = ++requestId.current
+    setLoading(true)
+    setError(null)
+    try {
+      const rows = await loadStationsInBounds(bounds, 0, PAGE_SIZE)
+      if (currentRequest !== requestId.current) return rows
+      const next = mergeStationPagesInBounds([], rows, bounds, MAX_ACCUMULATED_STATIONS)
+      stationsRef.current = next
+      setStations(next)
+      queryKeyRef.current = boundsQueryKey(bounds)
+      nextOffsetRef.current = rows.length
+      setHasMore(rows.length === PAGE_SIZE)
+      setStale(false)
+      setCachedAt(null)
+      saveStationSnapshot(next).catch(() => undefined)
+      return rows
+    } catch (loadError) {
+      recordAppFailure('stations.load-bounds', loadError).catch(() => undefined)
+      const snapshot = await loadStationSnapshot()
+      if (currentRequest !== requestId.current) return []
+      if (snapshot) {
+        const center = centerOfBounds(bounds)
+        const cachedStations = snapshot.stations
+          .filter((station) => isStationInBounds(station, bounds))
+          .map((station) => ({ ...station, distanceKm: distanceKmBetween(center, station) }))
+        stationsRef.current = cachedStations
+        setStations(cachedStations)
+        setHasMore(false)
+        setStale(true)
+        setCachedAt(snapshot.savedAt)
+        setError(userMessageForError(loadError, 'Não foi possível atualizar esta área. Exibindo os dados salvos neste aparelho.'))
+        return cachedStations
+      }
+      stationsRef.current = []
+      setStations([])
+      setHasMore(false)
+      setError(userMessageForError(loadError, 'Não foi possível carregar os postos desta área. Tente novamente.'))
+      setStale(false)
+      return []
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false)
+    }
+  }, [])
+
+  const loadMoreBounds = useCallback(async (bounds: MapBounds) => {
+    if (!hasMore) return stationsRef.current
+    if (queryKeyRef.current !== boundsQueryKey(bounds)) return refreshBounds(bounds)
+    const currentRequest = ++requestId.current
+    setLoading(true); setError(null)
+    try {
+      const rows = await loadStationsInBounds(bounds, nextOffsetRef.current, PAGE_SIZE)
+      if (currentRequest !== requestId.current) return stationsRef.current
+      const next = mergeStationPagesInBounds(stationsRef.current, rows, bounds, MAX_ACCUMULATED_STATIONS)
+      stationsRef.current = next
+      nextOffsetRef.current += rows.length
+      setStations(next); setHasMore(rows.length === PAGE_SIZE); setStale(false); setCachedAt(null)
+      saveStationSnapshot(next).catch(() => undefined)
+      return next
+    } catch (loadError) {
+      recordAppFailure('stations.load-more-bounds', loadError).catch(() => undefined)
+      if (currentRequest === requestId.current) setError(userMessageForError(loadError, 'Não foi possível carregar mais postos desta área agora.'))
+      return stationsRef.current
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false)
+    }
+  }, [hasMore, refreshBounds])
+
   useEffect(() => { refresh() }, [refresh])
-  return { stations, loading, error, stale, cachedAt, hasMore, refresh, loadMore }
+  return { stations, loading, error, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds }
+}
+
+function boundsQueryKey(bounds: MapBounds) {
+  return `bounds:${bounds.north.toFixed(5)}:${bounds.south.toFixed(5)}:${bounds.east.toFixed(5)}:${bounds.west.toFixed(5)}`
 }
 
 function queryKey(center: MapCenter, radiusKm: number) {

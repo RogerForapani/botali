@@ -30,7 +30,6 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
   const [sort, setSort] = useState<SortMode>('distance')
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
   const results = stations
-    .filter((station) => station.distanceKm <= radiusKm)
     .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
     .sort((a, b) => {
       if (sort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || a.distanceKm - b.distanceKm

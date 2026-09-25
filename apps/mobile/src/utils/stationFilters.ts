@@ -1,5 +1,5 @@
 import type { MapMode, Station } from '../types'
-import type { MapCenter } from '../services/stations'
+import type { MapBounds, MapCenter } from '../services/stations'
 
 export function distanceKmBetween(from: MapCenter, to: MapCenter) {
   const radians = (degrees: number) => degrees * Math.PI / 180
@@ -15,6 +15,26 @@ export function mergeStationPages(current: Station[], incoming: Station[], cente
   return [...unique.values()]
     .map((station) => ({ ...station, distanceKm: distanceKmBetween(center, station) }))
     .filter((station) => station.distanceKm <= radiusKm)
+    .sort((left, right) => left.distanceKm - right.distanceKm)
+    .slice(0, maxItems)
+}
+
+export function centerOfBounds(bounds: MapBounds): MapCenter {
+  return { latitude: (bounds.north + bounds.south) / 2, longitude: (bounds.east + bounds.west) / 2 }
+}
+
+export function isStationInBounds(station: Station, bounds: MapBounds) {
+  return station.latitude >= bounds.south && station.latitude <= bounds.north
+    && station.longitude >= bounds.west && station.longitude <= bounds.east
+}
+
+export function mergeStationPagesInBounds(current: Station[], incoming: Station[], bounds: MapBounds, maxItems = 600) {
+  const center = centerOfBounds(bounds)
+  const unique = new Map(current.map((station) => [station.id, station]))
+  for (const station of incoming) unique.set(station.id, station)
+  return [...unique.values()]
+    .filter((station) => isStationInBounds(station, bounds))
+    .map((station) => ({ ...station, distanceKm: distanceKmBetween(center, station) }))
     .sort((left, right) => left.distanceKm - right.distanceKm)
     .slice(0, maxItems)
 }

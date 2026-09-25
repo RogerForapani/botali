@@ -8,20 +8,40 @@ type StationFuelRow = { station_id: string; fuel_types: Relation<{ code: string 
 type NearbyRow = { id: string; name: string; brand: string | null; latitude: number; longitude: number; address: string | null; distance_m: number; status: 'pending' | 'verified' }
 type CommunityPriceRow = { station_id: string; fuel_code: string; price: number; confidence: number; reports: number; confirmations: number; disagreements: number; updated_at: string; submission_id: string | null }
 export type MapCenter = { latitude: number; longitude: number }
+export type MapBounds = { north: number; south: number; east: number; west: number }
 
 const first = <T,>(relation: Relation<T>) => Array.isArray(relation) ? relation[0] : relation
 
 export async function loadStations(center: MapCenter, radiusKm = 10, offset = 0, limit = 200): Promise<Station[]> {
   if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
-  const stationResult = await supabase.rpc('nearby_stations_v3', { lat: center.latitude, long: center.longitude, radius_m: Math.round(radiusKm * 1000), result_limit: Math.min(200, Math.max(1, Math.round(limit))), result_offset: Math.max(0, Math.round(offset)) })
+  const client = supabase
+  const stationResult = await client.rpc('nearby_stations_v3', { lat: center.latitude, long: center.longitude, radius_m: Math.round(radiusKm * 1000), result_limit: Math.min(200, Math.max(1, Math.round(limit))), result_offset: Math.max(0, Math.round(offset)) })
   if (stationResult.error) throw stationResult.error
-  const nearby = (stationResult.data ?? []) as NearbyRow[]
+  return hydrateStations(client, (stationResult.data ?? []) as NearbyRow[])
+}
+
+export async function loadStationsInBounds(bounds: MapBounds, offset = 0, limit = 200): Promise<Station[]> {
+  if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
+  const client = supabase
+  const stationResult = await client.rpc('stations_in_map_bounds_v1', {
+    north_lat: bounds.north,
+    south_lat: bounds.south,
+    east_long: bounds.east,
+    west_long: bounds.west,
+    result_limit: Math.min(200, Math.max(1, Math.round(limit))),
+    result_offset: Math.max(0, Math.round(offset)),
+  })
+  if (stationResult.error) throw stationResult.error
+  return hydrateStations(client, (stationResult.data ?? []) as NearbyRow[])
+}
+
+async function hydrateStations(client: NonNullable<typeof supabase>, nearby: NearbyRow[]): Promise<Station[]> {
   const stationIds = nearby.map((station) => station.id)
   if (!stationIds.length) return []
   const [priceResult, serviceResult, fuelResult] = await Promise.all([
-    supabase.rpc('community_prices_for_stations', { target_station_ids: stationIds }),
-    supabase.from('station_services').select('station_id,services(code,name)').in('station_id', stationIds).eq('status', 'confirmed'),
-    supabase.from('station_fuels').select('station_id,fuel_types(code)').in('station_id', stationIds),
+    client.rpc('community_prices_for_stations', { target_station_ids: stationIds }),
+    client.from('station_services').select('station_id,services(code,name)').in('station_id', stationIds).eq('status', 'confirmed'),
+    client.from('station_fuels').select('station_id,fuel_types(code)').in('station_id', stationIds),
   ])
   if (priceResult.error) throw priceResult.error
   if (serviceResult.error) throw serviceResult.error

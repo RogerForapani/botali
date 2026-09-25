@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../types'
-import { distanceKmBetween, filterStations, findBestPriceStationId, mergeStationPages } from './stationFilters'
+import { distanceKmBetween, filterStations, findBestPriceStationId, mergeStationPages, mergeStationPagesInBounds } from './stationFilters'
 
 const station = (overrides: Partial<Station>): Station => ({
   id: 'station', name: 'Posto', brand: 'Botali', latitude: 0, longitude: 0, distanceKm: 2, rating: 0,
@@ -45,6 +45,15 @@ describe('filtros de postos', () => {
     const incoming = [station({ id: 'same', latitude: 0, longitude: 0, name: 'Atualizado' }), station({ id: 'near', latitude: 0, longitude: .01 })]
     const merged = mergeStationPages(current, incoming, { latitude: 0, longitude: 0 }, 10)
     expect(merged.map((item) => item.id)).toEqual(['same', 'near'])
+    expect(merged[0].name).toBe('Atualizado')
+  })
+
+  it('substitui e pagina somente postos dentro dos limites visíveis do mapa', () => {
+    const bounds = { north: 1, south: -1, east: 1, west: -1 }
+    const current = [station({ id: 'same', latitude: 0, longitude: 0, name: 'Antigo' }), station({ id: 'outside', latitude: 2, longitude: 0 })]
+    const incoming = [station({ id: 'same', latitude: 0, longitude: 0, name: 'Atualizado' }), station({ id: 'inside', latitude: .5, longitude: .5 })]
+    const merged = mergeStationPagesInBounds(current, incoming, bounds)
+    expect(merged.map((item) => item.id)).toEqual(['same', 'inside'])
     expect(merged[0].name).toBe('Atualizado')
   })
 })

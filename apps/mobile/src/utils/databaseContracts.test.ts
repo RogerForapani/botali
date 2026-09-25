@@ -9,6 +9,7 @@ const trustMigration = readFileSync(resolve(currentDirectory, '../../../../supab
 const freshnessMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609150001_price_freshness_five_days.sql'), 'utf8')
 const locationEditMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609160001_station_location_edit_moderation.sql'), 'utf8')
 const stationSearchMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609170001_station_search_pagination.sql'), 'utf8')
+const visibleBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609240002_station_search_visible_bounds.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -82,5 +83,12 @@ describe('contrato de paginação geográfica', () => {
     expect(stationSearchMigration).toContain('extensions.st_dwithin')
     expect(stationSearchMigration).toContain('operator(extensions.<->)')
     expect(stationSearchMigration).toContain('offset least(greatest(result_offset, 0), 10000)')
+  })
+
+  it('limita a busca nesta área ao retângulo visível e a 200 resultados por página', () => {
+    expect(visibleBoundsMigration).toContain('extensions.st_makeenvelope')
+    expect(visibleBoundsMigration).toContain('extensions.st_covers')
+    expect(visibleBoundsMigration).toContain('limit least(greatest(result_limit, 1), 200)')
+    expect(visibleBoundsMigration).toContain('offset least(greatest(result_offset, 0), 10000)')
   })
 })
