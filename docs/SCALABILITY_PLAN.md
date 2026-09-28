@@ -21,6 +21,8 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Identificação textual compacta da bandeira no mapa e reforçada nos detalhes.
 - [x] Criar teste de carga reproduzível para busca geográfica e carregamento dos dados complementares do mapa.
 - [x] Repetir o teste de planos com 10 mil postos e 80 mil relatos em tabelas temporárias isoladas.
+- [x] Definir metas, consultas e rotina de observabilidade do Supabase.
+- [x] Medir localmente latência e sucesso das buscas sem registrar localização ou dados pessoais.
 - [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 
 ## Teste de carga do mapa
@@ -63,6 +65,10 @@ O ensaio SQL isolado está em `supabase/test-data/performance_10k_explain.sql`. 
 A medição motivou a migração `202609280001_optimize_visible_bounds_geography.sql`, que preserva a busca retangular e passa a aproveitar o índice GiST já existente. Os tempos são do PostgreSQL, sem rede ou renderização do aplicativo.
 
 Após aplicar a migração no projeto conectado, o teste ponta a ponta atual de 60 leituras terminou sem erros e com p95 geral de 529 ms. Essa segunda execução é uma verificação funcional da otimização, não uma comparação estatística definitiva com a linha de base anterior.
+
+## Observabilidade
+
+O runbook, os limites iniciais e a rotina de incidentes estão em `docs/OBSERVABILITY.md`. As consultas operacionais ficam em `supabase/observability/` e retornam somente métricas agregadas. No aplicativo, as buscas passam a registrar localmente contagem, falhas e duração; o compartilhamento continua manual e não inclui coordenadas, conta ou conteúdo pesquisado.
 
 ## Critérios
 

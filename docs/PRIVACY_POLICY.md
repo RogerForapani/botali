@@ -18,6 +18,8 @@ Não vendemos dados pessoais e não usamos localização para publicidade. O Bot
 
 O acesso ao banco aplica regras por usuário. Resultados públicos de preço e visita são agregados; contribuições brutas e identificadores individuais não são expostos ao público.
 
+Para diagnóstico técnico, o aplicativo pode manter no próprio aparelho uma lista curta de falhas sanitizadas e métricas agregadas de duração e sucesso das buscas. Esse diagnóstico não inclui coordenadas, e-mail, token, termo pesquisado ou posto selecionado e somente sai do aparelho quando o usuário escolhe compartilhá-lo manualmente.
+
 ## Controle do usuário
 
 Você pode desligar os lembretes inteligentes a qualquer momento no Perfil. Também pode excluir sua conta dentro do aplicativo. A exclusão remove autenticação, perfil, preços enviados e solicitações pessoais; postos já publicados e registros de moderação podem permanecer de forma anônima para manter a integridade do mapa e da auditoria.

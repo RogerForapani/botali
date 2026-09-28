@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadStations, loadStationsInBounds, type MapBounds, type MapCenter } from '../services/stations'
 import { loadStationSnapshot, saveStationSnapshot } from '../services/stationCache'
-import { recordAppFailure } from '../services/diagnostics'
+import { observeAppOperation, recordAppFailure } from '../services/diagnostics'
 import type { Station } from '../types'
 import { userMessageForError } from '../utils/appError'
 import { centerOfBounds, distanceKmBetween, isStationInBounds, mergeStationPages, mergeStationPagesInBounds } from '../utils/stationFilters'
@@ -26,7 +26,7 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     setLoading(true)
     setError(null)
     try {
-      const rows = await loadStations(center, radiusKm, 0, PAGE_SIZE)
+      const rows = await observeAppOperation('stations.radius.first-page', () => loadStations(center, radiusKm, 0, PAGE_SIZE))
       if (currentRequest !== requestId.current) return rows
       const next = mergeStationPages([], rows, center, radiusKm, MAX_ACCUMULATED_STATIONS)
       stationsRef.current = next
@@ -69,7 +69,7 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     const currentRequest = ++requestId.current
     setLoading(true); setError(null)
     try {
-      const rows = await loadStations(center, radiusKm, nextOffsetRef.current, PAGE_SIZE)
+      const rows = await observeAppOperation('stations.radius.next-page', () => loadStations(center, radiusKm, nextOffsetRef.current, PAGE_SIZE))
       if (currentRequest !== requestId.current) return stationsRef.current
       const next = mergeStationPages(stationsRef.current, rows, center, radiusKm, MAX_ACCUMULATED_STATIONS)
       stationsRef.current = next
@@ -94,7 +94,7 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     setStations([])
     setHasMore(false)
     try {
-      const rows = await loadStationsInBounds(bounds, 0, PAGE_SIZE)
+      const rows = await observeAppOperation('stations.bounds.first-page', () => loadStationsInBounds(bounds, 0, PAGE_SIZE))
       if (currentRequest !== requestId.current) return rows
       const next = mergeStationPagesInBounds([], rows, bounds, MAX_ACCUMULATED_STATIONS)
       stationsRef.current = next
@@ -140,7 +140,7 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     const currentRequest = ++requestId.current
     setLoading(true); setError(null)
     try {
-      const rows = await loadStationsInBounds(bounds, nextOffsetRef.current, PAGE_SIZE)
+      const rows = await observeAppOperation('stations.bounds.next-page', () => loadStationsInBounds(bounds, nextOffsetRef.current, PAGE_SIZE))
       if (currentRequest !== requestId.current) return stationsRef.current
       const next = mergeStationPagesInBounds(stationsRef.current, rows, bounds, MAX_ACCUMULATED_STATIONS)
       stationsRef.current = next

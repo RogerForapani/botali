@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { signInWithGoogle } from '../services/auth'
 import { loadMyRole, type AccountRole } from '../services/moderation'
 import { disableSmartVisits, enableSmartVisits, smartVisitsEnabled } from '../services/smartVisits'
-import { loadAppDiagnostics, recordAppFailure } from '../services/diagnostics'
+import { loadAppDiagnostics, loadAppMetrics, recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import type { Station } from '../types'
@@ -102,10 +102,15 @@ export function AuthModal({ visible, user, stations, onClose, onBack, onSignedOu
   }
 
   async function shareDiagnostics() {
-    const entries = await loadAppDiagnostics()
-    if (!entries.length) return setMessage('Nenhuma falha técnica foi registrada neste aparelho.')
+    const [entries, metrics] = await Promise.all([loadAppDiagnostics(), loadAppMetrics()])
+    if (!entries.length && !metrics.length) return setMessage('Nenhum diagnóstico técnico foi registrado neste aparelho.')
     const lines = entries.map((entry) => `${entry.occurredAt} | ${entry.context} | ${entry.code ?? '-'} | ${entry.status ?? '-'} | ${entry.message}`)
-    await Share.share({ title: 'Diagnóstico botali', message: `Diagnóstico botali\nSem localização, conta ou dados enviados pelo usuário.\n\n${lines.join('\n')}` })
+    const metricLines = metrics.map((metric) => `${metric.context} | ${metric.count} operações | ${metric.successRate}% sucesso | média ${metric.averageDurationMs} ms | p95 ${metric.p95DurationMs} ms | máx. ${metric.maxDurationMs} ms`)
+    const sections = [
+      metricLines.length ? `Desempenho agregado\n${metricLines.join('\n')}` : '',
+      lines.length ? `Falhas recentes\n${lines.join('\n')}` : '',
+    ].filter(Boolean)
+    await Share.share({ title: 'Diagnóstico botali', message: `Diagnóstico botali\nSem localização, e-mail, token ou conteúdo pesquisado. O envio é manual.\n\n${sections.join('\n\n')}` })
   }
 
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onBack ?? onClose}>
