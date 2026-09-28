@@ -48,6 +48,12 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 
 Não há agendamento automático nesta etapa. O projeto gratuito atual não oferece backup restaurável incluído; a rotina efetiva será agendada com `pg_cron` apenas depois do checklist acima e da definição de backup do beta.
 
+## Validação inicial em produção
+
+Em 28/09/2026, a estrutura desta política foi aplicada no projeto Supabase e validada sem executar a limpeza efetiva. O `dry-run` encontrou zero registros vencidos em todas as categorias. A auditoria anterior confirmou 1.230 relatos de preço e nenhuma coordenada exata armazenada em `price_submissions`.
+
+Também foram confirmados: tabelas privadas de agregação e auditoria disponíveis, descarte imediato da localização precisa, bloqueio da rotina para `anon` e `authenticated` e suporte à anonimização do autor de correções. A execução efetiva e o agendamento continuam desabilitados até a validação de restauração de backup e o ensaio em homologação.
+
 ## Revisão
 
 Revisar esta política a cada seis meses, antes de mudanças no algoritmo de confiança e sempre que forem adicionados novos dados, integrações ou finalidades. Incidentes, obrigações legais e solicitações válidas podem exigir preservação temporária; a exceção deve ser documentada, limitada e aprovada pelo responsável do produto.
