@@ -25,6 +25,7 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Medir localmente latência e sucesso das buscas sem registrar localização ou dados pessoais.
 - [x] Definir política de retenção, agregação e anonimização por categoria de dado.
 - [x] Preparar rotina administrativa com relatório em modo seguro antes de qualquer limpeza.
+- [x] Criar o projeto de homologação e aplicar o esquema completo com RLS validada.
 - [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 - [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
 

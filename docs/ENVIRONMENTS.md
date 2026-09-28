@@ -9,16 +9,26 @@
 
 ## Homologação
 
-- Nome planejado no Supabase: `botali-homologacao`.
+- Supabase: `botali-homologacao` (`phsvoeljsaksglqrpstm`).
 - Região: São Paulo (`sa-east-1`), igual à produção.
 - EAS: ambiente e canal `preview`.
 - Usa URL e chave pública próprias; segredos nunca são versionados.
 - Pode receber massa artificial de 10 mil postos e 80 mil relatos para testes.
 
+### Estado em 28/09/2026
+
+- Projeto criado e saudável no plano gratuito.
+- Todas as 19 migrações aplicadas em uma única transação.
+- 17 tabelas públicas com RLS habilitada.
+- Busca por raio, busca pelos limites do mapa e consenso disponíveis.
+- Agregados privados e rotina de retenção disponíveis; `dry-run` sem itens em banco vazio.
+- Catálogo inicial com 10 combustíveis e 18 bandeiras.
+- Pendente: configurar Auth, ambiente `preview` do EAS, dados sintéticos e testes ponta a ponta.
+
 ## Preparação do banco
 
-1. Criar o projeto com Data API habilitada, exposição automática de novas tabelas desabilitada e RLS automático habilitado.
-2. Aplicar todas as migrações de `supabase/migrations/` em ordem.
+1. [x] Criar o projeto com Data API habilitada, exposição automática de novas tabelas desabilitada e RLS automático habilitado.
+2. [x] Aplicar todas as migrações de `supabase/migrations/` em ordem.
 3. Configurar autenticação e URLs de redirecionamento específicas da homologação.
 4. Cadastrar `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` no ambiente `preview` do EAS.
 5. Executar os testes de contratos, RLS, autenticação, moderação e exclusão de conta.
