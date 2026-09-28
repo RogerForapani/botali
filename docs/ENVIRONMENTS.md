@@ -24,14 +24,15 @@
 - Agregados privados e rotina de retenção disponíveis; `dry-run` sem itens em banco vazio.
 - Catálogo inicial com 10 combustíveis e 18 bandeiras.
 - Auth configurado com URL principal e redirecionamento `botali://auth/callback`.
+- Login Google habilitado com um cliente OAuth Web exclusivo para a homologação e callback do Supabase registrado no Google Cloud.
 - Variáveis do Supabase separadas no EAS: `preview` usa homologação; `development` e `production` continuam na produção.
-- Pendente: configurar o provedor Google, carregar dados sintéticos e executar testes ponta a ponta.
+- Pendente: carregar dados sintéticos e executar testes ponta a ponta.
 
 ## Preparação do banco
 
 1. [x] Criar o projeto com Data API habilitada, exposição automática de novas tabelas desabilitada e RLS automático habilitado.
 2. [x] Aplicar todas as migrações de `supabase/migrations/` em ordem.
-3. [x] Configurar autenticação e URLs de redirecionamento específicas da homologação.
+3. [x] Configurar autenticação, provedor Google e URLs de redirecionamento específicas da homologação.
 4. [x] Cadastrar `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` no ambiente `preview` do EAS.
 5. Executar os testes de contratos, RLS, autenticação, moderação e exclusão de conta.
 6. Carregar somente dados sintéticos identificáveis e removíveis.
