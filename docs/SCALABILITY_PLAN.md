@@ -28,6 +28,8 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 - [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
 
+A separação de ambientes e o checklist de promoção estão em `docs/ENVIRONMENTS.md`. A sequência de produto aprovada para perfil, badges, veículo e recursos comunitários está em `docs/ROADMAP.md`.
+
 ## Teste de carga do mapa
 
 O comando abaixo simula o fluxo de leitura do aplicativo: consulta geográfica, consenso de preços, serviços e combustíveis. Ele alterna buscas pelo retângulo visível e por raios de 10, 25 e 100 km, sem criar ou alterar dados.

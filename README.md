@@ -36,6 +36,8 @@ Aplicativo Android/iOS para encontrar postos próximos, comparar preços de comb
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Regras de negócio](docs/BUSINESS_RULES.md)
 - [Plano de escalabilidade](docs/SCALABILITY_PLAN.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Ambientes](docs/ENVIRONMENTS.md)
 - [Diretrizes para agentes](AGENTS.md)
 
 ## Executar localmente
