@@ -10,6 +10,7 @@ const freshnessMigration = readFileSync(resolve(currentDirectory, '../../../../s
 const locationEditMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609160001_station_location_edit_moderation.sql'), 'utf8')
 const stationSearchMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609170001_station_search_pagination.sql'), 'utf8')
 const visibleBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609240002_station_search_visible_bounds.sql'), 'utf8')
+const optimizedBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280001_optimize_visible_bounds_geography.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -90,5 +91,11 @@ describe('contrato de paginação geográfica', () => {
     expect(visibleBoundsMigration).toContain('extensions.st_covers')
     expect(visibleBoundsMigration).toContain('limit least(greatest(result_limit, 1), 200)')
     expect(visibleBoundsMigration).toContain('offset least(greatest(result_offset, 0), 10000)')
+  })
+
+  it('usa geography na busca visível para aproveitar o índice espacial existente', () => {
+    expect(optimizedBoundsMigration).toContain('::extensions.geography as bounds')
+    expect(optimizedBoundsMigration).toContain('extensions.st_intersects(s.location, area.bounds)')
+    expect(optimizedBoundsMigration).not.toContain('s.location::extensions.geometry')
   })
 })

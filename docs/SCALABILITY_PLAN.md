@@ -20,7 +20,8 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Agrupamento visual de marcadores próximos.
 - [x] Identificação textual compacta da bandeira no mapa e reforçada nos detalhes.
 - [x] Criar teste de carga reproduzível para busca geográfica e carregamento dos dados complementares do mapa.
-- [ ] Repetir o teste com pelo menos 10 mil postos e volume proporcional de preços antes do beta público.
+- [x] Repetir o teste de planos com 10 mil postos e 80 mil relatos em tabelas temporárias isoladas.
+- [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 
 ## Teste de carga do mapa
 
@@ -47,6 +48,21 @@ O teste atual com 300 postos demonstrativos serve como linha de base funcional. 
 - As buscas que atingiram o limite retornaram 200 postos e permaneceram abaixo da meta de 2,5 segundos.
 
 Esses números refletem o projeto gratuito e a massa atual de aproximadamente 300 postos demonstrativos. O próximo teste de volume deve ocorrer em um ambiente separado, evitando inserir milhares de registros no banco usado pelos testes funcionais do aplicativo.
+
+O ensaio SQL isolado está em `supabase/test-data/performance_10k_explain.sql`. Ele cria tabelas temporárias com 10 mil postos e 80 mil relatos, mede os planos da busca por raio, limites visíveis e consenso de 200 postos e não escreve nas tabelas públicas do aplicativo.
+
+### Planos com 10 mil postos — 28/09/2026
+
+| Consulta | Execução | Índice utilizado |
+| --- | ---: | :---: |
+| Busca por raio de 25 km | 94,085 ms | Sim |
+| Consenso de 200 postos | 7,663 ms | Sim |
+| Limites visíveis antes da otimização | 6,196 ms | Não |
+| Limites visíveis usando `geography` | 3,780 ms | Sim |
+
+A medição motivou a migração `202609280001_optimize_visible_bounds_geography.sql`, que preserva a busca retangular e passa a aproveitar o índice GiST já existente. Os tempos são do PostgreSQL, sem rede ou renderização do aplicativo.
+
+Após aplicar a migração no projeto conectado, o teste ponta a ponta atual de 60 leituras terminou sem erros e com p95 geral de 529 ms. Essa segunda execução é uma verificação funcional da otimização, não uma comparação estatística definitiva com a linha de base anterior.
 
 ## Critérios
 
