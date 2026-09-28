@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../types'
-import { distanceKmBetween, filterStations, findBestPriceStationId, mergeStationPages, mergeStationPagesInBounds } from './stationFilters'
+import { distanceKmBetween, filterStations, findBestPriceStationId, isStationInBounds, mergeStationPages, mergeStationPagesInBounds } from './stationFilters'
 
 const station = (overrides: Partial<Station>): Station => ({
   id: 'station', name: 'Posto', brand: 'Botali', latitude: 0, longitude: 0, distanceKm: 2, rating: 0,
@@ -55,5 +55,11 @@ describe('filtros de postos', () => {
     const merged = mergeStationPagesInBounds(current, incoming, bounds)
     expect(merged.map((item) => item.id)).toEqual(['same', 'inside'])
     expect(merged[0].name).toBe('Atualizado')
+  })
+
+  it('impede a renderização de qualquer posto fora do retângulo ativo', () => {
+    const bounds = { north: -19.9, south: -20.1, east: -43.9, west: -44.1 }
+    expect(isStationInBounds(station({ latitude: -20, longitude: -44 }), bounds)).toBe(true)
+    expect(isStationInBounds(station({ latitude: -19.8, longitude: -44 }), bounds)).toBe(false)
   })
 })

@@ -37,7 +37,7 @@ import { recordAppFailure } from './src/services/diagnostics'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
-import { filterStations, findBestPriceStationId } from './src/utils/stationFilters'
+import { filterStations, findBestPriceStationId, isStationInBounds } from './src/utils/stationFilters'
 import { clusterStations, type StationClusterItem } from './src/utils/mapClustering'
 import { userMessageForError } from './src/utils/appError'
 
@@ -85,10 +85,14 @@ export default function App() {
     .then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) })
     .catch((error) => recordAppFailure('stations.options', error)), [])
   useEffect(() => { if (isOnline !== false) reloadStationOptions() }, [isOnline, reloadStationOptions])
-  const visibleStations = useMemo(() => filterStations(stations, { mode, radiusKm: activeBounds ? Number.POSITIVE_INFINITY : radiusKm, serviceCodes: selectedServices }), [activeBounds, mode, radiusKm, selectedServices, stations])
+  const scopedStations = useMemo(() => activeBounds ? stations.filter((station) => isStationInBounds(station, activeBounds)) : stations, [activeBounds, stations])
+  const visibleStations = useMemo(() => filterStations(scopedStations, { mode, radiusKm: activeBounds ? Number.POSITIVE_INFINITY : radiusKm, serviceCodes: selectedServices }), [activeBounds, mode, radiusKm, scopedStations, selectedServices])
   const selected = useMemo(() => selectedId ? stations.find((station) => station.id === selectedId) ?? null : null, [selectedId, stations])
   const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
   const mapItems = useMemo(() => clusterStations(visibleStations, visibleRegion, selectedId), [selectedId, visibleRegion, visibleStations])
+  const markerScopeKey = activeBounds
+    ? `bounds:${activeBounds.north.toFixed(5)}:${activeBounds.south.toFixed(5)}:${activeBounds.east.toFixed(5)}:${activeBounds.west.toFixed(5)}`
+    : `radius:${mapCenter.latitude.toFixed(5)}:${mapCenter.longitude.toFixed(5)}:${radiusKm}`
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const filtersActive = mode !== 'gasolina' || selectedServices.length > 0
   const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration
@@ -282,8 +286,8 @@ export default function App() {
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
         {tab === 'explore' ? <MapView key={`google-map-${themeMode}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {mapItems.map((item) => item.kind === 'cluster'
-            ? <StationClusterMarker key={item.id} cluster={item} onPress={() => openCluster(item)} />
-            : <StationMarker key={`${item.station.id}-${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
+            ? <StationClusterMarker key={`${markerScopeKey}:${item.id}`} cluster={item} onPress={() => openCluster(item)} />
+            : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">

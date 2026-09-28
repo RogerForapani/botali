@@ -90,6 +90,9 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     const currentRequest = ++requestId.current
     setLoading(true)
     setError(null)
+    stationsRef.current = []
+    setStations([])
+    setHasMore(false)
     try {
       const rows = await loadStationsInBounds(bounds, 0, PAGE_SIZE)
       if (currentRequest !== requestId.current) return rows
