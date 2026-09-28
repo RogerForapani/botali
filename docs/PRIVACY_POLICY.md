@@ -20,6 +20,12 @@ O acesso ao banco aplica regras por usuário. Resultados públicos de preço e v
 
 Para diagnóstico técnico, o aplicativo pode manter no próprio aparelho uma lista curta de falhas sanitizadas e métricas agregadas de duração e sucesso das buscas. Esse diagnóstico não inclui coordenadas, e-mail, token, termo pesquisado ou posto selecionado e somente sai do aparelho quando o usuário escolhe compartilhá-lo manualmente.
 
+## Retenção
+
+A coordenada precisa usada para validar presença é processada somente para calcular a distância até o posto e é descartada imediatamente. Visitas identificáveis permanecem por até 90 dias; confirmações de preço, por até 180 dias; relatos de preço e trilhas pessoais de correção, por até 24 meses. Depois desses prazos, os vínculos pessoais são removidos ou os registros são consolidados em estatísticas sem identificação, mantidas por até 36 meses. O último preço conhecido de cada posto e combustível pode permanecer para evitar que o mapa perca a referência histórica, sempre marcado como desatualizado quando aplicável.
+
+Comentários livres de avaliações são removidos após 12 meses sem edição. Dados públicos do estabelecimento e decisões essenciais de moderação podem permanecer anonimizados para preservar a integridade do mapa e da auditoria. A política operacional completa está em `docs/DATA_RETENTION_POLICY.md`.
+
 ## Controle do usuário
 
 Você pode desligar os lembretes inteligentes a qualquer momento no Perfil. Também pode excluir sua conta dentro do aplicativo. A exclusão remove autenticação, perfil, preços enviados e solicitações pessoais; postos já publicados e registros de moderação podem permanecer de forma anônima para manter a integridade do mapa e da auditoria.

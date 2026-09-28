@@ -23,7 +23,10 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Repetir o teste de planos com 10 mil postos e 80 mil relatos em tabelas temporárias isoladas.
 - [x] Definir metas, consultas e rotina de observabilidade do Supabase.
 - [x] Medir localmente latência e sucesso das buscas sem registrar localização ou dados pessoais.
+- [x] Definir política de retenção, agregação e anonimização por categoria de dado.
+- [x] Preparar rotina administrativa com relatório em modo seguro antes de qualquer limpeza.
 - [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
+- [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
 
 ## Teste de carga do mapa
 
@@ -69,6 +72,10 @@ Após aplicar a migração no projeto conectado, o teste ponta a ponta atual de 
 ## Observabilidade
 
 O runbook, os limites iniciais e a rotina de incidentes estão em `docs/OBSERVABILITY.md`. As consultas operacionais ficam em `supabase/observability/` e retornam somente métricas agregadas. No aplicativo, as buscas passam a registrar localmente contagem, falhas e duração; o compartilhamento continua manual e não inclui coordenadas, conta ou conteúdo pesquisado.
+
+## Retenção de histórico
+
+Os prazos, exceções e o checklist operacional estão em `docs/DATA_RETENTION_POLICY.md`. A migração cria agregados privados e uma função administrativa que primeiro retorna contagens em modo `dry-run`. Nenhuma limpeza recorrente é agendada enquanto o projeto não tiver backup restaurável validado em homologação.
 
 ## Critérios
 

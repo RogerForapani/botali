@@ -11,6 +11,7 @@ const locationEditMigration = readFileSync(resolve(currentDirectory, '../../../.
 const stationSearchMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609170001_station_search_pagination.sql'), 'utf8')
 const visibleBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609240002_station_search_visible_bounds.sql'), 'utf8')
 const optimizedBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280001_optimize_visible_bounds_geography.sql'), 'utf8')
+const retentionMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280002_data_retention_policy.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -97,5 +98,24 @@ describe('contrato de paginação geográfica', () => {
     expect(optimizedBoundsMigration).toContain('::extensions.geography as bounds')
     expect(optimizedBoundsMigration).toContain('extensions.st_intersects(s.location, area.bounds)')
     expect(optimizedBoundsMigration).not.toContain('s.location::extensions.geometry')
+  })
+})
+
+describe('contrato de retenção e minimização', () => {
+  it('descarta a coordenada exata depois de calcular a distância', () => {
+    expect(retentionMigration).toContain('new.submitted_location := null')
+    expect(retentionMigration).toMatch(/set submitted_location = null[\s\S]*where submitted_location is not null/)
+  })
+
+  it('preserva o último preço conhecido ao arquivar relatos antigos', () => {
+    expect(retentionMigration).toContain("p.created_at < now() - interval '24 months'")
+    expect(retentionMigration).toMatch(/exists \([\s\S]*newer\.station_id = p\.station_id[\s\S]*newer\.fuel_type_id = p\.fuel_type_id/)
+  })
+
+  it('mantém agregados privados e bloqueia a rotina para clientes', () => {
+    expect(retentionMigration).toContain('private.station_visit_daily_totals')
+    expect(retentionMigration).toContain('private.station_price_monthly_stats')
+    expect(retentionMigration).toContain('private.station_confirmation_monthly_stats')
+    expect(retentionMigration).toContain('revoke execute on function private.apply_data_retention(boolean) from public, anon, authenticated')
   })
 })

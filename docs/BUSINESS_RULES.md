@@ -68,6 +68,15 @@
 - Não mostrar formulários recorrentes. Sugestões de confirmação devem usar ações rápidas e limite de frequência.
 - Não solicitar confirmação quando o preço já tiver consenso forte e recente; priorize preços antigos, divergentes ou com poucos relatos.
 
+## Retenção e minimização
+
+- Coordenadas precisas usadas na validação são transitórias; somente a distância aproximada pode permanecer.
+- Visitas identificáveis são retidas por 90 dias e confirmações por 180 dias antes da consolidação anônima.
+- Relatos de preço podem ser arquivados após 24 meses, mas o último preço conhecido de cada posto/combustível nunca é removido pela rotina de retenção.
+- Conteúdo e autoria de correções resolvidas são anonimizados após 24 meses, preservando decisão e datas para auditoria.
+- Estatísticas arquivadas sem identificador pessoal são mantidas por até 36 meses.
+- A rotina efetiva exige relatório prévio, backup restaurável e validação em homologação; não executar limpeza automática sem esses controles.
+
 ## Linguagem
 
 Prefira mensagens curtas e brasileiras, como “Preço enviado! Valeu pela ajuda.” Evite linguagem corporativa ou técnica nas telas.
