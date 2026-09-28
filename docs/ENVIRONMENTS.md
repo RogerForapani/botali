@@ -26,6 +26,8 @@
 - Auth configurado com URL principal e redirecionamento `botali://auth/callback`.
 - Login Google habilitado com um cliente OAuth Web exclusivo para a homologação e callback do Supabase registrado no Google Cloud.
 - Variáveis do Supabase separadas no EAS: `preview` usa homologação; `development` e `production` continuam na produção.
+- Atualização Android publicada no canal `preview`, runtime `1.0.0`, grupo `a210b1a9-058e-4995-b718-f683247062c4`.
+- Novo APK pendente da renovação da cota gratuita de builds Android do Expo, prevista para 01/10/2026; o APK `preview` existente recebe a atualização OTA.
 - Pendente: carregar dados sintéticos e executar testes ponta a ponta.
 
 ## Preparação do banco
