@@ -30,8 +30,9 @@
 - Novo APK pendente da renovação da cota gratuita de builds Android do Expo, prevista para 01/10/2026; o APK `preview` existente recebe a atualização OTA.
 - Massa sintética persistente e removível carregada: 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços, 80.000 relatos de preço e 2 usuários técnicos sem senha ou identidade OAuth.
 - Validação SQL concluída: buscas por limites e por raio retornaram no máximo 200 postos; o consenso retornou 800 combinações para uma amostra de 200 postos; retenção em `dry-run` não encontrou dados vencidos.
+- Teste HTTP concluído contra a homologação: 60 fluxos completos, concorrência 5, nenhuma falha e p95 geral de 796 ms para uma meta de 2,5 segundos.
 - Produção não recebeu a massa sintética. Todos os registros usam o prefixo `[SYNTH HML]`, IDs determinísticos e podem ser removidos com `supabase/test-data/remove_homologation_10k.sql`.
-- Pendente: executar o teste de carga pelo fluxo HTTP do aplicativo contra a homologação e validar a experiência no build `preview`.
+- Pendente: validar a experiência com a massa de volume no build `preview`.
 
 ## Preparação do banco
 

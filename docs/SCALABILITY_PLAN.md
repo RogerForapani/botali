@@ -27,7 +27,7 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Preparar rotina administrativa com relatório em modo seguro antes de qualquer limpeza.
 - [x] Criar o projeto de homologação e aplicar o esquema completo com RLS validada.
 - [x] Carregar e validar em homologação 10 mil postos, 80 mil relatos e os limites geográficos de 200 resultados.
-- [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
+- [x] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 - [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
 
 A separação de ambientes e o checklist de promoção estão em `docs/ENVIRONMENTS.md`. A sequência de produto aprovada para perfil, badges, veículo e recursos comunitários está em `docs/ROADMAP.md`.
@@ -77,7 +77,9 @@ Após aplicar a migração no projeto conectado, o teste ponta a ponta atual de 
 
 O script `supabase/test-data/homologation_10k_stations.sql` carregou, apenas no projeto de homologação, 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços e 80.000 relatos de preço. Os registros têm IDs determinísticos, prefixo `[SYNTH HML]` e remoção dedicada, sem copiar usuários ou dados reais.
 
-O validador `supabase/test-data/validate_homologation_10k.sql` confirmou o teto de 200 resultados nas buscas por limites e por raio, além de 800 linhas de consenso para 200 postos. A retenção em modo `dry-run` retornou zero itens vencidos, como esperado para dados recém-criados. Ainda falta medir o fluxo completo via HTTP pelo mesmo cliente usado pelo aplicativo; por isso o teste ponta a ponta de homologação permanece pendente.
+O validador `supabase/test-data/validate_homologation_10k.sql` confirmou o teto de 200 resultados nas buscas por limites e por raio, além de 800 linhas de consenso para 200 postos. A retenção em modo `dry-run` retornou zero itens vencidos, como esperado para dados recém-criados.
+
+O fluxo HTTP usado pelo aplicativo foi repetido com 60 leituras e concorrência 5. Todas as leituras terminaram sem falhas, com p95 geral de 796 ms para uma meta de até 2,5 segundos. Os seis cenários retornaram 200 postos; o maior p95 por cenário foi 1.081 ms na busca pelos limites de Contagem.
 
 ## Observabilidade
 
