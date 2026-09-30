@@ -15,7 +15,7 @@
 - Usa URL e chave pública próprias; segredos nunca são versionados.
 - Pode receber massa artificial de 10 mil postos e 80 mil relatos para testes.
 
-### Estado em 28/09/2026
+### Estado em 29/09/2026
 
 - Projeto criado e saudável no plano gratuito.
 - Todas as 19 migrações aplicadas em uma única transação.
@@ -28,7 +28,10 @@
 - Variáveis do Supabase separadas no EAS: `preview` usa homologação; `development` e `production` continuam na produção.
 - Atualização Android publicada no canal `preview`, runtime `1.0.0`, grupo `a210b1a9-058e-4995-b718-f683247062c4`.
 - Novo APK pendente da renovação da cota gratuita de builds Android do Expo, prevista para 01/10/2026; o APK `preview` existente recebe a atualização OTA.
-- Pendente: carregar dados sintéticos e executar testes ponta a ponta.
+- Massa sintética persistente e removível carregada: 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços, 80.000 relatos de preço e 2 usuários técnicos sem senha ou identidade OAuth.
+- Validação SQL concluída: buscas por limites e por raio retornaram no máximo 200 postos; o consenso retornou 800 combinações para uma amostra de 200 postos; retenção em `dry-run` não encontrou dados vencidos.
+- Produção não recebeu a massa sintética. Todos os registros usam o prefixo `[SYNTH HML]`, IDs determinísticos e podem ser removidos com `supabase/test-data/remove_homologation_10k.sql`.
+- Pendente: executar o teste de carga pelo fluxo HTTP do aplicativo contra a homologação e validar a experiência no build `preview`.
 
 ## Preparação do banco
 
@@ -37,7 +40,7 @@
 3. [x] Configurar autenticação, provedor Google e URLs de redirecionamento específicas da homologação.
 4. [x] Cadastrar `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` no ambiente `preview` do EAS.
 5. Executar os testes de contratos, RLS, autenticação, moderação e exclusão de conta.
-6. Carregar somente dados sintéticos identificáveis e removíveis.
+6. [x] Carregar somente dados sintéticos identificáveis e removíveis.
 
 ## Validação antes do beta
 

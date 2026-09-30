@@ -26,6 +26,7 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Definir política de retenção, agregação e anonimização por categoria de dado.
 - [x] Preparar rotina administrativa com relatório em modo seguro antes de qualquer limpeza.
 - [x] Criar o projeto de homologação e aplicar o esquema completo com RLS validada.
+- [x] Carregar e validar em homologação 10 mil postos, 80 mil relatos e os limites geográficos de 200 resultados.
 - [ ] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
 - [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
 
@@ -71,6 +72,12 @@ O ensaio SQL isolado está em `supabase/test-data/performance_10k_explain.sql`. 
 A medição motivou a migração `202609280001_optimize_visible_bounds_geography.sql`, que preserva a busca retangular e passa a aproveitar o índice GiST já existente. Os tempos são do PostgreSQL, sem rede ou renderização do aplicativo.
 
 Após aplicar a migração no projeto conectado, o teste ponta a ponta atual de 60 leituras terminou sem erros e com p95 geral de 529 ms. Essa segunda execução é uma verificação funcional da otimização, não uma comparação estatística definitiva com a linha de base anterior.
+
+### Massa persistente em homologação — 29/09/2026
+
+O script `supabase/test-data/homologation_10k_stations.sql` carregou, apenas no projeto de homologação, 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços e 80.000 relatos de preço. Os registros têm IDs determinísticos, prefixo `[SYNTH HML]` e remoção dedicada, sem copiar usuários ou dados reais.
+
+O validador `supabase/test-data/validate_homologation_10k.sql` confirmou o teto de 200 resultados nas buscas por limites e por raio, além de 800 linhas de consenso para 200 postos. A retenção em modo `dry-run` retornou zero itens vencidos, como esperado para dados recém-criados. Ainda falta medir o fluxo completo via HTTP pelo mesmo cliente usado pelo aplicativo; por isso o teste ponta a ponta de homologação permanece pendente.
 
 ## Observabilidade
 
