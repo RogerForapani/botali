@@ -22,4 +22,18 @@ describe('agrupamento visual do mapa', () => {
     const closeRegion = { ...region, latitudeDelta: .002, longitudeDelta: .002 }
     expect(clusterStations([station('a', 0, 0), station('b', .001, .001)], closeRegion)).toHaveLength(2)
   })
+
+  it('troca a identidade do grupo quando seus postos mudam', () => {
+    const first = clusterStations([station('a', 0, 0), station('b', .001, .001)], region)
+    const second = clusterStations([station('a', 0, 0), station('b', .001, .001), station('c', .002, .002)], region)
+    expect(first[0].kind).toBe('cluster')
+    expect(second[0].kind).toBe('cluster')
+    expect(first[0].id).not.toBe(second[0].id)
+  })
+
+  it('mantém a identidade do grupo estável quando só muda a ordem dos postos', () => {
+    const first = clusterStations([station('a', 0, 0), station('b', .001, .001)], region)
+    const second = clusterStations([station('b', .001, .001), station('a', 0, 0)], region)
+    expect(first[0].id).toBe(second[0].id)
+  })
 })

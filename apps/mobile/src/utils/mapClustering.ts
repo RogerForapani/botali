@@ -26,7 +26,7 @@ export function clusterStations(stations: Station[], region: RegionLike, selecte
     if (members.length === 1) return toStationItem(members[0])
     return {
       kind: 'cluster',
-      id: `cluster:${key}`,
+      id: `cluster:${key}:${members.length}:${clusterFingerprint(members)}`,
       latitude: members.reduce((sum, station) => sum + station.latitude, 0) / members.length,
       longitude: members.reduce((sum, station) => sum + station.longitude, 0) / members.length,
       stations: members,
@@ -37,4 +37,13 @@ export function clusterStations(stations: Station[], region: RegionLike, selecte
 
 function toStationItem(station: Station): StationMapItem {
   return { kind: 'station', id: station.id, station }
+}
+
+function clusterFingerprint(stations: Station[]) {
+  let hash = 2166136261
+  for (const character of stations.map((station) => station.id).sort().join('|')) {
+    hash ^= character.charCodeAt(0)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(36)
 }

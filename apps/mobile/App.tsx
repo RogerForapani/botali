@@ -67,6 +67,7 @@ export default function App() {
   const [pendingCenter, setPendingCenter] = useState(initialCenter)
   const [visibleRegion, setVisibleRegion] = useState<Region>(initialRegion)
   const [activeBounds, setActiveBounds] = useState<MapBounds | null>(null)
+  const [mapRenderVersion, setMapRenderVersion] = useState(0)
   const [showSearchArea, setShowSearchArea] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [continuedAsGuest, setContinuedAsGuest] = useState(false)
@@ -247,6 +248,17 @@ export default function App() {
     }, 350)
   }
 
+  function searchVisibleArea() {
+    const bounds = regionToBounds(visibleRegion)
+    setMapRenderVersion((version) => version + 1)
+    setActiveBounds(bounds)
+    setMapCenter(pendingCenter)
+    setShowSearchArea(false)
+    setSelectedId(null)
+    saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined)
+    refreshBounds(bounds)
+  }
+
   function openNewStation() {
     setShowSearch(false)
     setShowFilters(false)
@@ -284,7 +296,7 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView key={`google-map-${themeMode}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
+        {tab === 'explore' ? <MapView key={`google-map-${themeMode}-${mapRenderVersion}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
           {mapItems.map((item) => item.kind === 'cluster'
             ? <StationClusterMarker key={`${markerScopeKey}:${item.id}`} cluster={item} onPress={() => openCluster(item)} />
             : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
@@ -293,7 +305,7 @@ export default function App() {
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
           {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setActiveBounds(null); setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => activeBounds ? loadMoreBounds(activeBounds) : loadMore(mapCenter, radiusKm)} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
-          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={() => { const bounds = regionToBounds(visibleRegion); setActiveBounds(bounds); setMapCenter(pendingCenter); setShowSearchArea(false); setSelectedId(null); saveMapPreferences({ center: pendingCenter, radiusKm }).catch(() => undefined); refreshBounds(bounds) }}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
+          <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={searchVisibleArea}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
           {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelectedId(null) }} onToggleService={(code) => { setSelectedId(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelectedId(null) }} /> : null}
           {stationsLoading || stationsError || isOnline === false || !stations.length ? <Pressable accessibilityRole="button" disabled={stationsLoading || isOnline === false} onPress={() => stationsError ? refreshCurrentSearch() : setShowSearch(true)} style={[styles.mapStatus, (stale || isOnline === false) && styles.mapStatusOffline]}><Text style={styles.mapStatusText}>{stationsLoading ? (stations.length ? 'Atualizando postos…' : 'Carregando postos…') : isOnline === false ? (stations.length ? `Sem internet · dados salvos${cacheTime ? ` às ${cacheTime}` : ''}` : 'Sem internet · conecte-se para carregar os postos') : stale ? `Dados salvos${cacheTime ? ` às ${cacheTime}` : ''} · Toque para atualizar` : stationsError ? `${stationsError} · Toque para tentar novamente` : activeBounds ? 'Nenhum posto encontrado nesta área · Mova o mapa para buscar novamente' : 'Nenhum posto encontrado neste raio · Toque para buscar ou cadastrar'}</Text></Pressable> : null}</>}
         </SafeAreaView> : null}
