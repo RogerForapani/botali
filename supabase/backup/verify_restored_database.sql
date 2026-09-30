@@ -12,7 +12,6 @@ begin
     present boolean not null,
     latest_version text
   ) on commit drop;
-  truncate table botali_backup_migration_state;
 
   select array_agg(table_name order by table_name)
   into missing_tables

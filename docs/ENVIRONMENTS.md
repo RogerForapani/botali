@@ -35,6 +35,7 @@
 - Pendente: validar a experiência com a massa de volume no build `preview`.
 - Backups físicos restauráveis indisponíveis no plano gratuito; procedimento de backup lógico e verificador de restauração preparados em `docs/BACKUP_RESTORE_RUNBOOK.md`.
 - Histórico do Supabase CLI ausente na homologação porque as migrações iniciais foram aplicadas pelo editor SQL; o verificador registra essa condição sem confundi-la com perda de estrutura.
+- Linha de base de backup validada em 30/09/2026: PostGIS e funções essenciais presentes, 17/17 tabelas públicas com RLS, 10.001 postos e 80.001 relatos de preço.
 
 ## Preparação do banco
 

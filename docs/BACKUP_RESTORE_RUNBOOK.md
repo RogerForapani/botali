@@ -8,6 +8,12 @@ Em 30/09/2026, `botali-homologacao` está no plano gratuito. O painel do Supabas
 
 A primeira validação estrutural também identificou que `supabase_migrations.schema_migrations` não existe na homologação, pois as migrações iniciais foram aplicadas diretamente pelo editor SQL. Isso não invalida o esquema atual, mas deve aparecer como `migration_history_present: false` no inventário e ser regularizado antes de o projeto adotar migrações remotas automatizadas pelo CLI.
 
+### Linha de base da homologação — 30/09/2026
+
+O verificador foi executado sem alterar dados e aprovou PostGIS, funções essenciais, 17 tabelas públicas e RLS nas 17 tabelas. O inventário registrou 4 usuários, 4 perfis, 10.001 postos, 40.002 vínculos de combustíveis, 15.335 serviços de postos e 80.001 relatos de preço. Dentro desses totais estão os 10.000 postos, 80.000 preços e 2 usuários sintéticos da massa `[SYNTH HML]`.
+
+Essa saída passa a ser a referência que um banco restaurado deve reproduzir. Como o aplicativo continua em uso, uma nova linha de base deve ser capturada imediatamente antes de cada backup futuro.
+
 Enquanto o projeto permanecer gratuito, a alternativa é um backup lógico pelo Supabase CLI. O ensaio exige:
 
 - Docker Desktop, usado pelo comando `supabase db dump`;
