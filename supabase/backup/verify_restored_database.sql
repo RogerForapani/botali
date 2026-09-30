@@ -8,6 +8,12 @@ declare
   tables_without_rls text[];
   missing_functions text[];
 begin
+  create temporary table if not exists botali_backup_migration_state (
+    present boolean not null,
+    latest_version text
+  ) on commit drop;
+  truncate table botali_backup_migration_state;
+
   select array_agg(table_name order by table_name)
   into missing_tables
   from unnest(array[
@@ -69,7 +75,9 @@ begin
   end if;
 
   if to_regclass('supabase_migrations.schema_migrations') is null then
-    raise exception 'Historico de migracoes ausente';
+    insert into botali_backup_migration_state values (false, null);
+  else
+    execute 'insert into botali_backup_migration_state select true, max(version)::text from supabase_migrations.schema_migrations';
   end if;
 end;
 $validation$;
@@ -77,7 +85,8 @@ $validation$;
 select jsonb_build_object(
   'verification_version', 1,
   'checked_at', now(),
-  'latest_migration', (select max(version) from supabase_migrations.schema_migrations),
+  'migration_history_present', (select present from botali_backup_migration_state),
+  'latest_migration', (select latest_version from botali_backup_migration_state),
   'public_tables', (
     select count(*)
     from pg_class relation

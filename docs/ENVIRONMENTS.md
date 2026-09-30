@@ -34,6 +34,7 @@
 - Produção não recebeu a massa sintética. Todos os registros usam o prefixo `[SYNTH HML]`, IDs determinísticos e podem ser removidos com `supabase/test-data/remove_homologation_10k.sql`.
 - Pendente: validar a experiência com a massa de volume no build `preview`.
 - Backups físicos restauráveis indisponíveis no plano gratuito; procedimento de backup lógico e verificador de restauração preparados em `docs/BACKUP_RESTORE_RUNBOOK.md`.
+- Histórico do Supabase CLI ausente na homologação porque as migrações iniciais foram aplicadas pelo editor SQL; o verificador registra essa condição sem confundi-la com perda de estrutura.
 
 ## Preparação do banco
 

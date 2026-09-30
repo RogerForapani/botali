@@ -6,6 +6,8 @@ Este procedimento valida que um backup do banco pode ser restaurado antes de qua
 
 Em 30/09/2026, `botali-homologacao` está no plano gratuito. O painel do Supabase confirma que esse plano não inclui backups físicos restauráveis nem a opção de restaurar para um novo projeto.
 
+A primeira validação estrutural também identificou que `supabase_migrations.schema_migrations` não existe na homologação, pois as migrações iniciais foram aplicadas diretamente pelo editor SQL. Isso não invalida o esquema atual, mas deve aparecer como `migration_history_present: false` no inventário e ser regularizado antes de o projeto adotar migrações remotas automatizadas pelo CLI.
+
 Enquanto o projeto permanecer gratuito, a alternativa é um backup lógico pelo Supabase CLI. O ensaio exige:
 
 - Docker Desktop, usado pelo comando `supabase db dump`;
@@ -57,7 +59,7 @@ psql --single-transaction --variable ON_ERROR_STOP=1 --file roles.sql --file sch
 ```
 
 9. Execute `supabase/backup/verify_restored_database.sql` no destino.
-10. Compare o JSON do destino com `source-verification.json`. Quantidades, última migração, RLS, funções essenciais e extensão PostGIS devem coincidir.
+10. Compare o JSON do destino com `source-verification.json`. Quantidades, estado do histórico de migrações, RLS, funções essenciais e extensão PostGIS devem coincidir.
 11. Faça uma consulta geográfica, carregue o consenso de 200 postos e teste login apenas com usuários sintéticos.
 12. Apague o projeto temporário somente depois de guardar o relatório do ensaio e confirmar que nenhum aplicativo aponta para ele.
 
