@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../types'
-import { clusterStations } from './mapClustering'
+import { clusterStations, shouldRebuildMapAfterZoom } from './mapClustering'
 
 const station = (id: string, latitude: number, longitude: number): Station => ({ id, name: id, brand: 'Shell', latitude, longitude, distanceKm: 0, rating: 0, hasElectricCharging: false, prices: {} })
 const region = { latitude: 0, longitude: 0, latitudeDelta: .08, longitudeDelta: .08 }
@@ -35,5 +35,13 @@ describe('agrupamento visual do mapa', () => {
     const first = clusterStations([station('a', 0, 0), station('b', .001, .001)], region)
     const second = clusterStations([station('b', .001, .001), station('a', 0, 0)], region)
     expect(first[0].id).toBe(second[0].id)
+  })
+
+  it('reconstrói a camada nativa depois de uma mudança relevante de zoom', () => {
+    expect(shouldRebuildMapAfterZoom(region, { ...region, latitudeDelta: .04, longitudeDelta: .04 })).toBe(true)
+  })
+
+  it('não reconstrói a camada nativa durante pequenos ajustes do mapa', () => {
+    expect(shouldRebuildMapAfterZoom(region, { ...region, latitudeDelta: .076, longitudeDelta: .076 })).toBe(false)
   })
 })

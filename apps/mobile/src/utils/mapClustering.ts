@@ -35,6 +35,11 @@ export function clusterStations(stations: Station[], region: RegionLike, selecte
   return [...clustered, ...selected]
 }
 
+export function shouldRebuildMapAfterZoom(previous: RegionLike, next: RegionLike, threshold = .15) {
+  return relativeChange(previous.latitudeDelta, next.latitudeDelta) >= threshold
+    || relativeChange(previous.longitudeDelta, next.longitudeDelta) >= threshold
+}
+
 function toStationItem(station: Station): StationMapItem {
   return { kind: 'station', id: station.id, station }
 }
@@ -46,4 +51,8 @@ function clusterFingerprint(stations: Station[]) {
     hash = Math.imul(hash, 16777619)
   }
   return (hash >>> 0).toString(36)
+}
+
+function relativeChange(previous: number, next: number) {
+  return previous > 0 ? Math.abs(next - previous) / previous : Number.POSITIVE_INFINITY
 }

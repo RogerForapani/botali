@@ -38,7 +38,7 @@ import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
 import { filterStations, findBestPriceStationId, isStationInBounds } from './src/utils/stationFilters'
-import { clusterStations, type StationClusterItem } from './src/utils/mapClustering'
+import { clusterStations, shouldRebuildMapAfterZoom, type StationClusterItem } from './src/utils/mapClustering'
 import { userMessageForError } from './src/utils/appError'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
@@ -49,6 +49,7 @@ export default function App() {
   const { colors, mode: themeMode } = useTheme()
   const styles = useMemo(() => createStyles(colors), [colors])
   const mapRef = useRef<MapView>(null)
+  const lastNativeMapRegion = useRef<Region>(initialRegion)
   const wasOffline = useRef(false)
   const { user, loading: sessionLoading, error: sessionError } = useSession()
   const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds } = useStations(initialCenter, 10)
@@ -259,6 +260,18 @@ export default function App() {
     refreshBounds(bounds)
   }
 
+  function handleRegionChangeComplete(region: Region) {
+    const next = { latitude: region.latitude, longitude: region.longitude }
+    const rebuildNativeMarkers = shouldRebuildMapAfterZoom(lastNativeMapRegion.current, region)
+    setVisibleRegion(region)
+    setPendingCenter(next)
+    setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002)
+    if (rebuildNativeMarkers) {
+      lastNativeMapRegion.current = region
+      setMapRenderVersion((version) => version + 1)
+    }
+  }
+
   function openNewStation() {
     setShowSearch(false)
     setShowFilters(false)
@@ -296,7 +309,7 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView key={`google-map-${themeMode}-${mapRenderVersion}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={(region) => { const next = { latitude: region.latitude, longitude: region.longitude }; setVisibleRegion(region); setPendingCenter(next); setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002) }}>
+        {tab === 'explore' ? <MapView key={`google-map-${themeMode}-${mapRenderVersion}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={handleRegionChangeComplete}>
           {mapItems.map((item) => item.kind === 'cluster'
             ? <StationClusterMarker key={`${markerScopeKey}:${item.id}`} cluster={item} onPress={() => openCluster(item)} />
             : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
