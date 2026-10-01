@@ -12,6 +12,7 @@ const stationSearchMigration = readFileSync(resolve(currentDirectory, '../../../
 const visibleBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609240002_station_search_visible_bounds.sql'), 'utf8')
 const optimizedBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280001_optimize_visible_bounds_geography.sql'), 'utf8')
 const retentionMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280002_data_retention_policy.sql'), 'utf8')
+const communityProfileMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609300001_community_profile_foundation.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -117,5 +118,21 @@ describe('contrato de retenção e minimização', () => {
     expect(retentionMigration).toContain('private.station_price_monthly_stats')
     expect(retentionMigration).toContain('private.station_confirmation_monthly_stats')
     expect(retentionMigration).toContain('revoke execute on function private.apply_data_retention(boolean) from public, anon, authenticated')
+  })
+})
+
+describe('contrato do perfil comunitário', () => {
+  it('mantém o perfil privado por padrão e exige opt-in explícito', () => {
+    expect(communityProfileMigration).toContain('profile_is_public boolean not null default false')
+  })
+
+  it('entrega somente o próprio resumo por uma função autenticada', () => {
+    expect(communityProfileMigration).toContain('where p.id = (select auth.uid())')
+    expect(communityProfileMigration).toContain('revoke execute on function public.my_community_profile() from public, anon')
+    expect(communityProfileMigration).toContain('grant execute on function public.my_community_profile() to authenticated')
+  })
+
+  it('não usa volume bruto para declarar um preço validado', () => {
+    expect(communityProfileMigration).toMatch(/validated_price_reports[\s\S]*exists \([\s\S]*pc\.user_id <> p\.id[\s\S]*pc\.agrees/)
   })
 })

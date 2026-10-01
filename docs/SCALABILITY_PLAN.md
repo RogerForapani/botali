@@ -32,6 +32,8 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 
 O procedimento reproduzível e o verificador estrutural da restauração estão em `docs/BACKUP_RESTORE_RUNBOOK.md` e `supabase/backup/verify_restored_database.sql`. A execução permanece pendente porque o plano gratuito não fornece backup físico restaurável e este computador ainda não possui Docker, `psql` nem uma conexão autenticada ao banco para o backup lógico.
 
+Em 30/09/2026, o responsável decidiu manter o plano gratuito e adiar essa execução. A pendência não bloqueia o desenvolvimento do perfil comunitário, mas bloqueia qualquer retenção destrutiva e deve ser resolvida antes do beta público.
+
 A separação de ambientes e o checklist de promoção estão em `docs/ENVIRONMENTS.md`. A sequência de produto aprovada para perfil, badges, veículo e recursos comunitários está em `docs/ROADMAP.md`.
 
 ## Teste de carga do mapa

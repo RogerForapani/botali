@@ -8,6 +8,7 @@ O roadmap preserva o foco do Botali em preços confiáveis e contribuições rá
    - Manter um projeto Supabase separado da produção.
    - Validar restauração de backup, migrações, retenção e carga em homologação.
    - Concluir os testes presenciais de confirmação de preço e os fluxos críticos do aplicativo.
+   - Decisão de 30/09/2026: o backup restaurável automático fica adiado enquanto o Supabase permanecer no plano gratuito. A retenção destrutiva continua desabilitada e esta pendência deve ser concluída antes do beta público.
 2. **Perfil comunitário**
    - Exibir nome público, avatar, nível, progresso e resumo de contribuições validadas.
    - Conceder níveis por qualidade e confirmação, não apenas por volume.
