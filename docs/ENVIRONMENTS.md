@@ -27,7 +27,7 @@
 - Login Google habilitado com um cliente OAuth Web exclusivo para a homologação e callback do Supabase registrado no Google Cloud.
 - Variáveis do Supabase separadas no EAS: `preview` usa homologação; `development` e `production` continuam na produção.
 - Atualização Android publicada no canal `preview`, runtime `1.0.0`, grupo `a210b1a9-058e-4995-b718-f683247062c4`.
-- Novo APK `preview` com seleção nativa de fotos concluído no EAS: build `97326947-70bf-48de-8817-7ab57e3fd0f6`.
+- Novo APK `preview` 1.0.1 (Android versionCode 2) com seleção nativa de fotos concluído no EAS: build `0601bc9b-b7d3-4465-a43a-d40e426301c7`.
 - Massa sintética persistente e removível carregada: 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços, 80.000 relatos de preço e 2 usuários técnicos sem senha ou identidade OAuth.
 - Validação SQL concluída: buscas por limites e por raio retornaram no máximo 200 postos; o consenso retornou 800 combinações para uma amostra de 200 postos; retenção em `dry-run` não encontrou dados vencidos.
 - Teste HTTP concluído contra a homologação: 60 fluxos completos, concorrência 5, nenhuma falha e p95 geral de 796 ms para uma meta de 2,5 segundos.
