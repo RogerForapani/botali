@@ -1,6 +1,15 @@
 import { supabase } from '../lib/supabase'
 import { decode } from 'base64-arraybuffer'
 
+export type CommunityBadge = {
+  id: string
+  title: string
+  description: string
+  iconName: string
+  accentColor: string
+  awardedAt: string | null
+}
+
 export type CommunityProfile = {
   displayName: string
   avatarUrl: string | null
@@ -12,6 +21,13 @@ export type CommunityProfile = {
   priceConfirmations: number
   verifiedStations: number
   approvedEdits: number
+  contributionPoints: number
+  levelNumber: number
+  levelTitle: string
+  levelMinPoints: number
+  nextLevelPoints: number
+  levelProgressPercent: number
+  badges: CommunityBadge[]
 }
 
 type CommunityProfileRow = {
@@ -24,6 +40,13 @@ type CommunityProfileRow = {
   price_confirmations: number
   verified_stations: number
   approved_edits: number
+  contribution_points: number
+  level_number: number
+  level_title: string
+  level_min_points: number
+  next_level_points: number
+  level_progress_percent: number
+  badges: CommunityBadge[] | null
 }
 
 export async function loadMyCommunityProfile(): Promise<CommunityProfile> {
@@ -82,5 +105,12 @@ async function mapProfile(row: CommunityProfileRow): Promise<CommunityProfile> {
     priceConfirmations: Number(row.price_confirmations),
     verifiedStations: Number(row.verified_stations),
     approvedEdits: Number(row.approved_edits),
+    contributionPoints: Number(row.contribution_points),
+    levelNumber: Number(row.level_number),
+    levelTitle: row.level_title,
+    levelMinPoints: Number(row.level_min_points),
+    nextLevelPoints: Number(row.next_level_points),
+    levelProgressPercent: Number(row.level_progress_percent),
+    badges: Array.isArray(row.badges) ? row.badges : [],
   }
 }

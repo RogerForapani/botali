@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { loadMyCommunityProfile, removeMyAvatar, updateMyCommunityProfile, uploadMyAvatar, type CommunityProfile } from '../../services/communityProfile'
@@ -9,6 +9,16 @@ import { recordAppFailure } from '../../services/diagnostics'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import { userMessageForError } from '../../utils/appError'
+
+type IconName = ComponentProps<typeof MaterialCommunityIcons>['name']
+
+const badgeIconNames: Record<string, IconName> = {
+  'first-validated-price': 'check-decagram',
+  'community-checker': 'account-check',
+  'station-scout': 'map-marker-plus',
+  'trusted-editor': 'map-check',
+  'beta-pioneer': 'rocket-launch',
+}
 
 export function CommunityProfileCard({ user }: { user: User }) {
   const { colors } = useTheme()
@@ -88,12 +98,19 @@ export function CommunityProfileCard({ user }: { user: User }) {
   const fallbackName = profile.displayName || user.user_metadata.full_name || user.email?.split('@')[0] || 'Motorista botali'
   const initial = fallbackName.trim().charAt(0).toUpperCase() || 'B'
   const displayedAvatar = avatarPreviewUri ?? (avatarPath ? profile.avatarUrl : null)
+  const levelColor = getLevelColor(profile.levelNumber, colors)
+  const pointsToNextLevel = Math.max(0, profile.nextLevelPoints - profile.contributionPoints)
 
   return <View style={styles.card}>
     <View style={styles.identity}>
-      {displayedAvatar ? <Image source={{ uri: displayedAvatar }} style={styles.avatar} /> : <View style={styles.avatarFallback}><Text style={styles.avatarInitial}>{initial}</Text></View>}
-      <View style={styles.identityCopy}><Text style={styles.name}>{profile.displayName}</Text><Text style={styles.visibility}>{profile.isPublic ? 'Perfil visível para a comunidade' : 'Perfil privado'}</Text></View>
+      <View style={[styles.avatarFrame, { borderColor: levelColor }]}>{displayedAvatar ? <Image source={{ uri: displayedAvatar }} style={styles.avatar} /> : <View style={styles.avatarFallback}><Text style={styles.avatarInitial}>{initial}</Text></View>}</View>
+      <View style={styles.identityCopy}><Text style={styles.name}>{profile.displayName}</Text><View style={styles.levelTitleRow}><MaterialCommunityIcons name="shield-star-outline" size={14} color={levelColor} /><Text style={[styles.levelTitle, { color: levelColor }]}>Nível {profile.levelNumber} · {profile.levelTitle}</Text></View><Text style={styles.visibility}>{profile.isPublic ? 'Perfil visível para a comunidade' : 'Perfil privado'}</Text></View>
       <Pressable accessibilityRole="button" accessibilityLabel={editing ? 'Cancelar edição do perfil' : 'Editar perfil comunitário'} style={styles.editButton} onPress={toggleEditing}><MaterialCommunityIcons name={editing ? 'close' : 'pencil-outline'} size={19} color={colors.brandText} /></Pressable>
+    </View>
+    <View accessible accessibilityLabel={`${profile.contributionPoints} pontos comunitários. Progresso de ${profile.levelProgressPercent} por cento no nível ${profile.levelNumber}.`} style={styles.levelCard}>
+      <View style={styles.levelHeader}><Text style={styles.levelPoints}>{profile.contributionPoints} pontos</Text><Text style={styles.levelNext}>{profile.levelNumber === 5 ? 'Nível máximo' : `${pointsToNextLevel} para o próximo nível`}</Text></View>
+      <View style={styles.progressTrack}><View style={[styles.progressFill, { backgroundColor: levelColor, width: `${profile.levelProgressPercent}%` }]} /></View>
+      <Text style={styles.levelRule}>Contam preços validados, confirmações e cadastros aprovados.</Text>
     </View>
     <View style={styles.stats}>
       <Stat value={profile.validatedPriceReports} label="Preços validados" styles={styles} />
@@ -101,6 +118,7 @@ export function CommunityProfileCard({ user }: { user: User }) {
       <Stat value={profile.verifiedStations + profile.approvedEdits} label="Cadastros aprovados" styles={styles} />
     </View>
     <Text style={styles.sentSummary}>{profile.priceReports} {profile.priceReports === 1 ? 'preço enviado' : 'preços enviados'} no total</Text>
+    {profile.badges.length ? <View style={styles.badgesSection}><Text style={styles.sectionLabel}>CONQUISTAS</Text><View style={styles.badgesGrid}>{profile.badges.map((badge) => <View key={badge.id} accessible accessibilityLabel={`${badge.title}. ${badge.description}`} style={[styles.badgeItem, { borderColor: badge.accentColor }]}><MaterialCommunityIcons name={badgeIconNames[badge.id] ?? 'medal-outline'} size={21} color={badge.accentColor} /><View style={styles.badgeCopy}><Text style={styles.badgeTitle}>{badge.title}</Text><Text numberOfLines={2} style={styles.badgeDescription}>{badge.description}</Text></View></View>)}</View></View> : null}
     {editing ? <View style={styles.form}>
       <Text style={styles.label}>NOME PÚBLICO</Text>
       <TextInput accessibilityLabel="Nome público" maxLength={40} value={displayName} onChangeText={setDisplayName} placeholder="Como quer aparecer" placeholderTextColor={colors.textMuted} style={styles.input} />
@@ -120,10 +138,20 @@ function Stat({ value, label, styles }: { value: number; label: string; styles: 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { marginBottom: spacing[4], padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surfaceAlt },
   loading: { minHeight: 72, marginBottom: spacing[4], padding: spacing[4], justifyContent: 'center', borderRadius: radius.lg, backgroundColor: colors.surfaceAlt },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] }, avatar: { width: 52, height: 52, borderRadius: radius.full, backgroundColor: colors.border }, avatarFallback: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.brand }, avatarInitial: { color: colors.onBrand, fontFamily: typography.black, fontSize: typography.h3 }, identityCopy: { flex: 1 }, name: { color: colors.offWhite, fontFamily: typography.black, fontSize: 18 }, visibility: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: 2 }, editButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.full },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] }, avatarFrame: { width: 58, height: 58, padding: 2, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderRadius: radius.full }, avatar: { width: 48, height: 48, borderRadius: radius.full, backgroundColor: colors.border }, avatarFallback: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.brand }, avatarInitial: { color: colors.onBrand, fontFamily: typography.black, fontSize: typography.h3 }, identityCopy: { flex: 1 }, name: { color: colors.offWhite, fontFamily: typography.black, fontSize: 18 }, levelTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }, levelTitle: { flex: 1, fontFamily: typography.bold, fontSize: 11 }, visibility: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: 2 }, editButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.full },
+  levelCard: { marginTop: spacing[4], padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.graphite }, levelHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[2] }, levelPoints: { color: colors.offWhite, fontFamily: typography.black, fontSize: typography.small }, levelNext: { flex: 1, color: colors.textMuted, fontFamily: typography.semibold, fontSize: 10, textAlign: 'right' }, progressTrack: { height: 7, marginTop: spacing[2], overflow: 'hidden', borderRadius: radius.full, backgroundColor: colors.border }, progressFill: { height: '100%', borderRadius: radius.full }, levelRule: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, lineHeight: 14, marginTop: spacing[2] },
   stats: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[4] }, stat: { flex: 1, minHeight: 72, padding: spacing[2], alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.graphite }, statValue: { color: colors.brandText, fontFamily: typography.black, fontSize: typography.h3 }, statLabel: { color: colors.textMuted, fontFamily: typography.semibold, fontSize: 9, lineHeight: 12, textAlign: 'center', marginTop: 2 }, sentSummary: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, textAlign: 'center', marginTop: spacing[2] },
+  badgesSection: { marginTop: spacing[4] }, sectionLabel: { color: colors.brandText, fontFamily: typography.black, fontSize: 9, letterSpacing: .8, marginBottom: spacing[2] }, badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }, badgeItem: { minWidth: '47%', flex: 1, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: spacing[2], padding: spacing[2], borderWidth: 1, borderRadius: radius.md, backgroundColor: colors.graphite }, badgeCopy: { flex: 1 }, badgeTitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 11 }, badgeDescription: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 9, lineHeight: 12, marginTop: 2 },
   form: { marginTop: spacing[4], paddingTop: spacing[4], borderTopWidth: 1, borderTopColor: colors.border }, label: { color: colors.brandText, fontFamily: typography.black, fontSize: 9, letterSpacing: .8, marginBottom: spacing[2] }, input: { minHeight: 48, marginBottom: spacing[3], paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite, color: colors.offWhite, fontFamily: typography.regular },
   photoActions: { flexDirection: 'row', gap: spacing[2], marginBottom: spacing[4] }, photoButton: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite }, photoButtonText: { color: colors.brandText, fontFamily: typography.bold, fontSize: typography.small }, removePhotoButton: { minHeight: 48, paddingHorizontal: spacing[3], alignItems: 'center', justifyContent: 'center' }, removePhotoText: { color: colors.dangerText, fontFamily: typography.bold, fontSize: typography.small },
   visibilityControl: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginBottom: spacing[3] }, visibilityCopy: { flex: 1 }, preferenceTitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: typography.small }, preferenceText: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, lineHeight: 16, marginTop: 2 }, toggle: { width: 48, height: 28, padding: 3, justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.border }, toggleActive: { backgroundColor: colors.brand }, toggleKnob: { width: 22, height: 22, borderRadius: radius.full, backgroundColor: colors.offWhite }, toggleKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.graphite },
   saveButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.brand }, saveText: { color: colors.onBrand, fontFamily: typography.black }, muted: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small }, success: { color: colors.brandText, fontFamily: typography.semibold, fontSize: typography.caption, marginTop: spacing[3] }, error: { color: colors.dangerText, fontFamily: typography.semibold, fontSize: typography.caption, marginTop: spacing[3] },
 })
+
+function getLevelColor(level: number, colors: ThemeColors) {
+  if (level >= 5) return colors.offWhite
+  if (level === 4) return colors.amber
+  if (level === 3) return colors.brand
+  if (level === 2) return colors.info
+  return colors.textMuted
+}

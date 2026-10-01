@@ -14,6 +14,7 @@ const optimizedBoundsMigration = readFileSync(resolve(currentDirectory, '../../.
 const retentionMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280002_data_retention_policy.sql'), 'utf8')
 const communityProfileMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609300001_community_profile_foundation.sql'), 'utf8')
 const profileAvatarMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610010001_profile_avatar_storage.sql'), 'utf8')
+const communityLevelsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610010002_community_levels_badges.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -145,5 +146,26 @@ describe('contrato do perfil comunitário', () => {
   it('restringe leitura e gravação do avatar à pasta do próprio usuário', () => {
     expect(profileAvatarMigration.match(/\(storage\.foldername\(name\)\)\[1\] = \(select auth\.uid\(\)::text\)/g)?.length).toBeGreaterThanOrEqual(4)
     expect(profileAvatarMigration).toContain("lower(storage.extension(name)) = 'jpg'")
+  })
+
+  it('calcula nível apenas com contribuições que receberam sinal de qualidade', () => {
+    expect(communityLevelsMigration).toContain('validated_price_reports * 5')
+    expect(communityLevelsMigration).toContain('least(summary.price_confirmations, 50::bigint)')
+    expect(communityLevelsMigration).toContain('verified_stations * 12')
+    expect(communityLevelsMigration).toContain('approved_edits * 8')
+    expect(communityLevelsMigration).not.toMatch(/summary\.price_reports \* \d/)
+  })
+
+  it('mantém badges permanentes protegidos e auditáveis', () => {
+    expect(communityLevelsMigration).toContain('alter table public.user_community_badges enable row level security')
+    expect(communityLevelsMigration).toContain('revoke all on public.user_community_badges from anon, authenticated')
+    expect(communityLevelsMigration).toContain('awarded_at timestamptz not null default now()')
+    expect(communityLevelsMigration).toContain('awarded_by uuid references public.profiles(id) on delete set null')
+  })
+
+  it('concede o badge beta pelo servidor às contas elegíveis', () => {
+    expect(communityLevelsMigration).toContain("values ('botali-beta', 'beta-pioneer', true, now())")
+    expect(communityLevelsMigration).toContain('after insert on public.profiles')
+    expect(communityLevelsMigration).toContain('insert into public.user_community_badges (user_id, badge_id, reason)')
   })
 })

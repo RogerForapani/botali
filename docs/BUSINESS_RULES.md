@@ -17,6 +17,14 @@
 - Quando gasolina e etanol estiverem disponíveis no mesmo posto, calcule `etanol ÷ gasolina × 100`.
 - A referência inicial configurada é 70%: até esse valor, o etanol é indicado como favorável; acima dele, a gasolina tende a compensar.
 - O percentual é uma referência de preço, não uma garantia de consumo ou economia para todos os veículos.
+
+## Níveis comunitários
+
+- O nível reconhece contribuições úteis e não altera confiança, moderação ou peso no consenso de preços.
+- Cada preço confirmado por outra pessoa vale 5 pontos; confirmação presencial vale 1 ponto, limitada a 50 pontos; posto aprovado vale 12 pontos; correção aprovada vale 8 pontos.
+- Envios ainda não validados não geram pontos.
+- Níveis: Explorador (0), Colaborador (25), Parceiro da Estrada (75), Referência Local (180) e Guardião Botali (400).
+- Badges de conquistas comuns são derivados dos dados validados. O badge Pioneiro do Beta é permanente, concedido pelo servidor e mantém data e motivo da concessão.
 - Se faltar um dos preços, não mostre a comparação.
 - No mapa, o preço escolhido continua sendo a informação principal; a relação flex aparece como informação secundária compacta.
 

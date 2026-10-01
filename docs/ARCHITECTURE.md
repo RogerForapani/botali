@@ -26,6 +26,7 @@
 - O preço comunitário é calculado por `community_prices_for_stations`; aplicativos recebem somente preço consolidado, confiança e contagens agregadas.
 - Tabelas brutas de preços, confirmações e perfis não são legíveis por visitantes anônimos.
 - Fotos de perfil ficam em um bucket privado, limitadas a JPEG de 2 MB e acessíveis somente pela pasta do próprio usuário; o banco guarda apenas o caminho do arquivo.
+- Níveis são calculados no PostgreSQL com preços confirmados por terceiros, confirmações limitadas, postos verificados e correções aprovadas. Badges permanentes têm concessão, data, motivo e origem no servidor e não influenciam o consenso.
 - A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
 - O aplicativo consulta `user_roles` ao abrir o perfil e apresenta a fila de moderação somente a `moderator` e `admin`; a autorização definitiva continua no PostgreSQL.
 - O mobile mantém somente o último resultado agregado de postos em cache local por até sete dias; ao reconectar, o Supabase volta a ser a fonte de verdade e atualiza o cache.

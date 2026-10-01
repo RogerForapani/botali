@@ -30,6 +30,8 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Sugerir correções de nome, bandeira, endereço, ponto no mapa, combustíveis e serviços de um posto publicado.
 - Acompanhar na aba Atividade o estado de cadastros e correções enviados.
 - Manter um perfil comunitário com nome público, foto opcional escolhida da galeria do celular, resumo agregado de contribuições e visibilidade privada por padrão.
+- Mostrar nível, título, progresso e conquistas calculados a partir de contribuições validadas, sem alterar o peso do usuário no consenso de preços.
+- Destacar participantes do beta com um badge permanente concedido pelo servidor.
 
 ## Princípios
 
