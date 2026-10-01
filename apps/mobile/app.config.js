@@ -24,6 +24,11 @@ module.exports = () => ({
     'expo-notifications',
     'expo-font',
     'expo-web-browser',
+    ['expo-image-picker', {
+      photosPermission: 'O Botali acessa suas fotos somente quando você escolhe uma imagem para o perfil.',
+      cameraPermission: false,
+      microphonePermission: false,
+    }],
     ['expo-splash-screen', {
       backgroundColor: '#F7F7F5',
       image: './assets/splash-icon.png',

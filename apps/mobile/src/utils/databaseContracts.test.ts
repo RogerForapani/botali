@@ -13,6 +13,7 @@ const visibleBoundsMigration = readFileSync(resolve(currentDirectory, '../../../
 const optimizedBoundsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280001_optimize_visible_bounds_geography.sql'), 'utf8')
 const retentionMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609280002_data_retention_policy.sql'), 'utf8')
 const communityProfileMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609300001_community_profile_foundation.sql'), 'utf8')
+const profileAvatarMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610010001_profile_avatar_storage.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -134,5 +135,15 @@ describe('contrato do perfil comunitário', () => {
 
   it('não usa volume bruto para declarar um preço validado', () => {
     expect(communityProfileMigration).toMatch(/validated_price_reports[\s\S]*exists \([\s\S]*pc\.user_id <> p\.id[\s\S]*pc\.agrees/)
+  })
+
+  it('mantém os avatares privados e limita o arquivo no bucket', () => {
+    expect(profileAvatarMigration).toContain("values ('profile-avatars', 'profile-avatars', false, 2097152")
+    expect(profileAvatarMigration).toContain("allowed_mime_types = excluded.allowed_mime_types")
+  })
+
+  it('restringe leitura e gravação do avatar à pasta do próprio usuário', () => {
+    expect(profileAvatarMigration.match(/\(storage\.foldername\(name\)\)\[1\] = \(select auth\.uid\(\)::text\)/g)?.length).toBeGreaterThanOrEqual(4)
+    expect(profileAvatarMigration).toContain("lower(storage.extension(name)) = 'jpg'")
   })
 })

@@ -29,7 +29,7 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Cadastrar postos ausentes após autenticação, usando o GPS como atalho ou localizando manualmente o endereço quando o usuário estiver distante.
 - Sugerir correções de nome, bandeira, endereço, ponto no mapa, combustíveis e serviços de um posto publicado.
 - Acompanhar na aba Atividade o estado de cadastros e correções enviados.
-- Manter um perfil comunitário com nome público, avatar opcional, resumo agregado de contribuições e visibilidade privada por padrão.
+- Manter um perfil comunitário com nome público, foto opcional escolhida da galeria do celular, resumo agregado de contribuições e visibilidade privada por padrão.
 
 ## Princípios
 

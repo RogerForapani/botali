@@ -1,8 +1,10 @@
 import { supabase } from '../lib/supabase'
+import { decode } from 'base64-arraybuffer'
 
 export type CommunityProfile = {
   displayName: string
   avatarUrl: string | null
+  avatarPath: string | null
   isPublic: boolean
   trustScore: number
   priceReports: number
@@ -33,20 +35,46 @@ export async function loadMyCommunityProfile(): Promise<CommunityProfile> {
   return mapProfile(row)
 }
 
-export async function updateMyCommunityProfile(input: Pick<CommunityProfile, 'displayName' | 'avatarUrl' | 'isPublic'>) {
+export async function updateMyCommunityProfile(input: Pick<CommunityProfile, 'displayName' | 'avatarPath' | 'isPublic'>) {
   if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
   const { error } = await supabase.rpc('update_my_community_profile', {
     p_display_name: input.displayName.trim(),
-    p_avatar_url: input.avatarUrl?.trim() || null,
+    p_avatar_url: input.avatarPath?.trim() || null,
     p_profile_is_public: input.isPublic,
   })
   if (error) throw error
 }
 
-function mapProfile(row: CommunityProfileRow): CommunityProfile {
+export async function uploadMyAvatar(userId: string, base64: string) {
+  if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
+  const path = `${userId}/avatar.jpg`
+  const { error } = await supabase.storage.from('profile-avatars').upload(path, decode(base64), {
+    contentType: 'image/jpeg',
+    cacheControl: '3600',
+    upsert: true,
+  })
+  if (error) throw error
+  return path
+}
+
+export async function removeMyAvatar(path: string) {
+  if (!supabase || path.startsWith('https://')) return
+  const { error } = await supabase.storage.from('profile-avatars').remove([path])
+  if (error) throw error
+}
+
+async function mapProfile(row: CommunityProfileRow): Promise<CommunityProfile> {
+  const avatarPath = row.avatar_url
+  let avatarUrl = avatarPath
+  if (supabase && avatarPath && !avatarPath.startsWith('https://')) {
+    const { data, error } = await supabase.storage.from('profile-avatars').createSignedUrl(avatarPath, 3600)
+    if (error) throw error
+    avatarUrl = data.signedUrl
+  }
   return {
     displayName: row.display_name ?? 'Motorista botali',
-    avatarUrl: row.avatar_url,
+    avatarUrl,
+    avatarPath,
     isPublic: row.profile_is_public,
     trustScore: Number(row.trust_score),
     priceReports: Number(row.price_reports),
