@@ -18,7 +18,7 @@
 ### Estado em 29/09/2026
 
 - Projeto criado e saudável no plano gratuito.
-- Todas as 19 migrações aplicadas em uma única transação.
+- As 19 migrações iniciais foram aplicadas em uma única transação; a migração do perfil comunitário foi aplicada separadamente em 30/09/2026, totalizando 20.
 - 17 tabelas públicas com RLS habilitada.
 - Busca por raio, busca pelos limites do mapa e consenso disponíveis.
 - Agregados privados e rotina de retenção disponíveis; `dry-run` sem itens em banco vazio.
@@ -36,6 +36,7 @@
 - Backups físicos restauráveis indisponíveis no plano gratuito; procedimento de backup lógico e verificador de restauração preparados em `docs/BACKUP_RESTORE_RUNBOOK.md`.
 - Histórico do Supabase CLI ausente na homologação porque as migrações iniciais foram aplicadas pelo editor SQL; o verificador registra essa condição sem confundi-la com perda de estrutura.
 - Linha de base de backup validada em 30/09/2026: PostGIS e funções essenciais presentes, 17/17 tabelas públicas com RLS, 10.001 postos e 80.001 relatos de preço.
+- Perfil comunitário validado em homologação: privado por padrão, resumo e atualização disponíveis somente para usuários autenticados e edição direta dos campos bloqueada.
 
 ## Preparação do banco
 
