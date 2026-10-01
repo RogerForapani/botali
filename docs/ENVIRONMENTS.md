@@ -15,10 +15,10 @@
 - Usa URL e chave pública próprias; segredos nunca são versionados.
 - Pode receber massa artificial de 10 mil postos e 80 mil relatos para testes.
 
-### Estado em 29/09/2026
+### Estado em 01/10/2026
 
 - Projeto criado e saudável no plano gratuito.
-- As 19 migrações iniciais foram aplicadas em uma única transação; a migração do perfil comunitário foi aplicada separadamente em 30/09/2026, totalizando 20.
+- As 19 migrações iniciais foram aplicadas em uma única transação; as migrações do perfil comunitário e do armazenamento privado de avatares foram aplicadas separadamente, totalizando 21.
 - 17 tabelas públicas com RLS habilitada.
 - Busca por raio, busca pelos limites do mapa e consenso disponíveis.
 - Agregados privados e rotina de retenção disponíveis; `dry-run` sem itens em banco vazio.
@@ -27,7 +27,7 @@
 - Login Google habilitado com um cliente OAuth Web exclusivo para a homologação e callback do Supabase registrado no Google Cloud.
 - Variáveis do Supabase separadas no EAS: `preview` usa homologação; `development` e `production` continuam na produção.
 - Atualização Android publicada no canal `preview`, runtime `1.0.0`, grupo `a210b1a9-058e-4995-b718-f683247062c4`.
-- Novo APK pendente da renovação da cota gratuita de builds Android do Expo, prevista para 01/10/2026; o APK `preview` existente recebe a atualização OTA.
+- Novo APK `preview` com seleção nativa de fotos concluído no EAS: build `97326947-70bf-48de-8817-7ab57e3fd0f6`.
 - Massa sintética persistente e removível carregada: 10.000 postos, 40.000 vínculos de combustíveis, 15.334 serviços, 80.000 relatos de preço e 2 usuários técnicos sem senha ou identidade OAuth.
 - Validação SQL concluída: buscas por limites e por raio retornaram no máximo 200 postos; o consenso retornou 800 combinações para uma amostra de 200 postos; retenção em `dry-run` não encontrou dados vencidos.
 - Teste HTTP concluído contra a homologação: 60 fluxos completos, concorrência 5, nenhuma falha e p95 geral de 796 ms para uma meta de 2,5 segundos.
@@ -37,6 +37,7 @@
 - Histórico do Supabase CLI ausente na homologação porque as migrações iniciais foram aplicadas pelo editor SQL; o verificador registra essa condição sem confundi-la com perda de estrutura.
 - Linha de base de backup validada em 30/09/2026: PostGIS e funções essenciais presentes, 17/17 tabelas públicas com RLS, 10.001 postos e 80.001 relatos de preço.
 - Perfil comunitário validado em homologação: privado por padrão, resumo e atualização disponíveis somente para usuários autenticados e edição direta dos campos bloqueada.
+- Avatares validados em produção e homologação: bucket privado de 2 MB, JPEG, quatro políticas por pasta do usuário e atualização indisponível para anônimos.
 
 ## Preparação do banco
 
