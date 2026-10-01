@@ -3,7 +3,7 @@ module.exports = () => ({
   slug: 'botali',
   owner: 'ningas',
   description: 'Encontre postos próximos, compare preços da comunidade e escolha com mais confiança.',
-  version: '1.0.0',
+  version: '1.0.1',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'botali',
