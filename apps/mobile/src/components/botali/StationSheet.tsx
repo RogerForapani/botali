@@ -7,7 +7,7 @@ import { radius, shadow, spacing, typography, type ThemeColors } from '../../the
 import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
-import { estimateVehicleTrip, type Vehicle } from '../../utils/vehicle'
+import { compareVehicleTrips, type Vehicle } from '../../utils/vehicle'
 import { userMessageForError } from '../../utils/appError'
 import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
@@ -26,8 +26,8 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
   const userDistanceKm = userLocation ? distanceKmBetween(userLocation, station) : null
-  const vehiclePrice = vehicle ? station.prices[vehicle.fuelCode] : null
-  const trip = vehicle && userLocation && vehiclePrice ? estimateVehicleTrip(vehicle, userLocation, station, vehiclePrice.value) : null
+  const trips = vehicle ? compareVehicleTrips(vehicle, userLocation, station) : []
+  const availableTrips = trips.filter((item) => item.trip).length
 
   async function requestTripLocation() {
     setLocating(true); setLocationError('')
@@ -69,7 +69,21 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
         {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
       </>}
       {expanded ? <View style={styles.expandedContent}>
-        <View style={styles.tripCard}><Text style={styles.detailLabel}>CUSTO ATÉ ESTE POSTO</Text>{!vehicle ? <><Text style={styles.tripCopy}>Adicione seu veículo no Perfil para estimar o gasto.</Text><Pressable accessibilityRole="button" onPress={onOpenProfile} style={styles.tripButton}><Text style={styles.tripButtonText}>Abrir Perfil</Text></Pressable></> : !vehiclePrice ? <Text style={styles.tripCopy}>Ainda não há preço de {vehicle.fuelCode.replaceAll('_', ' ')} neste posto para calcular o gasto.</Text> : trip ? <><Text style={styles.tripValue}>R$ {trip.cost.toFixed(2).replace('.', ',')} <Text style={styles.tripUnit}>ida e volta</Text></Text><Text style={styles.tripCopy}>{trip.roundTripKm.toFixed(1).replace('.', ',')} km em linha reta · {trip.liters.toFixed(2).replace('.', ',')} L a R$ {vehiclePrice.value.toFixed(2).replace('.', ',')}/L{vehiclePrice.stale ? ' · preço sem atualização há 5 dias' : ''}</Text><Text style={styles.tripWarning}>Estimativa mínima: a rota real pode ser mais longa e custar mais.</Text><Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : 'Atualizar minha posição'}</Text></Pressable>{locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}</> : <><Text style={styles.tripCopy}>Use sua localização para calcular uma estimativa de ida e volta.</Text><Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : 'Usar minha localização'}</Text></Pressable>{locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}</>}</View>
+        <View style={styles.tripCard}>
+          <View style={styles.tripHeading}><MaterialCommunityIcons name="car-arrow-right" size={20} color={colors.brandText} /><View style={styles.tripHeadingCopy}><Text style={styles.detailLabel}>CUSTO ATÉ ESTE POSTO</Text><Text style={styles.tripSubtitle}>Ida e volta · por combustível</Text></View></View>
+          {!vehicle ? <><Text style={styles.tripCopy}>Adicione seu veículo no Perfil para comparar os gastos.</Text><Pressable accessibilityRole="button" onPress={onOpenProfile} style={styles.tripButton}><Text style={styles.tripButtonText}>Abrir Perfil</Text></Pressable></> : <>
+            {!userLocation ? <Text style={styles.tripCopy}>Use sua posição para calcular o custo a partir de você.</Text> : <Text style={styles.tripDistance}>{(userDistanceKm! * 2).toFixed(1).replace('.', ',')} km de ida e volta em linha reta</Text>}
+            <View style={styles.tripOptions}>{trips.map(({ fuel: option, price: optionPrice, trip, best }) => <View key={option.fuelCode} style={[styles.tripOption, best && styles.tripOptionBest]}>
+              <View style={styles.tripOptionTop}><Text style={styles.tripFuelName}>{option.fuelCode.replaceAll('_', ' ')}</Text>{best ? <Text style={styles.tripBest}>MENOR CUSTO ESTIMADO</Text> : null}</View>
+              <View style={styles.tripOptionBottom}><Text style={styles.tripOptionMeta}>{option.consumptionKmL.toFixed(1).replace('.', ',')} km/L{optionPrice ? ` · R$ ${optionPrice.value.toFixed(2).replace('.', ',')}/L` : ''}</Text><Text style={[styles.tripOptionCost, !trip && styles.tripOptionCostMissing]}>{trip ? `R$ ${trip.cost.toFixed(2).replace('.', ',')}` : optionPrice ? 'Sem posição' : 'Sem preço'}</Text></View>
+              {optionPrice?.stale ? <Text style={styles.tripStale}>Preço sem atualização há 5 dias</Text> : null}
+            </View>)}</View>
+            {userLocation && !availableTrips ? <Text style={styles.tripCopy}>Este posto ainda não tem preço para os combustíveis do seu veículo.</Text> : null}
+            <Text style={styles.tripWarning}>Estimativa mínima em linha reta. A rota real pode ser mais longa; preços antigos não são destacados como melhor opção.</Text>
+            <Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : userLocation ? 'Atualizar minha posição' : 'Usar minha localização'}</Text></Pressable>
+            {locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}
+          </>}
+        </View>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
         <View style={styles.allPrices}>
           {(Object.entries(station.prices) as [string, { value: number; stale?: boolean }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text>{item.stale ? <Text style={styles.fuelStale}>Sem atualização há 5 dias</Text> : null}</View>)}
@@ -126,6 +140,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   detailLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 9, letterSpacing: .8 },
   detailValue: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 13, lineHeight: 18, marginTop: 4 },
   tripCard: { padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  tripHeading: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] }, tripHeadingCopy: { flex: 1 }, tripSubtitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 14, marginTop: spacing[1] },
+  tripDistance: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: spacing[3] }, tripOptions: { gap: spacing[2], marginTop: spacing[3] },
+  tripOption: { padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite }, tripOptionBest: { borderColor: colors.brandText },
+  tripOptionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing[1] }, tripFuelName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 13, textTransform: 'capitalize' }, tripBest: { color: colors.brandText, fontFamily: typography.black, fontSize: 8 },
+  tripOptionBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[2], marginTop: spacing[1] }, tripOptionMeta: { flex: 1, color: colors.textMuted, fontFamily: typography.regular, fontSize: 10 }, tripOptionCost: { color: colors.offWhite, fontFamily: typography.black, fontSize: 18 }, tripOptionCostMissing: { color: colors.textMuted, fontSize: 12 }, tripStale: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 10, marginTop: spacing[1] },
   tripCopy: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 12, lineHeight: 18, marginTop: spacing[2] },
   tripValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 20, marginTop: spacing[2] },
   tripUnit: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 12 },

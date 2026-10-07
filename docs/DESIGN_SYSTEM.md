@@ -48,7 +48,8 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - `CommunityProfileCard`: identidade pública opcional, resumo agregado de contribuições e edição com privacidade explícita.
-- `VehicleProfileCard`: resumo compacto no Perfil e edição sob demanda de tipo, marca, modelo, ano, combustível e consumo.
+- `VehicleProfileCard`: resumo compacto no Perfil e edição sob demanda de tipo, marca, modelo, ano e consumo individual de cada combustível selecionado.
+- A comparação de deslocamento no `StationSheet` apresenta uma linha por combustível do veículo, valor estimado em destaque e explicação de preço ausente ou antigo. O menor custo só recebe destaque verde quando há pelo menos dois preços recentes comparáveis.
 - A busca e o detalhe do posto exibem distância a partir da posição do motorista, nunca a distância do centro do mapa como se fosse dele. O custo estimado aparece somente nos detalhes expandidos, com ressalva explícita sobre a distância em linha reta.
 - O perfil comunitário usa as cinco molduras de nível e os cinco badges ilustrados em `apps/mobile/assets/community/`. A foto permanece visível no centro transparente da moldura; títulos e descrições acompanham as artes para preservar compreensão e acessibilidade.
 - O badge azul de Moderador Botali indica uma função ativa carregada de `user_roles` e aparece em uma seção própria do perfil. Não é uma conquista por pontos; deixa de aparecer quando a função é removida.

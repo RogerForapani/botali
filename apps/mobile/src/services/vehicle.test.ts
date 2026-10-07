@@ -11,7 +11,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }))
 
-const vehicle: Vehicle = { type: 'motorcycle', brand: 'Honda', model: 'CG', year: 2022, fuelCode: 'gasolina', consumptionKmL: 35 }
+const vehicle: Vehicle = { type: 'motorcycle', brand: 'Honda', model: 'CG', year: 2022, fuels: [{ fuelCode: 'gasolina', consumptionKmL: 35 }, { fuelCode: 'etanol', consumptionKmL: 26 }] }
 
 describe('armazenamento local do veículo', () => {
   beforeEach(() => storage.clear())
@@ -25,9 +25,16 @@ describe('armazenamento local do veículo', () => {
   })
 
   it('ignora dados locais danificados', async () => {
-    storage.set('botali:vehicle:v1:pessoa-a', '{quebrado')
+    storage.set('botali:vehicle:v2:pessoa-a', '{quebrado')
     expect(await loadVehicle('pessoa-a')).toBeNull()
-    storage.set('botali:vehicle:v1:pessoa-a', JSON.stringify({ ...vehicle, consumptionKmL: -2 }))
+    storage.set('botali:vehicle:v2:pessoa-a', JSON.stringify({ ...vehicle, fuels: [{ fuelCode: 'gasolina', consumptionKmL: -2 }] }))
     expect(await loadVehicle('pessoa-a')).toBeNull()
+  })
+
+  it('converte o veículo já salvo na versão anterior e remove o registro antigo', async () => {
+    storage.set('botali:vehicle:v1:pessoa-a', JSON.stringify({ type: 'motorcycle', brand: 'Honda', model: 'CG', year: 2022, fuelCode: 'gasolina', consumptionKmL: 35 }))
+    expect(await loadVehicle('pessoa-a')).toEqual({ ...vehicle, fuels: [vehicle.fuels[0]] })
+    expect(storage.has('botali:vehicle:v2:pessoa-a')).toBe(true)
+    expect(storage.has('botali:vehicle:v1:pessoa-a')).toBe(false)
   })
 })
