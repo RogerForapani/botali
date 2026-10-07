@@ -39,6 +39,13 @@
 - Perfil comunitário validado em homologação: privado por padrão, resumo e atualização disponíveis somente para usuários autenticados e edição direta dos campos bloqueada.
 - Avatares validados em produção e homologação: bucket privado de 2 MB, JPEG, quatro políticas por pasta do usuário e atualização indisponível para anônimos.
 
+### Validação em 06/10/2026
+
+- A migração `202610010002_community_levels_badges.sql` foi aplicada em homologação pelo editor SQL, em transação, com resultado de sucesso.
+- Conferência posterior: as três tabelas comunitárias existem, há 5 badges no catálogo, 4 concessões automáticas, RLS ativa em `user_community_badges` e `my_community_profile()` retorna os campos de níveis.
+- A migração ainda não foi aplicada em produção. A promoção continua sujeita à aprovação separada prevista nas regras de segurança abaixo.
+- APK Android `preview` versão 1.0.1 (versionCode 3) concluído no EAS: build `c2d2f365-b98c-4ec3-ac91-1cf51be26efe`. O perfil `preview` usou as variáveis próprias de homologação.
+
 ## Preparação do banco
 
 1. [x] Criar o projeto com Data API habilitada, exposição automática de novas tabelas desabilitada e RLS automático habilitado.
