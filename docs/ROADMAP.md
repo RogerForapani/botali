@@ -22,8 +22,8 @@ O roadmap preserva o foco do Botali em preços confiáveis e contribuições rá
    - Guardar no aparelho tipo, marca, modelo, ano e consumo por combustível de um veículo por conta; permitir edição no Perfil.
    - Exibir distância desde a posição do motorista, custo personalizado por 100 km e estimativa mínima de ida e volta em linha reta nos detalhes do posto.
    - Permitir informar litros planejados e classificar postos do mesmo combustível pelo abastecimento mais deslocamento mínimo estimado, deixando clara a aproximação.
-   - Pendente: obter distância por rota rodoviária e calcular economia líquida somente com volume planejado e preço de comparação confiável. Não confundir distância em linha reta com trajeto real.
-   - Pendente: alertas opt-in de oportunidade, com escopo geográfico, preço recente, limite de frequência e desligamento simples. Não enviar notificações enquanto o motorista dirige.
+   - Adiado por custo: consulta a rota rodoviária. A estimativa atual permanece em linha reta e não representa economia líquida.
+   - Alertas de preço opt-in: Android preview, envio e recibo Expo foram validados em homologação; o usuário confirmou recebimento e abertura do posto ao toque. O despachante foi agendado apenas em homologação, e sua primeira execução terminou com sucesso. Antes de promover a funcionalidade para produção, validar os fluxos críticos restantes e o checklist de lançamento. APNs/iOS permanece para fase posterior.
 5. **Beta e aprendizado**
    - Medir retenção, qualidade das contribuições, abuso e utilidade dos níveis.
    - Ajustar incentivos antes de ampliar funcionalidades sociais.

@@ -44,6 +44,15 @@
 - Para comparar postos de um mesmo combustível, o motorista pode informar de 1 a 1.000 litros planejados. O gasto mínimo estimado é `litros × preço no posto + custo de ida e volta em linha reta`. Sem veículo, preço ou posição, não classificar por gasto total. Não tratar essa soma como economia líquida nem equiparar o mesmo volume de gasolina e etanol em autonomia.
 - A posição precisa expira da memória após cinco minutos; o motorista pode atualizá-la quando quiser. Não salvar essa posição no perfil do veículo.
 
+## Alertas de preço
+
+- Um alerta por conta, desligado por padrão, com combustível, preço máximo entre R$ 0,50 e R$ 30,00, área arredondada a duas casas decimais e raio de 2, 5, 10, 25 ou 50 km.
+- O aviso é criado somente para posto verificado, preço consolidado de até 5 dias e confiança mínima de 70% dentro do limite escolhido. O próprio autor do relato representativo não recebe aviso sobre seu envio.
+- No máximo um aviso por conta em 24 horas e outro para o mesmo posto em 7 dias. Um aviso interno pode existir sem autorização de push; o push externo requer adesão separada e token válido.
+- A notificação externa é discreta, sem som. O usuário pode desativar o alerta no Perfil; a saída da conta remove o token do aparelho, mas preserva a preferência da conta. Ao entrar novamente, o aparelho é registrado sem pedir permissão de novo quando ela já foi concedida.
+- Não inferir que o motorista está parado ou dirigindo com base nesses dados; o aviso não deve exigir ação imediata nem pedir confirmação de preço ao recebê-lo.
+- Alertas não usam distância de rota paga nem monitoramento contínuo de GPS. O centro da área é escolhido explicitamente no mapa.
+
 ## Postos
 
 - Novos cadastros entram como `pending`.

@@ -10,6 +10,8 @@ A localização precisa é acessada somente após uma ação do usuário. Ela é
 
 Os lembretes inteligentes de visita são opcionais e ficam desligados por padrão. Quando ativados, usam geofences e localização em segundo plano para reconhecer uma permanência provável próxima a um posto. O aplicativo limita a frequência das sugestões e não mantém um histórico de deslocamentos.
 
+Alertas de preço também são opcionais e desligados por padrão. Para criá-los, você escolhe um combustível, preço máximo, raio e área exibida no mapa; o centro dessa área é arredondado a duas casas decimais antes de ser guardado no Supabase. Não usamos localização em segundo plano para esses alertas. Os avisos aparecem no Perfil. Somente com uma segunda escolha sua registramos um token de notificação do aparelho para avisos externos via Expo; esse token é removido ao desativar o envio externo, desativar o alerta ou sair da conta. Os avisos guardam o posto, combustível, preço, confiança, data e estado de leitura/entrega e são removidos com a conta.
+
 Se você cadastrar um veículo no Perfil, tipo, marca, modelo, ano, combustível e consumo médio ficam somente no armazenamento local deste aparelho, separados por conta; não são enviados ao Supabase. Esse armazenamento local não é criptografado pelo Botali. A posição precisa obtida por sua ação para calcular distância e custo estimado fica apenas na memória do aplicativo por até cinco minutos, sem ser salva no cadastro do veículo. A estimativa usa distância em linha reta, que pode ser menor que a rota real.
 
 Contribuições podem incluir preços, cadastros e correções de postos. Esses dados podem permanecer públicos ou auditáveis para preservar a qualidade do serviço, sem exibir o e-mail do autor.

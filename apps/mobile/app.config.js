@@ -47,6 +47,7 @@ module.exports = () => ({
     adaptiveIcon: { backgroundColor: '#171717', foregroundImage: './assets/android-icon-foreground.png', monochromeImage: './assets/android-icon-monochrome.png' },
     predictiveBackGestureEnabled: false,
     package: 'com.botali.app',
+    googleServicesFile: './google-services.json',
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? '' } },
   },
   web: { favicon: './assets/favicon.png' },

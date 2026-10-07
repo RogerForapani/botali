@@ -157,8 +157,15 @@ export function useStations(initialCenter: MapCenter, initialRadiusKm: number) {
     }
   }, [hasMore, refreshBounds])
 
+  const includeStation = useCallback((station: Station) => {
+    if (stationsRef.current.some((item) => item.id === station.id)) return
+    const next = [...stationsRef.current, station].slice(-MAX_ACCUMULATED_STATIONS)
+    stationsRef.current = next
+    setStations(next)
+  }, [])
+
   useEffect(() => { refresh() }, [refresh])
-  return { stations, loading, error, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds }
+  return { stations, loading, error, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds, includeStation }
 }
 
 function boundsQueryKey(bounds: MapBounds) {

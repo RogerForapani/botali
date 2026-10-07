@@ -36,6 +36,8 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Permitir que o motorista cadastre e edite no Perfil um veículo com tipo, marca, modelo, ano e múltiplos combustíveis, cada um com seu consumo médio; os dados permanecem somente no aparelho e separados por conta.
 - Mostrar a distância dos postos a partir da posição do motorista, quando ele a informar, e uma comparação de gasto de ida e volta por combustível no detalhe do posto.
 - Mostrar o custo personalizado por 100 km de cada combustível do veículo. Se o motorista informar quantos litros pretende abastecer e sua posição, permitir classificar postos pelo abastecimento mais o deslocamento mínimo estimado.
+- Permitir um alerta opt-in de preço por conta: combustível, preço máximo e área escolhida no mapa, com push externo opcional e sem solicitar localização em segundo plano.
+- Exibir os avisos de preço no topo da aba Atividade, com contador de não lidos; tocar no aviso interno ou no push abre o posto correspondente no mapa. O Perfil mantém a configuração do alerta.
 
 ## Princípios
 

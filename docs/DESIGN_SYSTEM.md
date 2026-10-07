@@ -49,6 +49,8 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - `CommunityProfileCard`: identidade pública opcional, resumo agregado de contribuições e edição com privacidade explícita.
 - `VehicleProfileCard`: resumo compacto no Perfil e edição sob demanda de tipo, marca, modelo, ano e consumo individual de cada combustível selecionado.
+- `PriceAlertCard`: configuração opt-in no Perfil, com combustível, limite, raio, área explícita do mapa e canal externo opcional. Mantém controles de 44 px e usa as cores semânticas dos dois temas.
+- `ActivityScreen`: avisos de preço em primeiro lugar, acima das contribuições; cartões de aviso têm preço, confiança, indicação de não lido e ação para abrir o posto no mapa. A aba Atividade mostra a contagem de avisos e decisões ainda não vistos.
 - A comparação de deslocamento no `StationSheet` apresenta uma linha por combustível do veículo, valor estimado em destaque e explicação de preço ausente ou antigo. O menor custo só recebe destaque verde quando há pelo menos dois preços recentes comparáveis.
 - Cada linha da comparação também mostra o custo personalizado para rodar 100 km, independente de GPS. A quantidade planejada de litros aparece sob demanda na busca e no detalhe; o gasto total estimado é separado em abastecimento e deslocamento, sem poluir o mapa.
 - A busca e o detalhe do posto exibem distância a partir da posição do motorista, nunca a distância do centro do mapa como se fosse dele. O custo estimado aparece somente nos detalhes expandidos, com ressalva explícita sobre a distância em linha reta.

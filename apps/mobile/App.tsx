@@ -26,12 +26,13 @@ import { StationSheet } from './src/components/botali/StationSheet'
 import { EmptyState } from './src/components/ui/EmptyState'
 import { Button } from './src/components/ui/Button'
 import { useFavorites } from './src/hooks/useFavorites'
-import { useActivity } from './src/hooks/useActivity'
+import { useActivity, type ActivityItem } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
 import { useConnectivity } from './src/hooks/useConnectivity'
 import { useVehicle } from './src/hooks/useVehicle'
-import { confirmPriceAtStation, loadStationOptions, type MapBounds, type MapCenter } from './src/services/stations'
+import { confirmPriceAtStation, loadStationById, loadStationOptions, type MapBounds, type MapCenter } from './src/services/stations'
+import { loadPriceAlertEvent, markPriceAlertRead, restorePriceAlertDevice } from './src/services/priceAlerts'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { syncSmartVisitStations } from './src/services/smartVisits'
 import { recordAppFailure } from './src/services/diagnostics'
@@ -52,11 +53,19 @@ export default function App() {
   const mapRef = useRef<MapView>(null)
   const lastNativeMapRegion = useRef<Region>(initialRegion)
   const wasOffline = useRef(false)
+  const handledNotificationId = useRef<string | null>(null)
   const { user, loading: sessionLoading, error: sessionError } = useSession()
-  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds } = useStations(initialCenter, 10)
+  const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds, includeStation } = useStations(initialCenter, 10)
+  const stationSnapshotRef = useRef(stations)
+  useEffect(() => { stationSnapshotRef.current = stations }, [stations])
   const isOnline = useConnectivity()
-  const favorites = useFavorites()
+  useEffect(() => {
+    if (!user?.id || isOnline === false) return
+    restorePriceAlertDevice(user.id).catch((error) => recordAppFailure('price-alert.restore-device', error))
+  }, [isOnline, user?.id])
+  const favorites = useFavorites(user?.id ?? null)
   const activity = useActivity(user?.id)
+  const refreshActivity = activity.refresh
   const { vehicle, loading: vehicleLoading, update: updateVehicle } = useVehicle(user?.id ?? null)
   const [tab, setTab] = useState<AppTab>('explore')
   const [mode, setMode] = useState<MapMode>('gasolina')
@@ -71,6 +80,7 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<MapCenter | null>(null)
   const [pendingCenter, setPendingCenter] = useState(initialCenter)
   const [visibleRegion, setVisibleRegion] = useState<Region>(initialRegion)
+  const [mapPreferencesReady, setMapPreferencesReady] = useState(false)
   const [activeBounds, setActiveBounds] = useState<MapBounds | null>(null)
   const [mapRenderVersion, setMapRenderVersion] = useState(0)
   const [showSearchArea, setShowSearchArea] = useState(false)
@@ -109,6 +119,8 @@ export default function App() {
   const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration
   const rejectionDecisionIds = useMemo(() => activity.items.filter((item) => item.status === 'rejected' && item.resolvedAt).map((item) => `${item.id}:${item.resolvedAt}`), [activity.items])
   const unreadDecisionCount = rejectionDecisionIds.filter((id) => !seenDecisionIds.includes(id)).length
+  const unreadAlertCount = activity.items.filter((item) => item.kind === 'alert' && !item.readAt).length
+  const notificationCount = unreadDecisionCount + unreadAlertCount
   const cacheTime = cachedAt ? new Date(cachedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null
 
   const refreshCurrentSearch = useCallback(() => activeBounds ? refreshBounds(activeBounds) : refresh(mapCenter, radiusKm), [activeBounds, mapCenter, radiusKm, refresh, refreshBounds])
@@ -132,13 +144,13 @@ export default function App() {
 
   useEffect(() => {
     let active = true
-    loadMapPreferences().then((preferences) => {
+    loadMapPreferences().then(async (preferences) => {
       if (!active || !preferences) return
       setActiveBounds(null)
       setMapCenter(preferences.center); setPendingCenter(preferences.center); setVisibleRegion({ ...preferences.center, latitudeDelta: 0.04, longitudeDelta: 0.04 }); setRadiusKm(preferences.radiusKm)
       mapRef.current?.animateToRegion({ ...preferences.center, latitudeDelta: 0.04, longitudeDelta: 0.04 }, 0)
-      refresh(preferences.center, preferences.radiusKm)
-    })
+      await refresh(preferences.center, preferences.radiusKm)
+    }).catch((error) => recordAppFailure('map.preferences', error)).finally(() => { if (active) setMapPreferencesReady(true) })
     return () => { active = false }
   }, [refresh])
 
@@ -178,27 +190,68 @@ export default function App() {
     return () => { active = false }
   }, [user?.id])
 
+  const openAlertStation = useCallback(async ({ stationId, alertId, fuelCode, latitude, longitude }: { stationId: string; alertId?: string; fuelCode?: string; latitude?: number; longitude?: number }) => {
+    try {
+      let center = Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude: Number(latitude), longitude: Number(longitude) } : null
+      let target: Station | null = stationSnapshotRef.current.find((station) => station.id === stationId) ?? null
+      if (!center) {
+        target ??= await loadStationById(stationId)
+        center = { latitude: target.latitude, longitude: target.longitude }
+      }
+      if (!Number.isFinite(center.latitude) || !Number.isFinite(center.longitude)) throw new Error('Coordenadas do posto indisponíveis.')
+      let selectedFuel = fuelCode
+      if (alertId && !selectedFuel) {
+        const alert = await loadPriceAlertEvent(alertId).catch(() => null)
+        selectedFuel = alert?.fuel_code
+      }
+      const region = { ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }
+      setActiveBounds(null); setSelectedId(null); setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false)
+      setShowPrice(false); setShowEditStation(false); setShowNewStation(false); setShowModeration(false); setShowEditModeration(false)
+      setSelectedServices([]); setMapRenderVersion((version) => version + 1)
+      setMapCenter(center); setPendingCenter(center); setVisibleRegion(region); setShowSearchArea(false)
+      if (selectedFuel) setMode(selectedFuel)
+      const rows = await refresh(center, Math.max(2, radiusKm))
+      target = rows.find((item) => item.id === stationId) ?? target ?? await loadStationById(stationId)
+      if (!rows.some((item) => item.id === stationId)) includeStation(target)
+      setSelectedId(target.id)
+      mapRef.current?.animateToRegion(region, 450)
+      if (alertId) await markPriceAlertRead(alertId).catch((error) => recordAppFailure('price-alert.read', error))
+      refreshActivity()
+    } catch (error) {
+      recordAppFailure('price-alert.open-station', error).catch(() => undefined)
+      setLocationMessage(userMessageForError(error, 'Não foi possível abrir o posto deste alerta.'))
+      setTab('explore')
+    }
+  }, [includeStation, radiusKm, refresh, refreshActivity])
+
   useEffect(() => {
+    if (sessionLoading || !mapPreferencesReady) return
     let active = true
-    const openVisitedStation = async (response: Notifications.NotificationResponse | null) => {
+    const openNotificationStation = async (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return
       const data = response.notification.request.content.data ?? {}
       const stationId = typeof data.stationId === 'string' ? data.stationId : null
-      const latitude = Number(data.latitude); const longitude = Number(data.longitude)
-      if (!stationId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return
-      await Notifications.clearLastNotificationResponseAsync()
-      const center = { latitude, longitude }
-      setActiveBounds(null)
-      setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false); setMapCenter(center); setPendingCenter(center)
-      const rows = await refresh(center, radiusKm)
-      if (!active) return
-      setSelectedId(rows.find((station) => station.id === stationId)?.id ?? null)
-      mapRef.current?.animateToRegion({ ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450)
+      if (!stationId) return
+      if (data.kind === 'price-alert' && !user?.id) return
+      const responseId = response.notification.request.identifier
+      if (handledNotificationId.current === responseId) return
+      handledNotificationId.current = responseId
+      await Notifications.clearLastNotificationResponseAsync().catch(() => undefined)
+      await openAlertStation({
+        stationId,
+        alertId: typeof data.alertId === 'string' ? data.alertId : undefined,
+        fuelCode: typeof data.fuelCode === 'string' ? data.fuelCode : undefined,
+        latitude: Number(data.latitude),
+        longitude: Number(data.longitude),
+      })
     }
-    Notifications.getLastNotificationResponseAsync().then(openVisitedStation)
-    const subscription = Notifications.addNotificationResponseReceivedListener(openVisitedStation)
-    return () => { active = false; subscription.remove() }
-  }, [radiusKm, refresh])
+    Notifications.getLastNotificationResponseAsync().then(openNotificationStation)
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(openNotificationStation)
+    const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
+      if (notification.request.content.data?.kind === 'price-alert') refreshActivity()
+    })
+    return () => { active = false; responseSubscription.remove(); receivedSubscription.remove() }
+  }, [mapPreferencesReady, openAlertStation, refreshActivity, sessionLoading, user?.id])
 
   function changeTab(next: AppTab) {
     if (next === 'profile') { setTab('explore'); setShowAuth(true); return }
@@ -214,7 +267,13 @@ export default function App() {
       setSeenDecisionIds(rejectionDecisionIds)
       AsyncStorage.setItem(`botali:seen-decisions:${user.id}`, JSON.stringify(rejectionDecisionIds)).catch(() => undefined)
     }
+    if (next === 'activity') refreshActivity()
     setTab(next)
+  }
+
+  function openAlertFromActivity(item: ActivityItem) {
+    if (item.kind !== 'alert' || !item.stationId) return
+    openAlertStation({ stationId: item.stationId, alertId: item.alertId, fuelCode: item.fuelCode })
   }
 
   async function requestUserLocation(): Promise<MapCenter> {
@@ -328,7 +387,7 @@ export default function App() {
           {mapItems.map((item) => item.kind === 'cluster'
             ? <StationClusterMarker key={`${markerScopeKey}:${item.id}`} cluster={item} onPress={() => openCluster(item)} />
             : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
-        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
+        </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} alertError={activity.alertError} onRetry={refreshActivity} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} onOpenAlert={openAlertFromActivity} /> : <LibraryScreen stations={favoriteStations} accountLabel={user?.email ?? 'Visitante'} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
           {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} userLocation={userLocation} vehicle={vehicle} plannedLiters={plannedLiters} onPlannedLitersChange={setPlannedLiters} onRequestLocation={requestUserLocation} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setActiveBounds(null); setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => activeBounds ? loadMoreBounds(activeBounds) : loadMore(mapCenter, radiusKm)} /> : <>
@@ -341,13 +400,13 @@ export default function App() {
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} vehicle={vehicle} userLocation={userLocation} plannedLiters={plannedLiters} onPlannedLitersChange={setPlannedLiters} onRequestLocation={requestUserLocation} onOpenProfile={() => setShowAuth(true)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} stations={stations} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
+        <AuthModal visible={showAuth} user={user} stations={stations} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} mapCenter={mapCenter} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
         <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refreshCurrentSearch(); activity.refresh() }} />
         <EditStationModal visible={showEditStation} station={selected} onClose={() => setShowEditStation(false)} onBack={returnToMap} onSent={() => { setShowEditStation(false); setLocationMessage('Correção enviada para revisão. Obrigado!'); activity.refresh() }} />
         <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onBack={returnToMap} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refreshCurrentSearch() }} />
-        <BottomNavigation value={tab} onChange={changeTab} notificationCount={unreadDecisionCount} />
+        <BottomNavigation value={tab} onChange={changeTab} notificationCount={notificationCount} />
       </View>
     </SafeAreaProvider>
   )
@@ -362,10 +421,35 @@ function regionToBounds(region: Region): MapBounds {
   }
 }
 
-function LibraryScreen({ stations, onExplore, onSelect }: { stations: Station[]; onExplore: () => void; onSelect: (station: Station) => void }) {
+function LibraryScreen({ stations, accountLabel, onExplore, onSelect }: { stations: Station[]; accountLabel: string; onExplore: () => void; onSelect: (station: Station) => void }) {
   const { colors } = useTheme()
   const styles = useMemo(() => createStyles(colors), [colors])
-  return <SafeAreaView style={styles.library}><View style={styles.libraryHeader}><Text style={styles.libraryEyebrow}>BOTALI</Text><Text style={styles.libraryTitle}>Favoritos</Text></View>{stations.length ? <ScrollView contentContainerStyle={styles.stationList}>{stations.map((station) => { const price = station.prices.gasolina; return <Pressable key={station.id} style={styles.stationCard} onPress={() => onSelect(station)}><View><Text style={styles.stationCardBrand}>{station.brand}</Text><Text style={styles.stationCardName}>{station.name}</Text><Text style={styles.stationCardMeta}>{station.address}</Text></View><View style={styles.stationCardPrice}>{price ? <><Text style={styles.stationCardValue}>R$ {price.value.toFixed(2).replace('.', ',')}</Text>{price.stale ? <Text style={styles.stationCardWarning}>Sem atualização há 5 dias</Text> : <ConfidenceBadge score={price.confidence} />}</> : <Text style={styles.stationCardMeta}>Ainda sem preço</Text>}</View></Pressable>})}</ScrollView> : <EmptyState icon="heart-outline" title="Seus postos favoritos ficam aqui" description="Salve um posto pelo cartão no mapa para encontrá-lo rapidamente." />}<View style={styles.libraryAction}><Button onPress={onExplore}>Explorar mapa</Button></View></SafeAreaView>
+  return <SafeAreaView style={styles.library}>
+    <View style={styles.libraryHeader}>
+      <Text style={styles.libraryEyebrow}>BOTALI</Text>
+      <Text style={styles.libraryTitle}>Favoritos</Text>
+      <Text numberOfLines={1} style={styles.libraryAccount}>Lista de {accountLabel}</Text>
+    </View>
+    {stations.length ? <ScrollView contentContainerStyle={styles.stationList}>
+      {stations.map((station) => {
+        const price = station.prices.gasolina
+        return <Pressable key={station.id} style={styles.stationCard} onPress={() => onSelect(station)}>
+          <View style={styles.stationCardDetails}>
+            <Text numberOfLines={1} style={styles.stationCardBrand}>{station.brand}</Text>
+            <Text numberOfLines={2} style={styles.stationCardName}>{station.name}</Text>
+            <Text numberOfLines={2} style={styles.stationCardMeta}>{station.address}</Text>
+          </View>
+          <View style={styles.stationCardPrice}>
+            {price ? <>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={styles.stationCardValue}>R$ {price.value.toFixed(2).replace('.', ',')}</Text>
+              {price.stale ? <Text style={styles.stationCardWarning}>Sem atualização há 5 dias</Text> : <ConfidenceBadge score={price.confidence} />}
+            </> : <Text style={styles.stationCardMeta}>Ainda sem preço</Text>}
+          </View>
+        </Pressable>
+      })}
+    </ScrollView> : <EmptyState icon="heart-outline" title="Seus postos favoritos ficam aqui" description="Salve um posto pelo cartão no mapa para encontrá-lo rapidamente." />}
+    <View style={styles.libraryAction}><Button onPress={onExplore}>Explorar mapa</Button></View>
+  </SafeAreaView>
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -386,7 +470,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   locate: { position: 'absolute', right: spacing[4], width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.offWhite, alignItems: 'center', justifyContent: 'center', ...shadow.floating }, locateWithSheet: { bottom: 248 }, locateFree: { bottom: 92 },
   searchArea: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.surface, ...shadow.floating },
   toast: { position: 'absolute', alignSelf: 'center', top: 175, maxWidth: '85%', paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: colors.surface }, toastText: { color: colors.text, fontSize: typography.small },
-  library: { flex: 1, paddingBottom: 82, backgroundColor: colors.background }, libraryHeader: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] }, libraryEyebrow: { color: colors.brandText, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, libraryTitle: { color: colors.text, fontSize: typography.h1, fontWeight: '900', marginTop: spacing[1] }, stationList: { padding: spacing[4], gap: spacing[3] }, stationCard: { padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', gap: spacing[3] }, stationCardBrand: { color: colors.brandText, fontSize: 10, fontWeight: '900' }, stationCardName: { color: colors.text, fontSize: typography.body, fontWeight: '800', marginTop: 3 }, stationCardMeta: { maxWidth: 190, color: colors.textMuted, fontSize: 11, marginTop: 3 }, stationCardPrice: { marginLeft: 'auto', alignItems: 'flex-end', gap: spacing[2] }, stationCardValue: { color: colors.text, fontSize: typography.h3, fontWeight: '900' }, stationCardWarning: { maxWidth: 92, color: colors.warningText, fontSize: 9, textAlign: 'right' }, libraryAction: { paddingHorizontal: spacing[5], paddingBottom: spacing[3] },
+  library: { flex: 1, paddingBottom: 82, backgroundColor: colors.background },
+  libraryHeader: { paddingHorizontal: spacing[5], paddingTop: spacing[4], paddingBottom: spacing[4] },
+  libraryEyebrow: { color: colors.brandText, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  libraryTitle: { color: colors.text, fontSize: typography.h1, fontWeight: '900', marginTop: spacing[1] },
+  libraryAccount: { color: colors.textMuted, fontSize: typography.small, marginTop: spacing[1] },
+  stationList: { padding: spacing[4], gap: spacing[3] },
+  stationCard: { padding: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] },
+  stationCardDetails: { flex: 1, minWidth: 0 },
+  stationCardBrand: { color: colors.brandText, fontSize: 10, fontWeight: '900' },
+  stationCardName: { color: colors.text, fontSize: typography.body, fontWeight: '800', marginTop: 3 },
+  stationCardMeta: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
+  stationCardPrice: { width: 104, maxWidth: '42%', alignItems: 'flex-end', gap: spacing[2] },
+  stationCardValue: { width: '100%', color: colors.text, fontSize: typography.h3, fontWeight: '900', textAlign: 'right' },
+  stationCardWarning: { maxWidth: 104, color: colors.warningText, fontSize: 9, textAlign: 'right' },
+  libraryAction: { paddingHorizontal: spacing[5], paddingBottom: spacing[3] },
 })
 
 const darkMapStyle = [

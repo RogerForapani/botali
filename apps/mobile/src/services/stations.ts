@@ -35,6 +35,17 @@ export async function loadStationsInBounds(bounds: MapBounds, offset = 0, limit 
   return hydrateStations(client, (stationResult.data ?? []) as NearbyRow[])
 }
 
+export async function loadStationById(stationId: string): Promise<Station> {
+  if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
+  const { data, error } = await supabase.from('stations')
+    .select('id,name,station_brands(name),latitude,longitude,address,status')
+    .eq('id', stationId).single()
+  if (error) throw error
+  const brand = first(data.station_brands as Relation<{ name: string }>)?.name ?? null
+  const [station] = await hydrateStations(supabase, [{ ...data, brand, distance_m: 0 } as NearbyRow])
+  return station
+}
+
 async function hydrateStations(client: NonNullable<typeof supabase>, nearby: NearbyRow[]): Promise<Station[]> {
   const stationIds = nearby.map((station) => station.id)
   if (!stationIds.length) return []

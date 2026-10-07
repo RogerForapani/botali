@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1031587669345",
+    "project_id": "botali-push",
+    "storage_bucket": "botali-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031587669345:android:6c82c21aaf355b04a11120",
+        "android_client_info": {
+          "package_name": "com.botali.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlZaX0oSsgOA0cntw6hv25kk9DMUhcMhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
