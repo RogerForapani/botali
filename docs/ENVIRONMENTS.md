@@ -49,6 +49,11 @@
 - Antes de validar a pontuação real nessa conta de teste ou promover o recurso: remover apenas os quatro registros com esse motivo de teste, descartar o wrapper e renomear `my_community_profile_actual()` de volta para `my_community_profile()` em uma única transação. Não copiar o wrapper para produção.
 - A migração `202610060001_raise_community_badge_thresholds.sql` foi ensaiada com `ROLLBACK` e aplicada em homologação: os quatro marcos são 3 preços validados, 20 confirmações, 2 postos aprovados e 3 correções aprovadas. O programa e a descrição do badge beta permaneceram inalterados; produção ainda não recebeu essa migração.
 - Ensaio transacional de pontuação com usuários e posto sintéticos: preço enviado sozinho `+0`; confirmação presencial `+1` para quem confirmou e `+5` para o autor do preço validado; aprovação do posto `+12`; aprovação da correção `+8`. O autor saiu de 0 para 25 pontos e nível 2 dentro da transação. `ROLLBACK` executado e ausência do posto de teste confirmada depois.
+- Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `c094d029-f618-43c0-9ce6-c47d5307ae48` e commit `8093f97`: o Perfil recarrega a pontuação a cada abertura. O APK `preview` de runtime `1.0.1` é compatível; nenhum novo APK foi gerado.
+
+## Estratégia de entrega
+
+- Priorizar OTA para mudanças de JavaScript, estilos e imagens compatíveis com o runtime do APK instalado. Gerar novo APK quando houver alteração nativa ou mudança de runtime; manter os canais e ambientes de `preview` e `production` separados.
 
 ## Preparação do banco
 
