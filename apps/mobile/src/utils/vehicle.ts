@@ -27,6 +27,13 @@ export function parseConsumption(value: string): number | null {
   return amount >= 0.5 && amount <= 100 ? amount : null
 }
 
+export function parsePlannedLiters(value: string): number | null {
+  const normalized = value.trim().replace(',', '.')
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null
+  const amount = Number(normalized)
+  return amount >= 1 && amount <= 1000 ? amount : null
+}
+
 export function parseVehicleYear(value: string, currentYear = new Date().getFullYear()): number | null | undefined {
   if (!value.trim()) return null
   if (!/^\d{4}$/.test(value.trim())) return undefined
@@ -63,12 +70,34 @@ export function estimateVehicleTrip(fuel: VehicleFuel, from: MapCenter, to: MapC
   return { roundTripKm, liters: roundTripKm / fuel.consumptionKmL, cost: roundTripKm / fuel.consumptionKmL * fuelPrice }
 }
 
+export function costPer100Km(fuel: VehicleFuel, fuelPrice: number): number | null {
+  if (!Number.isFinite(fuelPrice) || fuelPrice <= 0 || !Number.isFinite(fuel.consumptionKmL) || fuel.consumptionKmL <= 0) return null
+  return fuelPrice * 100 / fuel.consumptionKmL
+}
+
+export function estimatePurchaseTotal(vehicle: Vehicle, fuelCode: string, from: MapCenter | null, station: Station, liters: number) {
+  const fuel = vehicle.fuels.find((item) => item.fuelCode === fuelCode)
+  const price = station.prices[fuelCode]
+  if (!fuel || !price || !Number.isFinite(liters) || liters < 1 || liters > 1000) return null
+  const trip = from ? estimateVehicleTrip(fuel, from, station, price.value) : null
+  if (!trip) return null
+  const fuelCost = liters * price.value
+  return { fuelCost, tripCost: trip.cost, totalCost: fuelCost + trip.cost, roundTripKm: trip.roundTripKm, stale: Boolean(price.stale) }
+}
+
+export function compareStationsByPurchaseTotal(vehicle: Vehicle, fuelCode: string, from: MapCenter, liters: number, a: Station, b: Station): number {
+  const x = estimatePurchaseTotal(vehicle, fuelCode, from, a, liters)
+  const y = estimatePurchaseTotal(vehicle, fuelCode, from, b, liters)
+  return (x ? Number(x.stale) : 2) - (y ? Number(y.stale) : 2)
+    || (x?.totalCost ?? Number.POSITIVE_INFINITY) - (y?.totalCost ?? Number.POSITIVE_INFINITY)
+}
+
 export function compareVehicleTrips(vehicle: Vehicle, from: MapCenter | null, station: Station) {
   const options = vehicle.fuels.map((fuel) => {
     const price = station.prices[fuel.fuelCode]
-    return { fuel, price: price ?? null, trip: from && price ? estimateVehicleTrip(fuel, from, station, price.value) : null }
+    return { fuel, price: price ?? null, costPer100Km: price ? costPer100Km(fuel, price.value) : null, trip: from && price ? estimateVehicleTrip(fuel, from, station, price.value) : null }
   })
-  const fresh = options.filter((option) => option.trip && !option.price?.stale)
-  const bestCost = fresh.length > 1 ? Math.min(...fresh.map((option) => option.trip!.cost)) : null
-  return options.map((option) => ({ ...option, best: bestCost !== null && option.trip !== null && !option.price?.stale && Math.abs(option.trip.cost - bestCost) < 0.005 }))
+  const fresh = options.filter((option) => option.costPer100Km !== null && !option.price?.stale)
+  const bestCost = fresh.length > 1 ? Math.min(...fresh.map((option) => option.costPer100Km!)) : null
+  return options.map((option) => ({ ...option, best: bestCost !== null && option.costPer100Km !== null && !option.price?.stale && Math.abs(option.costPer100Km - bestCost) < 0.005 }))
 }

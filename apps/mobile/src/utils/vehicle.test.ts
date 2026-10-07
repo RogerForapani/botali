@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareVehicleTrips, estimateVehicleTrip, isVehicle, migrateLegacyVehicle, parseConsumption, parseVehicleYear, type Vehicle } from './vehicle'
+import { compareStationsByPurchaseTotal, compareVehicleTrips, costPer100Km, estimatePurchaseTotal, estimateVehicleTrip, isVehicle, migrateLegacyVehicle, parseConsumption, parsePlannedLiters, parseVehicleYear, type Vehicle } from './vehicle'
 import type { Station } from '../types'
 
 const vehicle: Vehicle = { type: 'car', brand: 'Fiat', model: 'Uno', year: 2020, fuels: [{ fuelCode: 'gasolina', consumptionKmL: 10 }, { fuelCode: 'etanol', consumptionKmL: 7 }] }
@@ -10,6 +10,9 @@ describe('perfil local do veículo', () => {
     expect(parseConsumption('12,5')).toBe(12.5)
     expect(parseConsumption('0')).toBeNull()
     expect(parseConsumption('abc')).toBeNull()
+    expect(parsePlannedLiters('40,5')).toBe(40.5)
+    expect(parsePlannedLiters('0')).toBeNull()
+    expect(parsePlannedLiters('1001')).toBeNull()
     expect(parseVehicleYear('', 2026)).toBeNull()
     expect(parseVehicleYear('2027', 2026)).toBe(2027)
     expect(parseVehicleYear('2030', 2026)).toBeUndefined()
@@ -43,5 +46,26 @@ describe('perfil local do veículo', () => {
     const missing = compareVehicleTrips(vehicle, null, station({ gasolina: { value: 6, confidence: 80 } }))
     expect(missing.map((option) => option.trip)).toEqual([null, null])
     expect(missing[1].price).toBeNull()
+    expect(options.map((option) => option.costPer100Km)).toEqual([60, 50])
+    expect(costPer100Km(vehicle.fuels[0], 0)).toBeNull()
+  })
+
+  it('soma o abastecimento e o deslocamento, sem usar o centro do mapa como origem', () => {
+    const target = station({ gasolina: { value: 6, confidence: 80 } })
+    const total = estimatePurchaseTotal(vehicle, 'gasolina', { latitude: 0, longitude: 0 }, target, 40)
+    expect(total?.fuelCost).toBe(240)
+    expect(total?.tripCost).toBeCloseTo(1.334, 2)
+    expect(total?.totalCost).toBeCloseTo(241.334, 2)
+    expect(estimatePurchaseTotal(vehicle, 'gasolina', null, target, 40)).toBeNull()
+    expect(estimatePurchaseTotal(vehicle, 'diesel_s10', { latitude: 0, longitude: 0 }, target, 40)).toBeNull()
+  })
+
+  it('ordena preço recente antes de preço antigo e ausente', () => {
+    const origin = { latitude: 0, longitude: 0 }
+    const recent = station({ gasolina: { value: 6, confidence: 80 } })
+    const stale = station({ gasolina: { value: 5, confidence: 20, stale: true } })
+    const missing = station({})
+    expect(compareStationsByPurchaseTotal(vehicle, 'gasolina', origin, 40, recent, stale)).toBeLessThan(0)
+    expect(compareStationsByPurchaseTotal(vehicle, 'gasolina', origin, 40, stale, missing)).toBeLessThan(0)
   })
 })

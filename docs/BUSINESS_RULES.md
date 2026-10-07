@@ -40,6 +40,8 @@
 - A distância exibida na busca e no detalhe do posto parte da última posição obtida por ação do motorista. Sem essa posição, indicar distância indisponível em vez de mostrar a distância do centro do mapa.
 - A estimativa de ida e volta de cada combustível usa `2 × distância em linha reta ÷ consumo desse combustível × preço correspondente no posto` e deve ser rotulada como mínima aproximada. Não apresentá-la como custo real da rota nem como economia líquida.
 - Preço ausente não produz custo. Preço sem atualização há 5 dias permanece visível e sinalizado, mas não pode fundamentar o destaque de menor custo. Sem ao menos dois custos recentes, não destacar vencedor.
+- O custo para rodar 100 km é `100 × preço por litro ÷ consumo em km/L` e dispensa a posição do motorista. O destaque personalizado substitui a regra genérica de 70% no detalhe quando o consumo do veículo está cadastrado.
+- Para comparar postos de um mesmo combustível, o motorista pode informar de 1 a 1.000 litros planejados. O gasto mínimo estimado é `litros × preço no posto + custo de ida e volta em linha reta`. Sem veículo, preço ou posição, não classificar por gasto total. Não tratar essa soma como economia líquida nem equiparar o mesmo volume de gasolina e etanol em autonomia.
 - A posição precisa expira da memória após cinco minutos; o motorista pode atualizá-la quando quiser. Não salvar essa posição no perfil do veículo.
 
 ## Postos

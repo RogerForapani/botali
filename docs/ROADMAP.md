@@ -19,9 +19,11 @@ O roadmap preserva o foco do Botali em preços confiáveis e contribuições rá
    - O resumo comunitário agora é recarregado ao reabrir o Perfil após uma contribuição; validar no aplicativo com conta sem apresentação visual temporária antes de concluir o fluxo de pontuação ponta a ponta.
    - Antes de ativar a retenção, decidir se níveis e conquistas comuns são históricos ou recalculados: a função atual conta registros vivos, e a remoção futura de confirmações antigas pode reduzir pontos.
 4. **Veículo e custo de deslocamento**
-   - Guardar no aparelho tipo, marca, modelo, ano, combustível e consumo médio de um veículo por conta; permitir edição no Perfil.
-   - Exibir distância desde a posição do motorista e estimativa mínima de ida e volta em linha reta nos detalhes do posto.
+   - Guardar no aparelho tipo, marca, modelo, ano e consumo por combustível de um veículo por conta; permitir edição no Perfil.
+   - Exibir distância desde a posição do motorista, custo personalizado por 100 km e estimativa mínima de ida e volta em linha reta nos detalhes do posto.
+   - Permitir informar litros planejados e classificar postos do mesmo combustível pelo abastecimento mais deslocamento mínimo estimado, deixando clara a aproximação.
    - Pendente: obter distância por rota rodoviária e calcular economia líquida somente com volume planejado e preço de comparação confiável. Não confundir distância em linha reta com trajeto real.
+   - Pendente: alertas opt-in de oportunidade, com escopo geográfico, preço recente, limite de frequência e desligamento simples. Não enviar notificações enquanto o motorista dirige.
 5. **Beta e aprendizado**
    - Medir retenção, qualidade das contribuições, abuso e utilidade dos níveis.
    - Ajustar incentivos antes de ampliar funcionalidades sociais.

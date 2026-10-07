@@ -7,9 +7,10 @@ import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
 import { userMessageForError } from '../../utils/appError'
+import { compareStationsByPurchaseTotal, estimatePurchaseTotal, parsePlannedLiters, type Vehicle } from '../../utils/vehicle'
 
 const radiusOptions = [2, 5, 10, 25, 50, 100]
-const sortOptions = [{ value: 'distance', label: 'Mais próximos' }, { value: 'price', label: 'Menor preço' }, { value: 'confidence', label: 'Mais confiáveis' }] as const
+const sortOptions = [{ value: 'distance', label: 'Mais próximos' }, { value: 'price', label: 'Menor preço' }, { value: 'confidence', label: 'Mais confiáveis' }, { value: 'total', label: 'Menor gasto total' }] as const
 type SortMode = typeof sortOptions[number]['value']
 
 type Props = {
@@ -20,6 +21,9 @@ type Props = {
   hasMore: boolean
   loadingMore: boolean
   userLocation: MapCenter | null
+  vehicle: Vehicle | null
+  plannedLiters: string
+  onPlannedLitersChange: (value: string) => void
   onRequestLocation: () => Promise<MapCenter>
   onQueryChange: (value: string) => void
   onRadiusChange: (value: number) => void
@@ -29,13 +33,17 @@ type Props = {
   onLoadMore: () => void
 }
 
-export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadingMore, userLocation, onRequestLocation, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation, onLoadMore }: Props) {
+export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadingMore, userLocation, vehicle, plannedLiters, onPlannedLitersChange, onRequestLocation, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation, onLoadMore }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const { height } = useWindowDimensions()
   const [sort, setSort] = useState<SortMode>('distance')
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState('')
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
+  const liters = parsePlannedLiters(plannedLiters)
+  const canCompareTotal = Boolean(vehicle && userLocation && liters && mode !== 'electric' && vehicle.fuels.some((fuel) => fuel.fuelCode === mode))
+  const activeSort = sort === 'total' && !canCompareTotal ? 'distance' : sort
+  const totalFor = (station: Station) => vehicle && mode !== 'electric' && liters ? estimatePurchaseTotal(vehicle, mode, userLocation, station, liters) : null
   const distanceFromUser = (station: Station) => userLocation ? distanceKmBetween(userLocation, station) : null
   const distanceOrder = (a: Station, b: Station) => userLocation
     ? distanceKmBetween(userLocation, a) - distanceKmBetween(userLocation, b)
@@ -43,8 +51,9 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
   const results = stations
     .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
     .sort((a, b) => {
-      if (sort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || distanceOrder(a, b)
-      if (sort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || distanceOrder(a, b)
+      if (activeSort === 'total' && vehicle && userLocation && liters) return compareStationsByPurchaseTotal(vehicle, mode, userLocation, liters, a, b) || distanceOrder(a, b)
+      if (activeSort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || distanceOrder(a, b)
+      if (activeSort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || distanceOrder(a, b)
       return distanceOrder(a, b)
     })
 
@@ -64,7 +73,8 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
     <Text style={styles.label}>RAIO DA BUSCA NO MAPA</Text>
     <View style={styles.radiusRow}>{radiusOptions.map((value) => <Pressable key={value} onPress={() => onRadiusChange(value)} style={[styles.radius, radiusKm === value && styles.radiusActive]}><Text style={[styles.radiusText, radiusKm === value && styles.radiusTextActive]}>{value} km</Text></Pressable>)}</View>
     <Text style={styles.label}>CLASSIFICAR POR</Text>
-    <View style={styles.sortRow}>{sortOptions.map((item) => <Pressable key={item.value} onPress={() => setSort(item.value)} style={[styles.sort, sort === item.value && styles.sortActive]}><Text style={[styles.sortText, sort === item.value && styles.sortTextActive]}>{item.value === 'distance' && !userLocation ? 'Por nome' : item.label}</Text></Pressable>)}</View>
+    <View style={styles.sortRow}>{sortOptions.map((item) => <Pressable key={item.value} disabled={item.value === 'total' && !canCompareTotal} onPress={() => setSort(item.value)} style={[styles.sort, activeSort === item.value && styles.sortActive, item.value === 'total' && !canCompareTotal && styles.sortDisabled]}><Text style={[styles.sortText, activeSort === item.value && styles.sortTextActive]}>{item.value === 'distance' && !userLocation ? 'Por nome' : item.label}</Text></Pressable>)}</View>
+    {vehicle && mode !== 'electric' && vehicle.fuels.some((fuel) => fuel.fuelCode === mode) ? <View style={styles.planRow}><View style={styles.planCopy}><Text style={styles.planTitle}>Quanto vai abastecer?</Text><Text style={styles.planHint}>Gasto total = combustível + ida e volta aproximada.</Text></View><TextInput accessibilityLabel="Litros planejados para abastecer" keyboardType="decimal-pad" placeholder="Litros" placeholderTextColor={colors.textMuted} value={plannedLiters} onChangeText={(value) => { if (/^\d{0,4}(?:[,.]\d{0,2})?$/.test(value)) onPlannedLitersChange(value) }} style={styles.planInput} /></View> : null}
     <Pressable accessibilityRole="button" disabled={locating} onPress={requestLocation} style={styles.locationPrompt}><MaterialCommunityIcons name="crosshairs-gps" size={17} color={colors.brandText} /><Text style={styles.locationPromptText}>{locating ? 'Localizando…' : userLocation ? 'Atualizar minha posição' : 'Usar minha posição para ver distâncias'}</Text></Pressable>
     {userLocation ? <Text style={styles.locationHint}>Distâncias em linha reta a partir da sua posição.</Text> : null}
     {locationError ? <Text accessibilityLiveRegion="polite" style={styles.locationError}>{locationError}</Text> : null}
@@ -73,8 +83,9 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
       {results.map((station) => {
         const price = mode === 'electric' ? null : station.prices[mode]
         const distance = distanceFromUser(station)
+        const total = totalFor(station)
         return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
-          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{distance === null ? 'Distância indisponível' : `${distance.toFixed(1).replace('.', ',')} km de você`}{station.address ? ` · ${station.address}` : ''}</Text></View>
+          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{distance === null ? 'Distância indisponível' : `${distance.toFixed(1).replace('.', ',')} km de você`}{station.address ? ` · ${station.address}` : ''}</Text>{total ? <Text style={styles.total}>Gasto mínimo ~R$ {total.totalCost.toFixed(2).replace('.', ',')}{total.stale ? ' · preço antigo' : ''}</Text> : null}</View>
           {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <View style={styles.priceGroup}><Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.stalePrice}>Sem atualização há 5 dias</Text> : null}</View>}
         </Pressable>
       })}
@@ -102,6 +113,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sortActive: { backgroundColor: colors.brand },
   sortText: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 11 },
   sortTextActive: { color: colors.onBrand },
+  sortDisabled: { opacity: .45 },
+  planRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[2] }, planCopy: { flex: 1 }, planTitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 12 }, planHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: spacing[1] }, planInput: { width: 72, minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, backgroundColor: colors.surfaceAlt, color: colors.offWhite, textAlign: 'center', fontFamily: typography.bold },
   count: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.caption, marginTop: spacing[4] },
   locationPrompt: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[2] }, locationPromptText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 11 },
   locationHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: spacing[2] }, locationError: { color: colors.warningText, fontFamily: typography.regular, fontSize: 11 },
@@ -112,6 +125,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   brand: { color: colors.brandText, fontFamily: typography.black, fontSize: 9 },
   name: { color: colors.offWhite, fontFamily: typography.bold, marginTop: 2 },
   meta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, marginTop: 3 },
+  total: { color: colors.brandText, fontFamily: typography.bold, fontSize: 11, marginTop: spacing[1] },
   price: { color: colors.offWhite, fontFamily: typography.black, fontSize: typography.h3, marginLeft: spacing[3] },
   noPrice: { maxWidth: 72, color: colors.textMuted, fontSize: 10, textAlign: 'right' },
   priceGroup: { maxWidth: 96, alignItems: 'flex-end' },

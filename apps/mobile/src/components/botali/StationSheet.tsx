@@ -1,21 +1,21 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useState } from 'react'
-import { Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
-import { compareVehicleTrips, type Vehicle } from '../../utils/vehicle'
+import { compareVehicleTrips, estimatePurchaseTotal, parsePlannedLiters, type Vehicle } from '../../utils/vehicle'
 import { userMessageForError } from '../../utils/appError'
 import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { FlexRatioBadge } from './FlexRatioBadge'
 
-type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; vehicle: Vehicle | null; userLocation: MapCenter | null; onRequestLocation: () => Promise<MapCenter>; onOpenProfile: () => void; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
+type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; vehicle: Vehicle | null; userLocation: MapCenter | null; plannedLiters: string; onPlannedLitersChange: (value: string) => void; onRequestLocation: () => Promise<MapCenter>; onOpenProfile: () => void; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
 
-export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle, userLocation, onRequestLocation, onOpenProfile, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
+export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle, userLocation, plannedLiters, onPlannedLitersChange, onRequestLocation, onOpenProfile, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
   const [locating, setLocating] = useState(false)
@@ -25,9 +25,13 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
   const flexRatio = station.prices.gasolina && station.prices.etanol && !station.prices.gasolina.stale && !station.prices.etanol.stale
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
+  const hasPersonalFlex = Boolean(vehicle?.fuels.some((item) => item.fuelCode === 'gasolina') && vehicle?.fuels.some((item) => item.fuelCode === 'etanol'))
   const userDistanceKm = userLocation ? distanceKmBetween(userLocation, station) : null
   const trips = vehicle ? compareVehicleTrips(vehicle, userLocation, station) : []
   const availableTrips = trips.filter((item) => item.trip).length
+  const plannedAmount = parsePlannedLiters(plannedLiters)
+  const supportsSelectedFuel = Boolean(vehicle && mode !== 'electric' && vehicle.fuels.some((item) => item.fuelCode === mode))
+  const purchaseTotal = vehicle && mode !== 'electric' && plannedAmount ? estimatePurchaseTotal(vehicle, mode, userLocation, station, plannedAmount) : null
 
   async function requestTripLocation() {
     setLocating(true); setLocationError('')
@@ -65,7 +69,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
     <ScrollView style={expanded ? styles.bodyExpanded : undefined} contentContainerStyle={styles.bodyContent} scrollEnabled={expanded} showsVerticalScrollIndicator={expanded}>
       {mode === 'electric' ? <View style={styles.priceRow}><View><Text style={styles.priceLabel}>RECARGA ELÉTRICA</Text><Text style={styles.priceValue}>Disponível</Text></View><View style={styles.electricStatus}><MaterialCommunityIcons name="check-decagram" size={17} color={colors.brandText} /><Text style={styles.confidence}>Serviço confirmado</Text></View></View> : <>
         <View style={styles.priceRow}><View style={styles.priceCopy}><Text style={styles.priceLabel}>{price?.stale ? 'ÚLTIMO PREÇO INFORMADO' : 'PREÇO DA COMUNIDADE'}</Text><Text style={[styles.priceValue, !price && styles.noPriceValue]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.staleMessage}>Este posto não teve atualização de preço nos últimos 5 dias.</Text> : price ? <Text style={styles.priceMeta}>{price.reports ?? 0} {(price.reports ?? 0) === 1 ? 'pessoa' : 'pessoas'} · {price.confirmations ?? 0} confirmações</Text> : <Text style={styles.priceMeta}>Se souber o valor, envie a primeira atualização.</Text>}</View>{price ? <ConfidenceBadge score={price.confidence} /> : null}</View>
-        {flexRatio ? <View style={styles.flexBadge}><FlexRatioBadge percentage={flexRatio} /></View> : null}
+        {flexRatio && !hasPersonalFlex ? <View style={styles.flexBadge}><FlexRatioBadge percentage={flexRatio} /></View> : null}
         {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
       </>}
       {expanded ? <View style={styles.expandedContent}>
@@ -74,11 +78,13 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
           {!vehicle ? <><Text style={styles.tripCopy}>Adicione seu veículo no Perfil para comparar os gastos.</Text><Pressable accessibilityRole="button" onPress={onOpenProfile} style={styles.tripButton}><Text style={styles.tripButtonText}>Abrir Perfil</Text></Pressable></> : <>
             {!userLocation ? <Text style={styles.tripCopy}>Use sua posição para calcular o custo a partir de você.</Text> : <Text style={styles.tripDistance}>{(userDistanceKm! * 2).toFixed(1).replace('.', ',')} km de ida e volta em linha reta</Text>}
             <View style={styles.tripOptions}>{trips.map(({ fuel: option, price: optionPrice, trip, best }) => <View key={option.fuelCode} style={[styles.tripOption, best && styles.tripOptionBest]}>
-              <View style={styles.tripOptionTop}><Text style={styles.tripFuelName}>{option.fuelCode.replaceAll('_', ' ')}</Text>{best ? <Text style={styles.tripBest}>MENOR CUSTO ESTIMADO</Text> : null}</View>
+              <View style={styles.tripOptionTop}><Text style={styles.tripFuelName}>{option.fuelCode.replaceAll('_', ' ')}</Text>{best ? <Text style={styles.tripBest}>MENOR CUSTO / 100 KM</Text> : null}</View>
               <View style={styles.tripOptionBottom}><Text style={styles.tripOptionMeta}>{option.consumptionKmL.toFixed(1).replace('.', ',')} km/L{optionPrice ? ` · R$ ${optionPrice.value.toFixed(2).replace('.', ',')}/L` : ''}</Text><Text style={[styles.tripOptionCost, !trip && styles.tripOptionCostMissing]}>{trip ? `R$ ${trip.cost.toFixed(2).replace('.', ',')}` : optionPrice ? 'Sem posição' : 'Sem preço'}</Text></View>
+              {optionPrice ? <Text style={styles.tripPer100}>R$ {(optionPrice.value * 100 / option.consumptionKmL).toFixed(2).replace('.', ',')} para rodar 100 km</Text> : null}
               {optionPrice?.stale ? <Text style={styles.tripStale}>Preço sem atualização há 5 dias</Text> : null}
             </View>)}</View>
             {userLocation && !availableTrips ? <Text style={styles.tripCopy}>Este posto ainda não tem preço para os combustíveis do seu veículo.</Text> : null}
+            {supportsSelectedFuel ? <View style={styles.purchaseCard}><Text style={styles.purchaseTitle}>Vai abastecer {mode.replaceAll('_', ' ')}?</Text><View style={styles.purchaseInputRow}><Text style={styles.purchaseLabel}>Litros planejados</Text><TextInput accessibilityLabel="Litros planejados para abastecer" keyboardType="decimal-pad" placeholder="Ex.: 40" placeholderTextColor={colors.textMuted} value={plannedLiters} onChangeText={(value) => { if (/^\d{0,4}(?:[,.]\d{0,2})?$/.test(value)) onPlannedLitersChange(value) }} style={styles.purchaseInput} /></View>{purchaseTotal ? <><Text style={styles.purchaseTotal}>Gasto mínimo ~R$ {purchaseTotal.totalCost.toFixed(2).replace('.', ',')}</Text><Text style={styles.purchaseBreakdown}>R$ {purchaseTotal.fuelCost.toFixed(2).replace('.', ',')} no abastecimento + R$ {purchaseTotal.tripCost.toFixed(2).replace('.', ',')} no deslocamento estimado.</Text>{purchaseTotal.stale ? <Text style={styles.tripStale}>Cálculo com preço sem atualização há 5 dias.</Text> : null}</> : <Text style={styles.purchaseBreakdown}>{!plannedAmount ? 'Informe de 1 a 1.000 litros para comparar postos.' : !userLocation ? 'Use sua posição para incluir o deslocamento.' : 'Ainda não há preço deste combustível no posto.'}</Text>}</View> : null}
             <Text style={styles.tripWarning}>Estimativa mínima em linha reta. A rota real pode ser mais longa; preços antigos não são destacados como melhor opção.</Text>
             <Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : userLocation ? 'Atualizar minha posição' : 'Usar minha localização'}</Text></Pressable>
             {locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}
@@ -145,6 +151,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   tripOption: { padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.graphite }, tripOptionBest: { borderColor: colors.brandText },
   tripOptionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing[1] }, tripFuelName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 13, textTransform: 'capitalize' }, tripBest: { color: colors.brandText, fontFamily: typography.black, fontSize: 8 },
   tripOptionBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[2], marginTop: spacing[1] }, tripOptionMeta: { flex: 1, color: colors.textMuted, fontFamily: typography.regular, fontSize: 10 }, tripOptionCost: { color: colors.offWhite, fontFamily: typography.black, fontSize: 18 }, tripOptionCostMissing: { color: colors.textMuted, fontSize: 12 }, tripStale: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 10, marginTop: spacing[1] },
+  tripPer100: { color: colors.brandText, fontFamily: typography.semibold, fontSize: 11, marginTop: spacing[1] },
+  purchaseCard: { marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderColor: colors.border }, purchaseTitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 12, textTransform: 'capitalize' }, purchaseInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[2], marginTop: spacing[2] }, purchaseLabel: { flex: 1, color: colors.textMuted, fontFamily: typography.regular, fontSize: 11 }, purchaseInput: { width: 86, minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, backgroundColor: colors.graphite, color: colors.offWhite, textAlign: 'center', fontFamily: typography.bold }, purchaseTotal: { color: colors.brandText, fontFamily: typography.black, fontSize: 18, marginTop: spacing[3] }, purchaseBreakdown: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 11, lineHeight: 16, marginTop: spacing[1] },
   tripCopy: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 12, lineHeight: 18, marginTop: spacing[2] },
   tripValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 20, marginTop: spacing[2] },
   tripUnit: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 12 },
