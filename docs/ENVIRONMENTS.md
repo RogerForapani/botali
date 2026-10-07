@@ -55,6 +55,7 @@
 
 - Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `eb56ae96-1493-4a65-91ce-450a4ff52151` e commit `42d6297`: distância da busca e dos detalhes a partir da posição do motorista, cadastro local de veículo no Perfil e estimativa mínima de ida e volta. O registro foi conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
 - Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `2e0a28f8-b9a9-45b4-8802-e6d01c65666a` e commit `6a50384`: veículo com vários combustíveis e consumo separado, migração local do cadastro anterior e comparação visual do custo por combustível no posto. Registro conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
+- Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `609303ff-6ab1-42da-a6da-188036b93efd` e commit `5600469`: custo personalizado por 100 km e comparação de gasto mínimo de abastecimento mais deslocamento na busca e no detalhe. Registro conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
 
 ## Estratégia de entrega
 
