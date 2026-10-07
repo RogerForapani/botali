@@ -46,7 +46,9 @@
 - A migração ainda não foi aplicada em produção. A promoção continua sujeita à aprovação separada prevista nas regras de segurança abaixo.
 - APK Android `preview` versão 1.0.1 (versionCode 3) concluído no EAS: build `c2d2f365-b98c-4ec3-ac91-1cf51be26efe`. O perfil `preview` usou as variáveis próprias de homologação.
 - Teste visual temporário do perfil: uma única conta de homologação recebe apresentação de nível 2 (25 pontos) por um wrapper de `my_community_profile()`; a função original foi preservada como `my_community_profile_actual()`. Quatro badges de conquista foram concedidos com o motivo `Teste visual temporario em homologacao; nao representa conquista real`; o badge beta já existia. Nenhuma confirmação de preço foi fabricada e nenhuma dessas alterações foi aplicada em produção.
-- Antes de validar a pontuação real, aplicar nova migração de perfil ou promover o recurso: remover apenas os quatro registros com esse motivo de teste, descartar o wrapper e renomear `my_community_profile_actual()` de volta para `my_community_profile()` em uma única transação. Não copiar o wrapper para produção.
+- Antes de validar a pontuação real nessa conta de teste ou promover o recurso: remover apenas os quatro registros com esse motivo de teste, descartar o wrapper e renomear `my_community_profile_actual()` de volta para `my_community_profile()` em uma única transação. Não copiar o wrapper para produção.
+- A migração `202610060001_raise_community_badge_thresholds.sql` foi ensaiada com `ROLLBACK` e aplicada em homologação: os quatro marcos são 3 preços validados, 20 confirmações, 2 postos aprovados e 3 correções aprovadas. O programa e a descrição do badge beta permaneceram inalterados; produção ainda não recebeu essa migração.
+- Ensaio transacional de pontuação com usuários e posto sintéticos: preço enviado sozinho `+0`; confirmação presencial `+1` para quem confirmou e `+5` para o autor do preço validado; aprovação do posto `+12`; aprovação da correção `+8`. O autor saiu de 0 para 25 pontos e nível 2 dentro da transação. `ROLLBACK` executado e ausência do posto de teste confirmada depois.
 
 ## Preparação do banco
 

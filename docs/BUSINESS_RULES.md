@@ -25,6 +25,7 @@
 - Envios ainda não validados não geram pontos.
 - Níveis: Explorador (0), Colaborador (25), Parceiro da Estrada (75), Referência Local (180) e Guardião Botali (400).
 - Badges de conquistas comuns são derivados dos dados validados. O badge Pioneiro do Beta é permanente, concedido pelo servidor e mantém data e motivo da concessão.
+- Marcos das quatro conquistas comuns: 3 preços confirmados por outras pessoas, 20 confirmações de preço, 2 postos aprovados e 3 correções de posto aprovadas. O badge beta e o identificador de moderador não dependem desses marcos.
 - Se faltar um dos preços, não mostre a comparação.
 - No mapa, o preço escolhido continua sendo a informação principal; a relação flex aparece como informação secundária compacta.
 

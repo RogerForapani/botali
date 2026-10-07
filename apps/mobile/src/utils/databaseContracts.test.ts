@@ -15,6 +15,7 @@ const retentionMigration = readFileSync(resolve(currentDirectory, '../../../../s
 const communityProfileMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202609300001_community_profile_foundation.sql'), 'utf8')
 const profileAvatarMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610010001_profile_avatar_storage.sql'), 'utf8')
 const communityLevelsMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610010002_community_levels_badges.sql'), 'utf8')
+const harderBadgesMigration = readFileSync(resolve(currentDirectory, '../../../../supabase/migrations/202610060001_raise_community_badge_thresholds.sql'), 'utf8')
 
 describe('contratos de confiança e privacidade do PostgreSQL', () => {
   it('não expõe contribuições, confirmações ou perfis brutos anonimamente', () => {
@@ -167,5 +168,14 @@ describe('contrato do perfil comunitário', () => {
     expect(communityLevelsMigration).toContain("values ('botali-beta', 'beta-pioneer', true, now())")
     expect(communityLevelsMigration).toContain('after insert on public.profiles')
     expect(communityLevelsMigration).toContain('insert into public.user_community_badges (user_id, badge_id, reason)')
+  })
+
+  it('eleva apenas os quatro marcos de conquista, preservando o badge beta', () => {
+    expect(harderBadgesMigration).toContain("'level.validated_price_reports >= 3'")
+    expect(harderBadgesMigration).toContain("'level.price_confirmations >= 20'")
+    expect(harderBadgesMigration).toContain("'level.verified_stations >= 2'")
+    expect(harderBadgesMigration).toContain("'level.approved_edits >= 3'")
+    expect(harderBadgesMigration).not.toContain("when 'beta-pioneer'")
+    expect(harderBadgesMigration).not.toContain('contribution_points *')
   })
 })

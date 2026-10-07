@@ -16,6 +16,8 @@ O roadmap preserva o foco do Botali em preços confiáveis e contribuições rá
 3. **Níveis e badges**
    - Criar níveis graduais e recompensas visuais sem vantagens que afetem o consenso de preços.
    - Conceder o badge permanente de participante do beta pelo servidor, com data e trilha de auditoria.
+   - Recarregar o resumo comunitário ao reabrir o Perfil após uma contribuição: hoje o cartão consulta o banco apenas quando `user.id` muda, então a pontuação exibida pode ficar desatualizada.
+   - Antes de ativar a retenção, decidir se níveis e conquistas comuns são históricos ou recalculados: a função atual conta registros vivos, e a remoção futura de confirmações antigas pode reduzir pontos.
 4. **Veículo e custo de deslocamento**
    - Guardar inicialmente no aparelho combustível, consumo médio e dados opcionais do veículo.
    - Mostrar custo estimado de ida e volta e economia líquida ao escolher um posto.
