@@ -30,7 +30,8 @@ import { useActivity } from './src/hooks/useActivity'
 import { useSession } from './src/hooks/useSession'
 import { useStations } from './src/hooks/useStations'
 import { useConnectivity } from './src/hooks/useConnectivity'
-import { confirmPriceAtStation, loadStationOptions, type MapBounds } from './src/services/stations'
+import { useVehicle } from './src/hooks/useVehicle'
+import { confirmPriceAtStation, loadStationOptions, type MapBounds, type MapCenter } from './src/services/stations'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { syncSmartVisitStations } from './src/services/smartVisits'
 import { recordAppFailure } from './src/services/diagnostics'
@@ -56,6 +57,7 @@ export default function App() {
   const isOnline = useConnectivity()
   const favorites = useFavorites()
   const activity = useActivity(user?.id)
+  const { vehicle, loading: vehicleLoading, update: updateVehicle } = useVehicle(user?.id ?? null)
   const [tab, setTab] = useState<AppTab>('explore')
   const [mode, setMode] = useState<MapMode>('gasolina')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -65,6 +67,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [radiusKm, setRadiusKm] = useState(10)
   const [mapCenter, setMapCenter] = useState(initialCenter)
+  const [userLocation, setUserLocation] = useState<MapCenter | null>(null)
   const [pendingCenter, setPendingCenter] = useState(initialCenter)
   const [visibleRegion, setVisibleRegion] = useState<Region>(initialRegion)
   const [activeBounds, setActiveBounds] = useState<MapBounds | null>(null)
@@ -83,6 +86,11 @@ export default function App() {
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [seenDecisionIds, setSeenDecisionIds] = useState<string[]>([])
+  useEffect(() => {
+    if (!userLocation) return
+    const timeout = setTimeout(() => setUserLocation(null), 5 * 60 * 1000)
+    return () => clearTimeout(timeout)
+  }, [userLocation])
   const reloadStationOptions = useCallback(() => loadStationOptions()
     .then((options) => { if (options.fuels.length) setFuelOptions(options.fuels); setServiceOptions(options.services) })
     .catch((error) => recordAppFailure('stations.options', error)), [])
@@ -208,12 +216,18 @@ export default function App() {
     setTab(next)
   }
 
+  async function requestUserLocation(): Promise<MapCenter> {
+    const permission = await Location.requestForegroundPermissionsAsync()
+    if (!permission.granted) throw new Error('Ative a localização para medir a distância a partir de você.')
+    const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+    const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
+    setUserLocation(center)
+    return center
+  }
+
   async function locate() {
     try {
-      const permission = await Location.requestForegroundPermissionsAsync()
-      if (!permission.granted) return setLocationMessage('Ative a localização para ver postos perto de você.')
-      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const center = { latitude: current.coords.latitude, longitude: current.coords.longitude }
+      const center = await requestUserLocation()
       setActiveBounds(null)
       setMapCenter(center); setPendingCenter(center); setShowSearchArea(false)
       saveMapPreferences({ center, radiusKm }).catch(() => undefined)
@@ -316,7 +330,7 @@ export default function App() {
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} onRetry={activity.refresh} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} /> : <LibraryScreen stations={favoriteStations} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
-          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setActiveBounds(null); setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => activeBounds ? loadMoreBounds(activeBounds) : loadMore(mapCenter, radiusKm)} /> : <>
+          {showSearch ? <StationSearch query={searchQuery} radiusKm={radiusKm} mode={mode} stations={visibleStations} hasMore={hasMore} loadingMore={stationsLoading} userLocation={userLocation} onRequestLocation={requestUserLocation} onQueryChange={setSearchQuery} onRadiusChange={(value) => { setActiveBounds(null); setRadiusKm(value); setSelectedId(null); saveMapPreferences({ center: mapCenter, radiusKm: value }).catch(() => undefined); refresh(mapCenter, value) }} onClose={() => { setShowSearch(false); setContributionIntent(false) }} onSelect={selectFromSearch} onAddStation={openNewStation} onLoadMore={() => activeBounds ? loadMoreBounds(activeBounds) : loadMore(mapCenter, radiusKm)} /> : <>
           <View style={styles.header}><View style={styles.logo}><Image source={themeMode === 'light' ? require('./assets/icon-light.png') : require('./assets/icon-dark.png')} style={styles.logoImage} resizeMode="cover" /></View><Pressable accessibilityRole="button" accessibilityLabel="Pesquisar postos" style={styles.searchTrigger} onPress={() => { setShowFilters(false); setContributionIntent(false); setShowSearch(true) }}><MaterialCommunityIcons name="magnify" size={20} color={colors.brandText} /><Text numberOfLines={1} style={styles.searchTriggerText}>Pesquise aqui...</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" style={styles.avatar} onPress={() => setShowAuth(true)}>{user?.email ? <Text style={styles.avatarInitial}>{user.email[0].toUpperCase()}</Text> : <MaterialCommunityIcons name="account-circle-outline" size={23} color={colors.text} />}</Pressable></View>
           <View style={styles.mapActions}><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Filtrar postos" accessibilityState={{ expanded: showFilters, selected: filtersActive }} style={[styles.filterButton, (showFilters || filtersActive) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)}><MaterialCommunityIcons name="tune-variant" size={22} color={showFilters || filtersActive ? colors.onBrand : colors.brandText} /></Pressable></View><View style={styles.mapActionSlot}>{showSearchArea ? <Pressable accessibilityRole="button" accessibilityLabel="Buscar postos nesta área" style={styles.searchArea} onPress={searchVisibleArea}><MaterialCommunityIcons name="map-search-outline" size={22} color={colors.text} /></Pressable> : null}</View><View style={styles.mapActionSlot}><Pressable accessibilityRole="button" accessibilityLabel="Cadastrar novo posto" style={styles.addStationButton} onPress={openNewStation}><MaterialCommunityIcons name="gas-station-outline" size={22} color={colors.onBrand} /></Pressable></View></View>
           {showFilters ? <StationFilters fuels={fuelOptions} services={serviceOptions} mode={mode} selectedServices={selectedServices} onModeChange={(value) => { setMode(value); setSelectedId(null) }} onToggleService={(code) => { setSelectedId(null); setSelectedServices((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]) }} onClear={() => { setMode('gasolina'); setSelectedServices([]); setSelectedId(null) }} /> : null}
@@ -325,8 +339,8 @@ export default function App() {
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} stations={stations} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
+        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} vehicle={vehicle} userLocation={userLocation} onRequestLocation={requestUserLocation} onOpenProfile={() => setShowAuth(true)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
+        <AuthModal visible={showAuth} user={user} stations={stations} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
         <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refreshCurrentSearch(); activity.refresh() }} />

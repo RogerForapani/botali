@@ -33,6 +33,8 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Mostrar nível, título, progresso e conquistas calculados a partir de contribuições validadas, sem alterar o peso do usuário no consenso de preços.
 - Destacar participantes do beta com um badge permanente concedido pelo servidor.
 - Identificar moderadores no perfil com um badge de função atual, separado das conquistas permanentes.
+- Permitir que o motorista cadastre e edite no Perfil um veículo com tipo, marca, modelo, ano, combustível e consumo médio; os dados permanecem somente no aparelho e separados por conta.
+- Mostrar a distância dos postos a partir da posição do motorista, quando ele a informar, e uma estimativa de gasto de ida e volta no detalhe do posto.
 
 ## Princípios
 

@@ -32,6 +32,7 @@
 - O mobile mantém somente o último resultado agregado de postos em cache local por até sete dias; ao reconectar, o Supabase volta a ser a fonte de verdade e atualiza o cache.
 - Ao restaurar o cache, o aplicativo recalcula a idade dos preços; dados offline nunca permanecem com aparência de recentes apenas porque foram salvos anteriormente.
 - A última região do mapa é persistida apenas no aparelho, com latitude e longitude arredondadas para três casas decimais.
+- O veículo fica no armazenamento local, separado por identificador de conta; não é enviado ao Supabase. A posição precisa do motorista usada para distância e estimativa fica somente em memória por até cinco minutos, obtida após ação explícita. O centro do mapa continua definindo a área de consulta, mas não a distância exibida ao usuário.
 - Enquanto o aplicativo está em alpha, builds e atualizações EAS usam a versão do aplicativo como runtime. Antes do beta público, a migração para runtime por `fingerprint` deve ocorrer junto de um novo APK-base, impedindo atualizações nativas incompatíveis.
 
 ## Organização evolutiva

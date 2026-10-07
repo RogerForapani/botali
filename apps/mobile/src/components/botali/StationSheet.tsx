@@ -5,20 +5,36 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
+import type { MapCenter } from '../../services/stations'
+import { distanceKmBetween } from '../../utils/stationFilters'
+import { estimateVehicleTrip, type Vehicle } from '../../utils/vehicle'
+import { userMessageForError } from '../../utils/appError'
 import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { FlexRatioBadge } from './FlexRatioBadge'
 
-type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
+type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; vehicle: Vehicle | null; userLocation: MapCenter | null; onRequestLocation: () => Promise<MapCenter>; onOpenProfile: () => void; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
 
-export function StationSheet({ station, mode, favorite, confirmingPrice, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
+export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle, userLocation, onRequestLocation, onOpenProfile, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [locationError, setLocationError] = useState('')
   const fuel = mode === 'electric' ? 'gasolina' : mode
   const price = station.prices[fuel]
   const flexRatio = station.prices.gasolina && station.prices.etanol && !station.prices.gasolina.stale && !station.prices.etanol.stale
     ? Math.round(station.prices.etanol.value / station.prices.gasolina.value * 100)
     : null
+  const userDistanceKm = userLocation ? distanceKmBetween(userLocation, station) : null
+  const vehiclePrice = vehicle ? station.prices[vehicle.fuelCode] : null
+  const trip = vehicle && userLocation && vehiclePrice ? estimateVehicleTrip(vehicle, userLocation, station, vehiclePrice.value) : null
+
+  async function requestTripLocation() {
+    setLocating(true); setLocationError('')
+    try { await onRequestLocation() }
+    catch (error) { setLocationError(userMessageForError(error, 'Não foi possível obter sua localização.')) }
+    finally { setLocating(false) }
+  }
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
     onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
@@ -41,7 +57,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
       <View style={styles.title}>
         <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
         <Text style={styles.stationName}>{station.name}</Text>
-        <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{station.distanceKm.toFixed(1).replace('.', ',')} km</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : station.address ? <><Text style={styles.stationMetaSeparator}>·</Text><Text numberOfLines={1} style={[styles.stationMeta, styles.stationAddress]}>{station.address}</Text></> : null}</View>
+        <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{userDistanceKm === null ? 'Distância indisponível' : `${userDistanceKm.toFixed(1).replace('.', ',')} km de você`}</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : null}</View>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} onPress={onToggleFavorite} style={styles.close}><MaterialCommunityIcons name={favorite ? 'heart' : 'heart-outline'} size={22} color={colors.brandText} /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Fechar detalhes" onPress={onClose} style={styles.close}><MaterialCommunityIcons name="close" size={23} color={colors.offWhite} /></Pressable>
@@ -53,6 +69,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, onToggl
         {price?.submissionId && station.status !== 'pending' ? <View style={styles.confirmCard}><Text style={styles.confirmTitle}>Você está neste posto?</Text><Text style={styles.confirmCopy}>Use sua localização uma vez para validar este preço.</Text><View style={styles.confirmActions}><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(true)} style={[styles.confirmButton, styles.confirmGood]}><Text style={styles.confirmGoodText}>{confirmingPrice ? 'Validando…' : 'Preço correto'}</Text></Pressable><Pressable disabled={confirmingPrice} accessibilityRole="button" onPress={() => onConfirmPrice(false)} style={[styles.confirmButton, styles.confirmChanged]}><Text style={styles.confirmChangedText}>Preço mudou</Text></Pressable></View></View> : null}
       </>}
       {expanded ? <View style={styles.expandedContent}>
+        <View style={styles.tripCard}><Text style={styles.detailLabel}>CUSTO ATÉ ESTE POSTO</Text>{!vehicle ? <><Text style={styles.tripCopy}>Adicione seu veículo no Perfil para estimar o gasto.</Text><Pressable accessibilityRole="button" onPress={onOpenProfile} style={styles.tripButton}><Text style={styles.tripButtonText}>Abrir Perfil</Text></Pressable></> : !vehiclePrice ? <Text style={styles.tripCopy}>Ainda não há preço de {vehicle.fuelCode.replaceAll('_', ' ')} neste posto para calcular o gasto.</Text> : trip ? <><Text style={styles.tripValue}>R$ {trip.cost.toFixed(2).replace('.', ',')} <Text style={styles.tripUnit}>ida e volta</Text></Text><Text style={styles.tripCopy}>{trip.roundTripKm.toFixed(1).replace('.', ',')} km em linha reta · {trip.liters.toFixed(2).replace('.', ',')} L a R$ {vehiclePrice.value.toFixed(2).replace('.', ',')}/L{vehiclePrice.stale ? ' · preço sem atualização há 5 dias' : ''}</Text><Text style={styles.tripWarning}>Estimativa mínima: a rota real pode ser mais longa e custar mais.</Text><Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : 'Atualizar minha posição'}</Text></Pressable>{locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}</> : <><Text style={styles.tripCopy}>Use sua localização para calcular uma estimativa de ida e volta.</Text><Pressable accessibilityRole="button" disabled={locating} onPress={requestTripLocation} style={styles.tripButton}><Text style={styles.tripButtonText}>{locating ? 'Localizando…' : 'Usar minha localização'}</Text></Pressable>{locationError ? <Text style={styles.tripWarning}>{locationError}</Text> : null}</>}</View>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
         <View style={styles.allPrices}>
           {(Object.entries(station.prices) as [string, { value: number; stale?: boolean }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text>{item.stale ? <Text style={styles.fuelStale}>Sem atualização há 5 dias</Text> : null}</View>)}
@@ -108,6 +125,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   detailRow: { padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   detailLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 9, letterSpacing: .8 },
   detailValue: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  tripCard: { padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  tripCopy: { color: colors.offWhite, fontFamily: typography.regular, fontSize: 12, lineHeight: 18, marginTop: spacing[2] },
+  tripValue: { color: colors.offWhite, fontFamily: typography.black, fontSize: 20, marginTop: spacing[2] },
+  tripUnit: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 12 },
+  tripWarning: { color: colors.warningText, fontFamily: typography.regular, fontSize: 11, lineHeight: 16, marginTop: spacing[2] },
+  tripButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: spacing[2], paddingHorizontal: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+  tripButtonText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 12 },
   allPrices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   fuelPrice: { minWidth: '30%', flexGrow: 1, padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   fuelLabel: { color: colors.textMuted, fontFamily: typography.black, fontSize: 8 },

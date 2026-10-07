@@ -4,6 +4,9 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
+import type { MapCenter } from '../../services/stations'
+import { distanceKmBetween } from '../../utils/stationFilters'
+import { userMessageForError } from '../../utils/appError'
 
 const radiusOptions = [2, 5, 10, 25, 50, 100]
 const sortOptions = [{ value: 'distance', label: 'Mais próximos' }, { value: 'price', label: 'Menor preço' }, { value: 'confidence', label: 'Mais confiáveis' }] as const
@@ -16,6 +19,8 @@ type Props = {
   stations: Station[]
   hasMore: boolean
   loadingMore: boolean
+  userLocation: MapCenter | null
+  onRequestLocation: () => Promise<MapCenter>
   onQueryChange: (value: string) => void
   onRadiusChange: (value: number) => void
   onClose: () => void
@@ -24,18 +29,31 @@ type Props = {
   onLoadMore: () => void
 }
 
-export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadingMore, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation, onLoadMore }: Props) {
+export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadingMore, userLocation, onRequestLocation, onQueryChange, onRadiusChange, onClose, onSelect, onAddStation, onLoadMore }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const { height } = useWindowDimensions()
   const [sort, setSort] = useState<SortMode>('distance')
+  const [locating, setLocating] = useState(false)
+  const [locationError, setLocationError] = useState('')
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
+  const distanceFromUser = (station: Station) => userLocation ? distanceKmBetween(userLocation, station) : null
+  const distanceOrder = (a: Station, b: Station) => userLocation
+    ? distanceKmBetween(userLocation, a) - distanceKmBetween(userLocation, b)
+    : a.name.localeCompare(b.name, 'pt-BR')
   const results = stations
     .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
     .sort((a, b) => {
-      if (sort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || a.distanceKm - b.distanceKm
-      if (sort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || a.distanceKm - b.distanceKm
-      return a.distanceKm - b.distanceKm
+      if (sort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || distanceOrder(a, b)
+      if (sort === 'confidence' && mode !== 'electric') return (b.prices[mode]?.confidence ?? -1) - (a.prices[mode]?.confidence ?? -1) || distanceOrder(a, b)
+      return distanceOrder(a, b)
     })
+
+  async function requestLocation() {
+    setLocating(true); setLocationError('')
+    try { await onRequestLocation() }
+    catch (error) { setLocationError(userMessageForError(error, 'Não foi possível obter sua localização.')) }
+    finally { setLocating(false) }
+  }
 
   return <View style={[styles.panel, { height: Math.min(height - spacing[3], Math.max(520, height * .88)) }]}>
     <View style={styles.searchRow}>
@@ -43,16 +61,20 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
       <TextInput autoFocus accessibilityLabel="Buscar posto" placeholder="Nome, bandeira ou endereço" placeholderTextColor={colors.textMuted} value={query} onChangeText={onQueryChange} style={styles.input} />
       <Pressable accessibilityRole="button" accessibilityLabel="Fechar busca" onPress={onClose} style={styles.close}><MaterialCommunityIcons name="close" size={24} color={colors.offWhite} /></Pressable>
     </View>
-    <Text style={styles.label}>DISTÂNCIA MÁXIMA</Text>
+    <Text style={styles.label}>RAIO DA BUSCA NO MAPA</Text>
     <View style={styles.radiusRow}>{radiusOptions.map((value) => <Pressable key={value} onPress={() => onRadiusChange(value)} style={[styles.radius, radiusKm === value && styles.radiusActive]}><Text style={[styles.radiusText, radiusKm === value && styles.radiusTextActive]}>{value} km</Text></Pressable>)}</View>
     <Text style={styles.label}>CLASSIFICAR POR</Text>
-    <View style={styles.sortRow}>{sortOptions.map((item) => <Pressable key={item.value} onPress={() => setSort(item.value)} style={[styles.sort, sort === item.value && styles.sortActive]}><Text style={[styles.sortText, sort === item.value && styles.sortTextActive]}>{item.label}</Text></Pressable>)}</View>
+    <View style={styles.sortRow}>{sortOptions.map((item) => <Pressable key={item.value} onPress={() => setSort(item.value)} style={[styles.sort, sort === item.value && styles.sortActive]}><Text style={[styles.sortText, sort === item.value && styles.sortTextActive]}>{item.value === 'distance' && !userLocation ? 'Por nome' : item.label}</Text></Pressable>)}</View>
+    <Pressable accessibilityRole="button" disabled={locating} onPress={requestLocation} style={styles.locationPrompt}><MaterialCommunityIcons name="crosshairs-gps" size={17} color={colors.brandText} /><Text style={styles.locationPromptText}>{locating ? 'Localizando…' : userLocation ? 'Atualizar minha posição' : 'Usar minha posição para ver distâncias'}</Text></Pressable>
+    {userLocation ? <Text style={styles.locationHint}>Distâncias em linha reta a partir da sua posição.</Text> : null}
+    {locationError ? <Text accessibilityLiveRegion="polite" style={styles.locationError}>{locationError}</Text> : null}
     <Text style={styles.count}>{results.length} {results.length === 1 ? 'posto encontrado' : 'postos encontrados'}</Text>
     <ScrollView keyboardShouldPersistTaps="handled" style={styles.list} contentContainerStyle={styles.listContent}>
       {results.map((station) => {
         const price = mode === 'electric' ? null : station.prices[mode]
+        const distance = distanceFromUser(station)
         return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
-          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{station.distanceKm.toFixed(1).replace('.', ',')} km{station.address ? ` · ${station.address}` : ''}</Text></View>
+          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text style={styles.name}>{station.name}</Text><Text style={styles.meta}>{distance === null ? 'Distância indisponível' : `${distance.toFixed(1).replace('.', ',')} km de você`}{station.address ? ` · ${station.address}` : ''}</Text></View>
           {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <View style={styles.priceGroup}><Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.stalePrice}>Sem atualização há 5 dias</Text> : null}</View>}
         </Pressable>
       })}
@@ -81,6 +103,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sortText: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 11 },
   sortTextActive: { color: colors.onBrand },
   count: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.caption, marginTop: spacing[4] },
+  locationPrompt: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[2] }, locationPromptText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 11 },
+  locationHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, marginTop: spacing[2] }, locationError: { color: colors.warningText, fontFamily: typography.regular, fontSize: 11 },
   list: { marginTop: spacing[2] },
   listContent: { gap: spacing[2], paddingBottom: spacing[3] },
   card: { minHeight: 70, flexDirection: 'row', alignItems: 'center', padding: spacing[3], borderRadius: radius.md, backgroundColor: colors.surfaceAlt },

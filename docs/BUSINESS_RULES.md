@@ -34,6 +34,13 @@
 - O modo de recarga do mapa mostra apenas postos que tenham esse serviço confirmado.
 - Recarga elétrica é um serviço do posto e não deve ser tratada como tipo de combustível líquido.
 
+## Veículo e deslocamento
+
+- Tipo, marca, modelo e ano identificam o veículo; só combustível e consumo médio em km/L são necessários para a estimativa. Não pedir placa.
+- A distância exibida na busca e no detalhe do posto parte da última posição obtida por ação do motorista. Sem essa posição, indicar distância indisponível em vez de mostrar a distância do centro do mapa.
+- A primeira estimativa de ida e volta usa `2 × distância em linha reta ÷ consumo médio × preço do combustível` e deve ser rotulada como mínima aproximada. Não apresentá-la como custo real da rota nem como economia líquida.
+- A posição precisa expira da memória após cinco minutos; o motorista pode atualizá-la quando quiser. Não salvar essa posição no perfil do veículo.
+
 ## Postos
 
 - Novos cadastros entram como `pending`.
