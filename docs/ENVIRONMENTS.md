@@ -45,6 +45,8 @@
 - Conferência posterior: as três tabelas comunitárias existem, há 5 badges no catálogo, 4 concessões automáticas, RLS ativa em `user_community_badges` e `my_community_profile()` retorna os campos de níveis.
 - A migração ainda não foi aplicada em produção. A promoção continua sujeita à aprovação separada prevista nas regras de segurança abaixo.
 - APK Android `preview` versão 1.0.1 (versionCode 3) concluído no EAS: build `c2d2f365-b98c-4ec3-ac91-1cf51be26efe`. O perfil `preview` usou as variáveis próprias de homologação.
+- Teste visual temporário do perfil: uma única conta de homologação recebe apresentação de nível 2 (25 pontos) por um wrapper de `my_community_profile()`; a função original foi preservada como `my_community_profile_actual()`. Quatro badges de conquista foram concedidos com o motivo `Teste visual temporario em homologacao; nao representa conquista real`; o badge beta já existia. Nenhuma confirmação de preço foi fabricada e nenhuma dessas alterações foi aplicada em produção.
+- Antes de validar a pontuação real, aplicar nova migração de perfil ou promover o recurso: remover apenas os quatro registros com esse motivo de teste, descartar o wrapper e renomear `my_community_profile_actual()` de volta para `my_community_profile()` em uma única transação. Não copiar o wrapper para produção.
 
 ## Preparação do banco
 
