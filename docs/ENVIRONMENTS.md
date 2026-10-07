@@ -51,6 +51,10 @@
 - Ensaio transacional de pontuação com usuários e posto sintéticos: preço enviado sozinho `+0`; confirmação presencial `+1` para quem confirmou e `+5` para o autor do preço validado; aprovação do posto `+12`; aprovação da correção `+8`. O autor saiu de 0 para 25 pontos e nível 2 dentro da transação. `ROLLBACK` executado e ausência do posto de teste confirmada depois.
 - Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `c094d029-f618-43c0-9ce6-c47d5307ae48` e commit `8093f97`: o Perfil recarrega a pontuação a cada abertura. O APK `preview` de runtime `1.0.1` é compatível; nenhum novo APK foi gerado.
 
+### Validação em 07/10/2026
+
+- Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `eb56ae96-1493-4a65-91ce-450a4ff52151` e commit `42d6297`: distância da busca e dos detalhes a partir da posição do motorista, cadastro local de veículo no Perfil e estimativa mínima de ida e volta. O registro foi conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
+
 ## Estratégia de entrega
 
 - Priorizar OTA para mudanças de JavaScript, estilos e imagens compatíveis com o runtime do APK instalado. Gerar novo APK quando houver alteração nativa ou mudança de runtime; manter os canais e ambientes de `preview` e `production` separados.
