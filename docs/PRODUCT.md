@@ -32,6 +32,7 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 - Manter um perfil comunitário com nome público, foto opcional escolhida da galeria do celular, resumo agregado de contribuições e visibilidade privada por padrão.
 - Mostrar nível, título, progresso e conquistas calculados a partir de contribuições validadas, sem alterar o peso do usuário no consenso de preços.
 - Destacar participantes do beta com um badge permanente concedido pelo servidor.
+- Identificar moderadores no perfil com um badge de função atual, separado das conquistas permanentes.
 
 ## Princípios
 
