@@ -48,6 +48,7 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - `CommunityProfileCard`: identidade pública opcional, resumo agregado de contribuições e edição com privacidade explícita.
+- O perfil comunitário usa as cinco molduras de nível e os cinco badges ilustrados em `apps/mobile/assets/community/`. A foto permanece visível no centro transparente da moldura; títulos e descrições acompanham as artes para preservar compreensão e acessibilidade.
 - Modais de autenticação e atualização rápida de preço.
 
 Os controles usam a família Material Community Icons. Símbolos de texto ou emojis não devem substituir ícones de interface, pois variam visualmente entre Android e iOS.
