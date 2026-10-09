@@ -19,6 +19,7 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 ## Experiência principal
 
 - Consultar postos próximos sem login.
+- Entrar com Google no Android; no iOS, oferecer Google e Apple. O acesso por e-mail e senha permanece disponível apenas para contas antigas, sem novo cadastro por esse método no aplicativo.
 - Filtrar por combustível, raio e serviços usando o mesmo catálogo ativo do cadastro de postos.
 - Comparar preço, distância e confiança.
 - Abrir detalhes e solicitar rota.

@@ -3,17 +3,17 @@ import { useState } from 'react'
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase'
-import { authRedirectUrl, signInWithGoogle } from '../services/auth'
+import { signInWithApple, signInWithGoogle } from '../services/auth'
 import { recordAppFailure } from '../services/diagnostics'
 import { useTheme } from '../theme/ThemeProvider'
 import { radius, spacing, typography, type ThemeColors } from '../theme/tokens'
 import { userMessageForError } from '../utils/appError'
+import { AppleSignInButton } from './botali/AppleSignInButton'
 
 export function AuthScreen({ onContinueAsGuest, initialMessage = '' }: { onContinueAsGuest: () => void; initialMessage?: string }) {
   const { colors, mode: themeMode } = useTheme()
   const styles = createStyles(colors)
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-  const [name, setName] = useState('')
+  const [showLegacyLogin, setShowLegacyLogin] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState(initialMessage)
@@ -24,11 +24,8 @@ export function AuthScreen({ onContinueAsGuest, initialMessage = '' }: { onConti
     if (!email.trim() || password.length < 6) return setMessage('Informe o e-mail e uma senha com pelo menos 6 caracteres.')
     setBusy(true); setMessage('')
     try {
-      const result = mode === 'signin'
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: authRedirectUrl, data: { full_name: name.trim() } } })
+      const result = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (result.error) throw result.error
-      if (mode === 'signup' && !result.data.session) setMessage('Confira seu e-mail para confirmar a conta.')
     } catch (error) {
       recordAppFailure('auth.password', error).catch(() => undefined)
       setMessage(userMessageForError(error, 'Não foi possível entrar. Tente novamente.'))
@@ -50,6 +47,17 @@ export function AuthScreen({ onContinueAsGuest, initialMessage = '' }: { onConti
     }
   }
 
+  async function continueWithApple() {
+    setBusy(true); setMessage('')
+    try {
+      const result = await signInWithApple()
+      if (result === 'cancel') setMessage('Login cancelado.')
+    } catch (error) {
+      recordAppFailure('auth.apple', error).catch(() => undefined)
+      setMessage(userMessageForError(error, 'Não foi possível entrar com a Apple.'))
+    } finally { setBusy(false) }
+  }
+
   return <SafeAreaView style={styles.screen}>
     <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -60,22 +68,22 @@ export function AuthScreen({ onContinueAsGuest, initialMessage = '' }: { onConti
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>{mode === 'signin' ? 'Boas-vindas' : 'Crie sua conta'}</Text>
-          <Text style={styles.description}>{mode === 'signin' ? 'Entre para contribuir com preços e postos.' : 'Faça parte da comunidade que mantém os preços atualizados.'}</Text>
+          <Text style={styles.title}>Boas-vindas</Text>
+          <Text style={styles.description}>Entre para contribuir com preços e postos.</Text>
 
           <Pressable disabled={busy} accessibilityRole="button" style={styles.googleButton} onPress={continueWithGoogle}>
             <MaterialCommunityIcons name="google" size={21} color={colors.text} />
             <Text style={styles.googleText}>Continuar com Google</Text>
           </Pressable>
-
-          <View style={styles.divider}><View style={styles.dividerLine} /><Text style={styles.dividerText}>ou</Text><View style={styles.dividerLine} /></View>
-
-          {mode === 'signup' ? <TextInput accessibilityLabel="Nome" style={styles.input} placeholder="Seu nome" placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} /> : null}
-          <TextInput accessibilityLabel="E-mail" style={styles.input} placeholder="seu@email.com" placeholderTextColor={colors.textMuted} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-          <TextInput accessibilityLabel="Senha" style={styles.input} placeholder="Sua senha" placeholderTextColor={colors.textMuted} secureTextEntry value={password} onChangeText={setPassword} />
+          <AppleSignInButton busy={busy} onPress={continueWithApple} />
+          <Pressable disabled={busy} accessibilityRole="button" style={styles.switchButton} onPress={() => { setShowLegacyLogin(!showLegacyLogin); setMessage('') }}><Text style={styles.switchText}>{showLegacyLogin ? 'Ocultar acesso por e-mail' : 'Já tenho conta com e-mail'}</Text></Pressable>
+          {showLegacyLogin ? <>
+            <Text style={styles.legacyHint}>Para quem já criou uma conta com e-mail e senha.</Text>
+            <TextInput accessibilityLabel="E-mail" style={styles.input} placeholder="seu@email.com" placeholderTextColor={colors.textMuted} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+            <TextInput accessibilityLabel="Senha" style={styles.input} placeholder="Sua senha" placeholderTextColor={colors.textMuted} secureTextEntry value={password} onChangeText={setPassword} />
+            <Pressable disabled={busy} accessibilityRole="button" style={styles.primaryButton} onPress={submit}><Text style={styles.primaryText}>{busy ? 'Aguarde…' : 'Entrar com e-mail'}</Text></Pressable>
+          </> : null}
           {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
-          <Pressable disabled={busy} style={styles.primaryButton} onPress={submit}><Text style={styles.primaryText}>{busy ? 'Aguarde…' : mode === 'signin' ? 'Entrar' : 'Criar conta'}</Text></Pressable>
-          <Pressable disabled={busy} style={styles.switchButton} onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage('') }}><Text style={styles.switchText}>{mode === 'signin' ? 'Ainda não tenho conta' : 'Já tenho uma conta'}</Text></Pressable>
         </View>
 
         <Pressable disabled={busy} accessibilityRole="button" style={styles.guestButton} onPress={onContinueAsGuest}>
@@ -93,7 +101,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   brand: { alignItems: 'center', marginBottom: spacing[6] }, logo: { width: 76, height: 76, borderRadius: radius.xl }, name: { marginTop: spacing[3], color: colors.text, fontFamily: typography.black, fontSize: 30 }, tagline: { marginTop: spacing[1], color: colors.textMuted, fontFamily: typography.semibold, fontSize: typography.small },
   card: { padding: spacing[5], borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, backgroundColor: colors.surface }, title: { color: colors.text, fontFamily: typography.black, fontSize: typography.h2 }, description: { marginTop: spacing[1], marginBottom: spacing[5], color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small, lineHeight: 20 },
   googleButton: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt }, googleText: { color: colors.text, fontFamily: typography.bold, fontSize: typography.small },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginVertical: spacing[4] }, dividerLine: { flex: 1, height: 1, backgroundColor: colors.border }, dividerText: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.caption },
+  legacyHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.caption, marginBottom: spacing[3], textAlign: 'center' },
   input: { minHeight: 50, marginBottom: spacing[3], paddingHorizontal: spacing[4], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, color: colors.text, fontFamily: typography.regular, fontSize: typography.body }, message: { marginBottom: spacing[3], color: colors.warningText, fontFamily: typography.semibold, fontSize: typography.small },
   primaryButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.brand }, primaryText: { color: colors.onBrand, fontFamily: typography.black }, switchButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: spacing[2] }, switchText: { color: colors.brandText, fontFamily: typography.bold },
   guestButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing[4] }, guestText: { color: colors.brandText, fontFamily: typography.bold }, guestHint: { color: colors.textMuted, textAlign: 'center', fontFamily: typography.regular, fontSize: typography.caption },

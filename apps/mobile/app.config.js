@@ -3,7 +3,7 @@ module.exports = () => ({
   slug: 'botali',
   owner: 'ningas',
   description: 'Encontre postos próximos, compare preços da comunidade e escolha com mais confiança.',
-  version: '1.0.1',
+  version: '1.0.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'botali',
@@ -24,6 +24,7 @@ module.exports = () => ({
     'expo-notifications',
     'expo-font',
     'expo-web-browser',
+    'expo-apple-authentication',
     ['expo-image-picker', {
       photosPermission: 'O Botali acessa suas fotos somente quando você escolhe uma imagem para o perfil.',
       cameraPermission: false,
@@ -38,6 +39,7 @@ module.exports = () => ({
   ],
   ios: {
     supportsTablet: true,
+    usesAppleSignIn: true,
     bundleIdentifier: 'com.botali.app',
     icon: { light: './assets/icon-light.png', dark: './assets/icon-dark.png' },
     config: { googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_API_KEY ?? '' },

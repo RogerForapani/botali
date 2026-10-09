@@ -17,6 +17,7 @@
 ## Backend e dados
 
 - Supabase para autenticação e acesso à Data API.
+- O aplicativo usa OAuth Google e, no iOS, autenticação nativa Apple com token de identidade e nonce validado pelo Supabase. O provedor de e-mail não é desativado no backend enquanto houver contas antigas dependentes dele.
 - PostgreSQL + PostGIS para persistência e consultas geoespaciais.
 - RLS habilitado e validado antes de exposição em produção.
 - Busca por proximidade, raio e duplicidade pertence ao PostGIS, não ao componente de mapa.

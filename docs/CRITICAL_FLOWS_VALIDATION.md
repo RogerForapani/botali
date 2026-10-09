@@ -27,6 +27,8 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 ## Ainda precisa ser exercitado no APK atual
 
+O novo fluxo de entrada (Google em destaque, acesso por e-mail apenas para contas antigas e modo visitante) foi implementado na versão 1.0.2 e passou nas verificações de código. Ainda precisa ser conferido no novo APK Android; a entrada Apple permanece adiada e desativada no Supabase.
+
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
 3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
