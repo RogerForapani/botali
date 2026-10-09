@@ -1,12 +1,12 @@
 # Validação dos fluxos críticos — homologação
 
-Estado em 08/10/2026. A auditoria inicial foi somente de leitura no banco `botali-homologacao`. Depois, o usuário criou dados identificados com `[TESTE HML]` para validar os fluxos no APK `preview`. Nada foi promovido para produção. Os demais testes de interface marcados como pendentes ainda precisam ocorrer no aparelho.
+Estado em 09/10/2026. A auditoria inicial foi somente de leitura no banco `botali-homologacao`. Depois, o usuário criou dados identificados com `[TESTE HML]` para validar os fluxos no APK `preview`. Nada foi promovido para produção. Os demais testes de interface marcados como pendentes ainda precisam ocorrer no aparelho.
 
 ## Confirmado nesta rodada
 
 | Área | Resultado | Evidência |
 | --- | --- | --- |
-| Código mobile | Aprovado | 69 testes em 10 arquivos; checagem de tipos aprovada. |
+| Código mobile | Aprovado | 70 testes em 10 arquivos; checagem de tipos aprovada. |
 | Código do repositório | Aprovado com avisos existentes | `npm run lint` passou com 3 avisos; `npm run build` passou. |
 | Segurança das tabelas | Aprovado por inspeção de permissões | 22 tabelas públicas; 0 sem RLS. `anon` pode consultar postos, mas não tem `SELECT` sobre relatos brutos, confirmações ou perfis. |
 | Funções protegidas | Aprovado por inspeção de permissões | Cadastro, correção, moderação, confirmação, exclusão de conta, perfil e registro de push exigem papel autenticado. As funções de moderação verificam `private.is_moderator()` no corpo. Isto não substitui teste de autorização com contas reais. |
@@ -29,11 +29,11 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 O novo fluxo de entrada (Google em destaque, acesso por e-mail apenas para contas antigas e modo visitante) foi implementado na versão 1.0.2 e passou nas verificações de código. Google e visitante foram confirmados no APK Android; o acesso legado por e-mail ainda não foi testado. A entrada Apple permanece adiada e desativada no Supabase.
 
-Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.0.2 falharam antes da compilação com `CREDENTIALS_TEMPORARY_NETWORK_ERROR`/HTTP 503 no serviço da Expo, inclusive usando a versão atual do EAS CLI. Builds: `2f37e6fe-2f99-44a5-999b-c58937b51a61`, `6134ea43-c046-46c8-afc6-176316327755`, `708687bb-6aab-4e78-965e-96e3afffd993`. Na tentativa seguinte, o build `73e6a2f6-7bfc-4112-b25d-efe669cc5241` terminou com sucesso e gerou o APK Android `preview` 1.0.2 (versionCode 8). O usuário confirmou instalação, login Google e acesso como visitante no aparelho. Nenhuma OTA foi publicada; não reutilizar o APK 1.0.1 para esta mudança nativa.
+Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.0.2 falharam antes da compilação com `CREDENTIALS_TEMPORARY_NETWORK_ERROR`/HTTP 503 no serviço da Expo, inclusive usando a versão atual do EAS CLI. Builds: `2f37e6fe-2f99-44a5-999b-c58937b51a61`, `6134ea43-c046-46c8-afc6-176316327755`, `708687bb-6aab-4e78-965e-96e3afffd993`. Na tentativa seguinte, o build `73e6a2f6-7bfc-4112-b25d-efe669cc5241` terminou com sucesso e gerou o APK Android `preview` 1.0.2 (versionCode 8). O usuário confirmou instalação, login Google e acesso como visitante no aparelho. Não reutilizar o APK 1.0.1 para esta mudança nativa.
 
 **Exclusão de conta — teste no aparelho:** com uma conta Google descartável de homologação, o usuário cadastrou um veículo, excluiu a conta e entrou novamente com o mesmo Google. O veículo não reapareceu. Isso confirma o comportamento observado na interface e no armazenamento local; não prova, por si só, a remoção de todas as linhas pessoais no banco. O e-mail da conta de teste não é registrado neste repositório.
 
-**Achado corrigido no código, pendente no aparelho:** o fluxo agora apaga a lista local de favoritos vinculada ao identificador da conta excluída, aguardando eventuais toques pendentes. O teste automatizado confirma que os favoritos do visitante, a lista antiga de visitante e os de outras contas permanecem intactos. Validar no APK 1.0.2 após a OTA `preview`.
+**Achado corrigido no código, pendente no aparelho:** o fluxo agora apaga a lista local de favoritos vinculada ao identificador da conta excluída, aguardando eventuais toques pendentes. O teste automatizado confirma que os favoritos do visitante, a lista antiga de visitante e os de outras contas permanecem intactos. A OTA Android `preview` para runtime 1.0.2 foi publicada em 09/10/2026 ([grupo `6bc1613e-7068-4bc2-bd99-feb401259038`](https://expo.dev/accounts/ningas/projects/botali/updates/6bc1613e-7068-4bc2-bd99-feb401259038), update `01a11e9a-c848-70cf-8654-b97ea1300afb`, commit `e873416`). Validar no APK 1.0.2 após receber essa OTA.
 
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
