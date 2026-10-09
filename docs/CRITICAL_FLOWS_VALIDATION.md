@@ -25,7 +25,7 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 ## Ainda precisa ser exercitado no APK atual
 
-1. **Login e sessão:** entrar pelo Google e por e-mail, fechar/reabrir o app, sair e trocar entre duas contas. Cada conta deve manter apenas seus próprios alertas, atividade e veículo. A preferência de push, os favoritos e o veículo após troca de contas já foram confirmados pelo usuário no Android.
+1. **Login e sessão:** o usuário utiliza contas Google; a troca entre contas, preferência de push, favoritos e veículo foram confirmados no Android. Confirmar que a sessão Google permanece ativa após fechar e reabrir o app. O login por e-mail/senha permanece sem teste e deve ser verificado separadamente com uma conta descartável antes do beta, sem exigir que o usuário crie senha para sua conta Google.
 2. **Preço e confirmação presencial:** em um posto real, enviar gasolina e etanol com valores distintos; verificar ambos no detalhe. Outra conta, dentro do limite de 200 m, confirma um preço. Conferir contagem, consenso, atividade e pontos de cada participante. Não usar preços inventados em posto real.
 3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
 
