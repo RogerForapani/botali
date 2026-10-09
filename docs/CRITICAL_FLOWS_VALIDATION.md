@@ -18,6 +18,7 @@ Estado em 08/10/2026. A auditoria inicial foi somente de leitura no banco `botal
 | Correção de endereço e ponto | Aprovação e rejeição validadas no Android pelo usuário | A conta comum sugeriu novo endereço e ponto para o posto de teste. O marcador permaneceu na posição anterior enquanto a solicitação estava pendente; o moderador viu as posições antiga e proposta; após aprovação, endereço e marcador mudaram juntos. Em outra sugestão, a rejeição preservou endereço e ponto, e o autor recebeu o motivo na Atividade. |
 | Veículo e comparação de custos | Aprovado no Android pelo usuário | Cadastro com gasolina e etanol de consumos diferentes exibiu duas linhas de custo por 100 km; sem posição, o deslocamento ficou indisponível; após a ação explícita de localização, distância e estimativa de ida e volta apareceram para ambos. O usuário confirmou que o veículo não foi compartilhado entre contas, reapareceu ao voltar para a primeira e que a posição expirou após cinco minutos sem remover o custo por 100 km. |
 | Mapa e contribuição sem internet | Aprovado no Android pelo usuário | Sem internet, os postos e preços permaneceram visíveis no mapa com aviso de falta de conexão, e o botão de envio ficou indisponível com mensagem compreensível. Após reconectar, o botão foi reabilitado e o usuário conseguiu enviar valores de combustíveis no posto de teste em homologação. |
+| Confirmação presencial de preço | Aceitação confirmada no Android pelo usuário | O usuário informou que conseguiu confirmar o preço estando no posto. Ainda falta explicitar se a contagem de confirmações, a Atividade e a pontuação refletiram essa ação; não tratar esses efeitos como validados até conferir. |
 | Retenção | Somente simulação aprovada | `private.apply_data_retention(false)` retornou `dry-run` com 0 itens elegíveis em todas as categorias. Nenhuma limpeza foi executada. |
 
 ## Achado de isolamento entre contas
@@ -26,7 +27,7 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 ## Ainda precisa ser exercitado no APK atual
 
-1. **Preço e confirmação presencial:** em um posto real, enviar gasolina e etanol com valores distintos; verificar ambos no detalhe. Outra conta, dentro do limite de 200 m, confirma um preço. Conferir contagem, consenso, atividade e pontos de cada participante. Não usar preços inventados em posto real.
+1. **Efeitos da confirmação presencial:** o usuário confirmou que a ação foi aceita estando no posto. Conferir se a contagem, o consenso, a Atividade e a pontuação de cada participante atualizaram corretamente; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
 3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
 
