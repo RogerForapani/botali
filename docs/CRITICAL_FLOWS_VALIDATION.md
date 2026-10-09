@@ -27,13 +27,17 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 ## Ainda precisa ser exercitado no APK atual
 
-O novo fluxo de entrada (Google em destaque, acesso por e-mail apenas para contas antigas e modo visitante) foi implementado na versão 1.0.2 e passou nas verificações de código. Ainda precisa ser conferido no novo APK Android; a entrada Apple permanece adiada e desativada no Supabase.
+O novo fluxo de entrada (Google em destaque, acesso por e-mail apenas para contas antigas e modo visitante) foi implementado na versão 1.0.2 e passou nas verificações de código. Google e visitante foram confirmados no APK Android; o acesso legado por e-mail ainda não foi testado. A entrada Apple permanece adiada e desativada no Supabase.
 
-Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.0.2 falharam antes da compilação com `CREDENTIALS_TEMPORARY_NETWORK_ERROR`/HTTP 503 no serviço da Expo, inclusive usando a versão atual do EAS CLI. Builds: `2f37e6fe-2f99-44a5-999b-c58937b51a61`, `6134ea43-c046-46c8-afc6-176316327755`, `708687bb-6aab-4e78-965e-96e3afffd993`. Na tentativa seguinte, o build `73e6a2f6-7bfc-4112-b25d-efe669cc5241` terminou com sucesso e gerou o APK Android `preview` 1.0.2 (versionCode 8). A instalação e os fluxos de entrada ainda precisam ser validados no aparelho. Nenhuma OTA foi publicada; não reutilizar o APK 1.0.1 para esta mudança nativa.
+Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.0.2 falharam antes da compilação com `CREDENTIALS_TEMPORARY_NETWORK_ERROR`/HTTP 503 no serviço da Expo, inclusive usando a versão atual do EAS CLI. Builds: `2f37e6fe-2f99-44a5-999b-c58937b51a61`, `6134ea43-c046-46c8-afc6-176316327755`, `708687bb-6aab-4e78-965e-96e3afffd993`. Na tentativa seguinte, o build `73e6a2f6-7bfc-4112-b25d-efe669cc5241` terminou com sucesso e gerou o APK Android `preview` 1.0.2 (versionCode 8). O usuário confirmou instalação, login Google e acesso como visitante no aparelho. Nenhuma OTA foi publicada; não reutilizar o APK 1.0.1 para esta mudança nativa.
+
+**Exclusão de conta — teste no aparelho:** com uma conta Google descartável de homologação, o usuário cadastrou um veículo, excluiu a conta e entrou novamente com o mesmo Google. O veículo não reapareceu. Isso confirma o comportamento observado na interface e no armazenamento local; não prova, por si só, a remoção de todas as linhas pessoais no banco. O e-mail da conta de teste não é registrado neste repositório.
+
+**Achado a corrigir antes do beta:** o fluxo remove as duas versões locais do veículo, mas não apaga a lista local de favoritos vinculada ao identificador da conta excluída. Ela não reaparece ao criar uma nova conta com o mesmo Google, porém permanece no armazenamento do aparelho. Fazer a limpeza da chave da conta excluída e cobrir com teste automatizado; não limpar favoritos do visitante ou de outras contas.
 
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
-3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
+3. **Exclusão de conta:** o fluxo básico foi exercitado com conta descartável e veículo local. Resta verificar no banco que o identificador anterior e os dados pessoais associados foram removidos; testar dados de contribuição somente com registros sintéticos em homologação. Não repetir a exclusão na conta principal.
 
 ## Critério para avançar
 
