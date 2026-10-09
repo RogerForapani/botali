@@ -29,6 +29,8 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 O novo fluxo de entrada (Google em destaque, acesso por e-mail apenas para contas antigas e modo visitante) foi implementado na versão 1.0.2 e passou nas verificações de código. Ainda precisa ser conferido no novo APK Android; a entrada Apple permanece adiada e desativada no Supabase.
 
+Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.0.2 falharam antes da compilação com `CREDENTIALS_TEMPORARY_NETWORK_ERROR`/HTTP 503 no serviço da Expo, inclusive usando a versão atual do EAS CLI. Nenhum APK 1.0.2 foi gerado e nenhuma OTA foi publicada. Builds: `2f37e6fe-2f99-44a5-999b-c58937b51a61`, `6134ea43-c046-46c8-afc6-176316327755`, `708687bb-6aab-4e78-965e-96e3afffd993`. Não reutilizar o APK 1.0.1 para esta mudança nativa.
+
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
 3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
