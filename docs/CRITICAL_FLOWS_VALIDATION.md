@@ -16,7 +16,7 @@ Estado em 08/10/2026. A auditoria inicial foi somente de leitura no banco `botal
 | Cadastro e moderação de postos | Aprovado no Android pelo usuário | Cadastro distante com endereço e número ficou pendente e apareceu para o moderador. Após aprovação, o posto apareceu para visitantes. Um segundo cadastro foi rejeitado com motivo, permaneceu invisível para visitantes e o autor recebeu o aviso na Atividade. Testes identificados com `[TESTE HML]` em homologação. |
 | Correção de endereço e ponto | Aprovação e rejeição validadas no Android pelo usuário | A conta comum sugeriu novo endereço e ponto para o posto de teste. O marcador permaneceu na posição anterior enquanto a solicitação estava pendente; o moderador viu as posições antiga e proposta; após aprovação, endereço e marcador mudaram juntos. Em outra sugestão, a rejeição preservou endereço e ponto, e o autor recebeu o motivo na Atividade. |
 | Veículo e comparação de custos | Aprovado no Android pelo usuário | Cadastro com gasolina e etanol de consumos diferentes exibiu duas linhas de custo por 100 km; sem posição, o deslocamento ficou indisponível; após a ação explícita de localização, distância e estimativa de ida e volta apareceram para ambos. O usuário confirmou que o veículo não foi compartilhado entre contas, reapareceu ao voltar para a primeira e que a posição expirou após cinco minutos sem remover o custo por 100 km. |
-| Contribuição sem internet | Bloqueio e recuperação aprovados no Android pelo usuário | Sem internet, o botão de envio de preço ficou indisponível com uma mensagem compreensível; após reconectar, foi reabilitado. A resposta não confirmou explicitamente um envio posterior nem a inspeção do cache nesta rodada. |
+| Mapa e contribuição sem internet | Aprovado no Android pelo usuário | Sem internet, os postos e preços permaneceram visíveis no mapa com aviso de falta de conexão, e o botão de envio ficou indisponível com mensagem compreensível. Após reconectar, o botão foi reabilitado e o usuário conseguiu enviar valores de combustíveis no posto de teste em homologação. |
 | Retenção | Somente simulação aprovada | `private.apply_data_retention(false)` retornou `dry-run` com 0 itens elegíveis em todas as categorias. Nenhuma limpeza foi executada. |
 
 ## Achado de isolamento entre contas
@@ -27,8 +27,7 @@ Corrigido no código: cada conta usa uma chave local própria e o visitante tem 
 
 1. **Login e sessão:** entrar pelo Google e por e-mail, fechar/reabrir o app, sair e trocar entre duas contas. Cada conta deve manter apenas seus próprios alertas, atividade e veículo. A preferência de push, os favoritos e o veículo após troca de contas já foram confirmados pelo usuário no Android.
 2. **Preço e confirmação presencial:** em um posto real, enviar gasolina e etanol com valores distintos; verificar ambos no detalhe. Outra conta, dentro do limite de 200 m, confirma um preço. Conferir contagem, consenso, atividade e pontos de cada participante. Não usar preços inventados em posto real.
-3. **Offline:** confirmar nesta versão que o mapa mantém os postos em cache, mostra aviso de falta de conexão e atualiza os dados após reconectar. O bloqueio e a reabilitação do envio de preço já foram confirmados; um envio posterior não foi explicitamente informado.
-4. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
+3. **Exclusão de conta:** testar somente com uma conta descartável de homologação, depois de verificar a exportação de dados necessária. A exclusão é irreversível e não foi executada nesta rodada.
 
 ## Critério para avançar
 
