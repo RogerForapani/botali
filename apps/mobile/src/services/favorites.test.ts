@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadFavorites, toggleFavorite } from './favorites'
+import { loadFavorites, removeFavorites, toggleFavorite } from './favorites'
 
 const storage = new Map<string, string>()
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: vi.fn(async (key: string) => storage.get(key) ?? null),
     setItem: vi.fn(async (key: string, value: string) => { storage.set(key, value) }),
+    removeItem: vi.fn(async (key: string) => { storage.delete(key) }),
   },
 }))
 
@@ -44,5 +45,20 @@ describe('favoritos locais', () => {
     expect(await loadFavorites('pessoa-a')).toEqual(['posto-a', 'posto-b'])
     storage.set('botali:favorites:user:pessoa-b', JSON.stringify(['posto-a', null, 'posto-a', 1]))
     expect(await loadFavorites('pessoa-b')).toEqual(['posto-a'])
+  })
+
+  it('exclui somente os favoritos da conta removida, mesmo com toque pendente', async () => {
+    storage.set('botali:favorites', JSON.stringify(['posto-antigo']))
+    const tap = toggleFavorite('pessoa-a', 'posto-a')
+    await toggleFavorite('pessoa-b', 'posto-b')
+    await toggleFavorite(null, 'posto-visitante')
+    await removeFavorites('pessoa-a')
+    await tap
+
+    expect(storage.has('botali:favorites:user:pessoa-a')).toBe(false)
+    expect(await loadFavorites('pessoa-a')).toEqual([])
+    expect(await loadFavorites('pessoa-b')).toEqual(['posto-b'])
+    expect(await loadFavorites(null)).toEqual(['posto-antigo', 'posto-visitante'])
+    expect(storage.get('botali:favorites')).toBe(JSON.stringify(['posto-antigo']))
   })
 })

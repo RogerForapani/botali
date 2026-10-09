@@ -48,3 +48,11 @@ export async function toggleFavorite(userId: string | null, id: string): Promise
     if (pending.get(key) === operation) pending.delete(key)
   }
 }
+
+export async function removeFavorites(userId: string): Promise<void> {
+  if (!userId.trim()) throw new Error('Identificador da conta inválido.')
+  const key = `${USER_PREFIX}${userId}`
+  // A previous tap must finish before deleting this account's local list.
+  await pending.get(key)?.catch(() => undefined)
+  await AsyncStorage.removeItem(key)
+}

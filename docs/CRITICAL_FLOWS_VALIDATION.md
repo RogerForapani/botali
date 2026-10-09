@@ -33,7 +33,7 @@ Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.
 
 **Exclusão de conta — teste no aparelho:** com uma conta Google descartável de homologação, o usuário cadastrou um veículo, excluiu a conta e entrou novamente com o mesmo Google. O veículo não reapareceu. Isso confirma o comportamento observado na interface e no armazenamento local; não prova, por si só, a remoção de todas as linhas pessoais no banco. O e-mail da conta de teste não é registrado neste repositório.
 
-**Achado a corrigir antes do beta:** o fluxo remove as duas versões locais do veículo, mas não apaga a lista local de favoritos vinculada ao identificador da conta excluída. Ela não reaparece ao criar uma nova conta com o mesmo Google, porém permanece no armazenamento do aparelho. Fazer a limpeza da chave da conta excluída e cobrir com teste automatizado; não limpar favoritos do visitante ou de outras contas.
+**Achado corrigido no código, pendente no aparelho:** o fluxo agora apaga a lista local de favoritos vinculada ao identificador da conta excluída, aguardando eventuais toques pendentes. O teste automatizado confirma que os favoritos do visitante, a lista antiga de visitante e os de outras contas permanecem intactos. Validar no APK 1.0.2 após a OTA `preview`.
 
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
