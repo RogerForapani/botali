@@ -2,7 +2,7 @@
 
 Última atualização: 10 de outubro de 2026.
 
-O Botali é o aplicativo responsável pelas práticas descritas nesta política. Para dúvidas, solicitações sobre seus dados ou exclusão de conta, escreva para **rogerforapani@gmail.com**. A identificação formal do responsável pelo tratamento será concluída antes da publicação na loja.
+O Botali é operado por **Roger Junio Marques Forapani**, pessoa física e responsável pelas decisões sobre o tratamento de dados pessoais descrito nesta política. Para dúvidas, solicitações sobre seus dados ou exclusão de conta, escreva para **rogerforapani@gmail.com**.
 
 ## Dados utilizados
 

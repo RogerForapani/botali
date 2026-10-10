@@ -37,6 +37,6 @@ Mapas e navegação.
 
 ## Contato e URLs antes da publicação
 
-- Política de privacidade: https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md (revisão jurídica e identificação formal do responsável pendentes).
+- Política de privacidade: https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md (responsável identificado como pessoa física; revisão jurídica pendente).
 - Suporte e privacidade: rogerforapani@gmail.com.
 - Exclusão de conta: disponível dentro do Perfil e pela página https://github.com/RogerForapani/botali/blob/main/docs/ACCOUNT_DELETION.md.
