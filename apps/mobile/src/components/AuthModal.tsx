@@ -18,6 +18,7 @@ import type { Vehicle } from '../utils/vehicle'
 import { removeVehicle } from '../services/vehicle'
 import { removePriceAlertDevice } from '../services/priceAlerts'
 import { removeFavorites } from '../services/favorites'
+import { deleteRemoteAccount } from '../services/accountDeletion'
 import { AppleSignInButton } from './botali/AppleSignInButton'
 
 export function AuthModal({ visible, user, stations, vehicle, vehicleLoading, fuelOptions, mapCenter, onSaveVehicle, onClose, onBack, onSignedOut, onOpenModeration, onOpenEditModeration }: { visible: boolean; user: User | null; stations: Station[]; vehicle: Vehicle | null; vehicleLoading: boolean; fuelOptions: { code: string; name: string }[]; mapCenter: { latitude: number; longitude: number }; onSaveVehicle: (vehicle: Vehicle | null) => Promise<void>; onClose: () => void; onBack?: () => void; onSignedOut?: () => void; onOpenModeration: () => void; onOpenEditModeration: () => void }) {
@@ -97,15 +98,13 @@ export function AuthModal({ visible, user, stations, vehicle, vehicleLoading, fu
   }
   async function deleteAccount() {
     if (!supabase || deleteText.trim().toUpperCase() !== 'EXCLUIR') return setMessage('Digite EXCLUIR para confirmar.')
+    if (!user) return setMessage('Conta não encontrada. Entre novamente e tente excluir.')
     setBusy(true); setMessage('')
     try {
       await disableSmartVisits()
-      const { error } = await supabase.rpc('delete_my_account', { confirmation: deleteText.trim() })
-      if (error) throw error
-      if (user) {
-        await removeVehicle(user.id).catch((removeError) => recordAppFailure('vehicle.remove-after-account-deletion', removeError).catch(() => undefined))
-        await removeFavorites(user.id).catch((removeError) => recordAppFailure('favorites.remove-after-account-deletion', removeError).catch(() => undefined))
-      }
+      await deleteRemoteAccount(user.id, deleteText.trim())
+      await removeVehicle(user.id).catch((removeError) => recordAppFailure('vehicle.remove-after-account-deletion', removeError).catch(() => undefined))
+      await removeFavorites(user.id).catch((removeError) => recordAppFailure('favorites.remove-after-account-deletion', removeError).catch(() => undefined))
       await supabase.auth.signOut({ scope: 'local' })
       setDeleteMode(false); setDeleteText(''); onClose()
     } catch (error) { recordAppFailure('account.delete', error).catch(() => undefined); setMessage(userMessageForError(error, 'Não foi possível excluir a conta.')) }

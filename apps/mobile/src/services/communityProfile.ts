@@ -70,7 +70,7 @@ export async function updateMyCommunityProfile(input: Pick<CommunityProfile, 'di
 
 export async function uploadMyAvatar(userId: string, base64: string) {
   if (!supabase) throw new Error('Serviço de dados não configurado neste aplicativo.')
-  const path = `${userId}/avatar.jpg`
+  const path = profileAvatarPath(userId)
   const { error } = await supabase.storage.from('profile-avatars').upload(path, decode(base64), {
     contentType: 'image/jpeg',
     cacheControl: '3600',
@@ -78,6 +78,10 @@ export async function uploadMyAvatar(userId: string, base64: string) {
   })
   if (error) throw error
   return path
+}
+
+export function profileAvatarPath(userId: string): string {
+  return `${userId}/avatar.jpg`
 }
 
 export async function removeMyAvatar(path: string) {

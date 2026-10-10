@@ -37,7 +37,7 @@ Em 08/10/2026, três solicitações de build Android `preview` para a versão 1.
 
 1. **Consenso após confirmação:** a contagem, a Atividade e a pontuação da conta que confirmou foram validadas. Uma verificação específica do valor consolidado e da pontuação do autor do preço permanece opcional se houver divergência futura; não usar preços inventados em posto real.
 2. **Login por e-mail/senha:** o usuário usa Google e não precisa criar senha. Testar a opção por e-mail separadamente com uma conta descartável antes do beta.
-3. **Exclusão de conta:** o fluxo básico foi exercitado com conta descartável e veículo local. Resta verificar no banco que o identificador anterior e os dados pessoais associados foram removidos; testar dados de contribuição somente com registros sintéticos em homologação. Não repetir a exclusão na conta principal.
+3. **Exclusão de conta:** o fluxo básico foi exercitado com conta descartável e veículo local. Em 09/10/2026, uma inspeção somente de leitura na homologação encontrou zero perfis, preços, confirmações, eventos de reputação e regras de alerta sem conta/perfil correspondente. A tabela de auditoria de autenticação estava vazia e o ID antigo não foi preservado, portanto isso não prova a exclusão individual de todas as linhas daquela conta. O Storage não tinha arquivos; o fluxo foi corrigido para remover o avatar pela API antes da exclusão, com 74 testes mobile aprovados, mas ainda precisa de teste no aparelho com foto de uma conta descartável. Não repetir a exclusão na conta principal.
 
 ## Critério para avançar
 

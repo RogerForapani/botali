@@ -27,6 +27,7 @@
 - O preço comunitário é calculado por `community_prices_for_stations`; aplicativos recebem somente preço consolidado, confiança e contagens agregadas.
 - Tabelas brutas de preços, confirmações e perfis não são legíveis por visitantes anônimos.
 - Fotos de perfil ficam em um bucket privado, limitadas a JPEG de 2 MB e acessíveis somente pela pasta do próprio usuário; o banco guarda apenas o caminho do arquivo.
+- Antes de excluir a conta, o aplicativo confere a sessão ativa e remove a foto da pasta dessa conta pela Storage API. Se a consulta ou remoção falhar, a exclusão é interrompida para evitar um arquivo pessoal remanescente ou um bloqueio do Supabase; arquivos não devem ser apagados diretamente por SQL.
 - Níveis são calculados no PostgreSQL com preços confirmados por terceiros, confirmações limitadas, postos verificados e correções aprovadas. Badges permanentes têm concessão, data, motivo e origem no servidor e não influenciam o consenso.
 - A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
 - O aplicativo consulta `user_roles` ao abrir o perfil e apresenta a fila de moderação somente a `moderator` e `admin`; a autorização definitiva continua no PostgreSQL.
