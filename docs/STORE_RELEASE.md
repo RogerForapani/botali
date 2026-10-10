@@ -1,5 +1,20 @@
 # Checklist de lançamento
 
+## Estado em 09/10/2026
+
+O APK Android `preview` 1.0.2 permanece em homologação. O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto. A consulta posterior no bucket privado de avatares retornou zero arquivos. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
+
+Antes do beta público Android, permanecem como portões:
+
+- [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
+- [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
+- [ ] Exercitar autorização/RLS com contas reais de papéis diferentes além da inspeção de permissões; registrar resultados sem dados pessoais.
+- [ ] Revisar a política de privacidade, publicá-la em URL acessível e definir o contato de suporte.
+- [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
+- [ ] Revisar as declarações da Play Store, sobretudo localização opcional em segundo plano, e testar o build candidato em aparelho.
+
+A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
+
 ## Configuração técnica concluída
 
 - Identificadores: `com.botali.app` no Android e iOS.
