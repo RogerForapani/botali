@@ -28,7 +28,6 @@ Recursos principais:
 - favoritos e histórico das suas contribuições;
 - modo claro e escuro;
 - consulta temporária dos últimos dados salvos quando estiver sem internet;
-- lembretes inteligentes de visita, opcionais e desligados por padrão.
 
 O Botali não vende localização nem usa seus deslocamentos para publicidade. Consulte a Política de Privacidade para conhecer os controles disponíveis.
 
@@ -38,6 +37,6 @@ Mapas e navegação.
 
 ## Contato e URLs antes da publicação
 
-- Política de privacidade: publicar `docs/PRIVACY_POLICY.md` em uma URL pública estável.
-- Suporte: definir um e-mail público de suporte antes do envio.
-- Exclusão de conta: disponível dentro do Perfil no aplicativo.
+- Política de privacidade: https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md (revisão jurídica e identificação formal do responsável pendentes).
+- Suporte e privacidade: rogerforapani@gmail.com.
+- Exclusão de conta: disponível dentro do Perfil e pela página https://github.com/RogerForapani/botali/blob/main/docs/ACCOUNT_DELETION.md.

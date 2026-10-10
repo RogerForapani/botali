@@ -34,7 +34,9 @@ No SQL Editor da homologação, as consultas foram executadas em transações `R
 
 Uma contagem inicial com junção ampla falhou por falta de espaço **temporário** no banco; consultas menores terminaram normalmente. O tamanho informado para o banco foi 58 MB. Evitar essa consulta ampla e acompanhar espaço/consultas temporárias antes de testes de carga. Ainda falta repetir o isolamento pela API com sessões reais de usuário comum e moderador e verificar escrita indevida, sem usar dados de produção.
 
-**API real como visitante:** o script `scripts/audit-anon-rls.mjs`, executado com as variáveis públicas do EAS `preview` e restrito por código ao domínio da homologação, passou em 09/10/2026. A Data API retornou um posto verificado, nenhum pendente e negou acesso a perfis, relatos brutos e à RPC de moderação. `npm run lint` passou com 3 avisos preexistentes e `npm run build` passou. As sessões autenticadas continuam pendentes; nenhuma credencial ou token de usuário foi extraído do aparelho.
+**API real como visitante:** o script `scripts/audit-anon-rls.mjs`, executado com as variáveis públicas do EAS `preview` e restrito por código ao domínio da homologação, passou em 09/10/2026. A Data API retornou um posto verificado, nenhum pendente e negou acesso a perfis, relatos brutos e à RPC de moderação. `npm run lint` passou com 3 avisos preexistentes e `npm run build` passou. Nenhuma credencial ou token de usuário foi extraído do aparelho.
+
+**API real com sessões autenticadas:** em 10/10/2026, o usuário executou a auditoria temporária no APK Android de homologação com uma conta comum e uma moderadora; ambas apresentaram **6/6** verificações aprovadas. A auditoria testou isolamento de perfis, relatos e correções e a autorização das duas funções de moderação usando identificadores inexistentes, sem alterar registros reais. O botão e o código temporários foram retirados na OTA seguinte. Nenhuma senha ou token foi compartilhado. Esses resultados substituem a pendência de teste autenticado acima, mas não equivalem a auditoria exaustiva de segurança.
 
 ## Achado de isolamento entre contas
 

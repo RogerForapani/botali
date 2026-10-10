@@ -8,10 +8,11 @@ Antes do beta público Android, permanecem como portões:
 
 - [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
 - [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
-- [ ] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador, incluindo tentativas de escrita indevida. A simulação `READ ONLY` dos papéis no PostgreSQL passou em 09/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
-- [ ] Revisar a política de privacidade, publicá-la em URL acessível e definir o contato de suporte.
+- [x] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador. O usuário confirmou 6/6 em cada conta no APK de homologação em 10/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
+- [ ] Revisar juridicamente a política de privacidade e identificar formalmente o responsável. O texto já está acessível por URL e o contato público é rogerforapani@gmail.com.
+- [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
 - [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
-- [ ] Revisar as declarações da Play Store, sobretudo localização opcional em segundo plano, e testar o build candidato em aparelho.
+- [ ] Gerar e testar novo APK-base sem permissão de localização em segundo plano; conferir o manifesto final e as declarações da Play Store.
 
 A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
 
@@ -28,9 +29,9 @@ A assinatura Apple Developer e a publicação iOS continuam adiadas; não são d
 
 - Criar uma chave iOS do Google Maps restrita ao bundle `com.botali.app` e cadastrar `GOOGLE_MAPS_IOS_API_KEY` no ambiente de produção do EAS.
 - Confirmar que a chave Android está restrita ao pacote `com.botali.app` e aos certificados corretos.
-- Publicar a política de privacidade em URL pública e adicionar o contato de suporte.
-- Preencher as declarações de privacidade considerando e-mail/nome, localização precisa usada em tempo real, localização em segundo plano opcional e conteúdo enviado pelo usuário.
-- Para o Google Play, preparar a declaração, a divulgação destacada dentro do app e o vídeo demonstrando por que o lembrete de visita usa localização em segundo plano.
+- Confirmar a identificação formal do responsável, revisar juridicamente a política pública e testar o e-mail de suporte.
+- Preencher as declarações de privacidade considerando e-mail/nome, localização precisa usada em primeiro plano sob ação do usuário e conteúdo enviado pelo usuário; não declarar localização em segundo plano no novo APK-base.
+- No primeiro beta Android, não declarar localização em segundo plano: os lembretes automáticos foram adiados. Verificar que a permissão não aparece no APK final. Se o recurso voltar, preparar declaração, divulgação destacada e vídeo antes da publicação.
 - Criar screenshots reais em aparelhos representativos e revisar textos da página da loja.
 - Gerar e testar um build `preview`; somente depois gerar o build `production`.
 - Publicar atualizações OTA primeiro no canal `preview` e promover para `production` após validação.

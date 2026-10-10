@@ -82,6 +82,7 @@
 
 ## Presença e localização
 
+- Lembretes automáticos por geofence ficam adiados no primeiro beta Android. As regras de segundo plano abaixo são especificação futura, não permissão a solicitar na versão candidata.
 - A localização é solicitada apenas após uma ação explícita do usuário.
 - Check-in e confirmação só são aceitos a até 200 metros do posto.
 - A coordenada exata não é armazenada no histórico de visitas; persistem somente posto, usuário, dia e distância aproximada.

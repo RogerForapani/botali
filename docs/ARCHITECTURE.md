@@ -3,8 +3,7 @@
 ## Aplicativo principal
 
 - React Native + Expo + TypeScript para Android e iOS.
-- Development builds para recursos nativos de localização em segundo plano.
-- Geofencing com `expo-location` e tarefas com `expo-task-manager`.
+- Localização em primeiro plano com `expo-location`; a localização em segundo plano e as geofences ficam adiadas no primeiro beta Android. O aplicativo apenas remove registros legados de geofences.
 - Mapa nativo; evitar dependência estrutural de um único provedor.
 - A camada de mapas deve permanecer desacoplada para permitir troca futura de provedor sem reescrever regras de negócio.
 
@@ -62,6 +61,5 @@ O MVP atual ainda é compacto. A migração para essa estrutura deve ocorrer inc
 - Nunca versionar `.env.local` nem `service_role`.
 - Operações privilegiadas devem ser executadas no backend ou por funções protegidas.
 - Geolocalização é dado pessoal: capture somente com ação clara, valide proximidade no banco e retenha o mínimo necessário.
-- Solicite localização em primeiro plano antes da permissão em segundo plano e explique o benefício no momento adequado.
-- Prefira geofencing e processamento local a atualizações contínuas de GPS.
+- No beta inicial, solicite somente localização em primeiro plano após ação do usuário. Se geofencing voltar no futuro, exija divulgação destacada antes da permissão de segundo plano e mantenha o processamento local.
 - Android suporta até 100 geofences ativas por app; iOS, até 20 regiões. Registre dinamicamente apenas os postos mais próximos.

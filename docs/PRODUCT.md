@@ -53,7 +53,8 @@ O mapa, os preços e a comunidade são protagonistas. A linguagem deve ser diret
 
 ## Experiência de presença
 
-- O usuário pode ativar lembretes inteligentes de visita de forma opcional.
+- Os lembretes automáticos de visita e a localização em segundo plano ficam adiados no primeiro beta Android. As regras abaixo descrevem uma fase futura, não a funcionalidade oferecida no APK candidato.
+- Quando o recurso for retomado, o usuário poderá ativá-lo de forma opcional, após divulgação destacada e consentimento específico.
 - Geofences e tempo de permanência identificam uma visita provável sem rastreamento contínuo de alta frequência.
 - A presença é um sinal separado: estar no posto não confirma automaticamente o preço da bomba.
 - Uma confirmação só deve ser sugerida após visita com boa precisão e permanência suficiente.

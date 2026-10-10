@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
 import * as Notifications from 'expo-notifications'
 import { StatusBar } from 'expo-status-bar'
-import './src/services/smartVisits'
 import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
@@ -34,7 +33,7 @@ import { useVehicle } from './src/hooks/useVehicle'
 import { confirmPriceAtStation, loadStationById, loadStationOptions, type MapBounds, type MapCenter } from './src/services/stations'
 import { loadPriceAlertEvent, markPriceAlertRead, restorePriceAlertDevice } from './src/services/priceAlerts'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
-import { syncSmartVisitStations } from './src/services/smartVisits'
+import { disableSmartVisits } from './src/services/smartVisits'
 import { recordAppFailure } from './src/services/diagnostics'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
@@ -162,7 +161,7 @@ export default function App() {
     }
   }, [isOnline, refreshCurrentSearch])
 
-  useEffect(() => { syncSmartVisitStations(stations).catch((error) => recordAppFailure('smart-visits.sync', error)) }, [stations])
+  useEffect(() => { disableSmartVisits().catch((error) => recordAppFailure('smart-visits.cleanup', error)) }, [])
 
   useEffect(() => {
     if (!locationMessage) return
@@ -400,7 +399,7 @@ export default function App() {
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
         {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} vehicle={vehicle} userLocation={userLocation} plannedLiters={plannedLiters} onPlannedLitersChange={setPlannedLiters} onRequestLocation={requestUserLocation} onOpenProfile={() => setShowAuth(true)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} stations={stations} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} mapCenter={mapCenter} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
+        <AuthModal visible={showAuth} user={user} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} mapCenter={mapCenter} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
         <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refreshCurrentSearch(); activity.refresh() }} />

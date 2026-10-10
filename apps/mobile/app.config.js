@@ -17,9 +17,8 @@ module.exports = () => ({
   plugins: [
     ['expo-location', {
       locationWhenInUsePermission: 'O Botali usa sua localização para mostrar postos e preços próximos.',
-      locationAlwaysAndWhenInUsePermission: 'O Botali usa geofences para reconhecer visitas a postos e sugerir confirmações úteis, mesmo com o app fechado.',
-      isAndroidBackgroundLocationEnabled: true,
-      isIosBackgroundLocationEnabled: true,
+      isAndroidBackgroundLocationEnabled: false,
+      isIosBackgroundLocationEnabled: false,
     }],
     'expo-notifications',
     'expo-font',
@@ -46,6 +45,7 @@ module.exports = () => ({
     infoPlist: {},
   },
   android: {
+    blockedPermissions: ['android.permission.ACCESS_BACKGROUND_LOCATION', 'android.permission.FOREGROUND_SERVICE_LOCATION'],
     adaptiveIcon: { backgroundColor: '#171717', foregroundImage: './assets/android-icon-foreground.png', monochromeImage: './assets/android-icon-monochrome.png' },
     predictiveBackGestureEnabled: false,
     package: 'com.botali.app',

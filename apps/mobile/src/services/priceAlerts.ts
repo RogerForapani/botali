@@ -3,6 +3,9 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import { supabase } from '../lib/supabase'
 
+// Mantém os alertas de preço visíveis com o app aberto após a retirada dos lembretes de visita.
+Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }) })
+
 export type PriceAlertRule = {
   user_id: string
   fuel_code: string
