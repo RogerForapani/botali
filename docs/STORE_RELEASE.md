@@ -1,8 +1,8 @@
 # Checklist de lançamento
 
-## Estado em 09/10/2026
+## Estado em 10/10/2026
 
-O APK Android `preview` 1.0.2 permanece em homologação. O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto. A consulta posterior no bucket privado de avatares retornou zero arquivos. A OTA de 10/10/2026 desativou os lembretes automáticos na versão instalada; o novo APK-base 1.0.3 removerá também a permissão nativa de segundo plano. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
+O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto no APK `preview` 1.0.2. A consulta posterior no bucket privado de avatares retornou zero arquivos. A OTA de 10/10/2026 desativou os lembretes automáticos na versão instalada. O [novo APK `preview` 1.0.3](https://expo.dev/accounts/ningas/projects/botali/builds/5f09a0dc-2e06-4fc8-8b12-087c3eef7680) foi compilado; a inspeção do `AndroidManifest.xml` empacotado não encontrou `ACCESS_BACKGROUND_LOCATION` nem `FOREGROUND_SERVICE_LOCATION`, mas encontrou `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION`. Ainda falta testar esse APK no aparelho. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
 
 Antes do beta público Android, permanecem como portões:
 
@@ -12,7 +12,7 @@ Antes do beta público Android, permanecem como portões:
 - [ ] Revisar juridicamente a política de privacidade e identificar formalmente o responsável. O texto já está acessível por URL e o contato público é rogerforapani@gmail.com.
 - [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
 - [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
-- [ ] Gerar e testar novo APK-base sem permissão de localização em segundo plano; conferir o manifesto final e as declarações da Play Store.
+- [ ] Testar no aparelho o novo APK-base sem permissão de localização em segundo plano e revisar as declarações da Play Store. A compilação e a conferência do manifesto foram concluídas em 10/10/2026.
 
 A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
 
