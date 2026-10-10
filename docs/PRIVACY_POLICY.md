@@ -6,7 +6,7 @@ O Botali é operado por **Roger Junio Marques Forapani**, pessoa física e respo
 
 ## Dados utilizados
 
-O Botali permite consultar postos sem criar conta. Ao entrar com Google ou criar uma conta, usamos nome e e-mail para autenticação, identificação das próprias contribuições, prevenção de abuso e moderação. O e-mail não é exibido no mapa. O perfil comunitário pode guardar um nome de exibição, uma foto escolhida da galeria, a preferência de visibilidade e o resumo das contribuições; a visibilidade é privada por padrão.
+O Botali permite consultar postos sem criar conta. Ao entrar com Google (ou Apple no iOS) — ou usar uma conta antiga de e-mail e senha —, usamos os dados de identificação fornecidos, como nome e e-mail, para autenticação, identificação das próprias contribuições, prevenção de abuso e moderação. O e-mail não é exibido no mapa. O perfil comunitário pode guardar um nome de exibição, uma foto escolhida da galeria, a preferência de visibilidade e o resumo das contribuições; a visibilidade é privada por padrão. Sem conta, você pode consultar o mapa, mas não enviar contribuições nem configurar alertas associados a uma conta.
 
 A localização precisa é acessada somente após uma ação do usuário. Ela é usada em tempo real para centralizar o mapa, preencher o endereço de um novo posto e validar presença em um posto. A coordenada precisa enviada para validação não é gravada no histórico: armazenamos apenas o posto, o dia e a distância aproximada.
 
@@ -24,6 +24,8 @@ Não vendemos dados pessoais e não usamos localização para publicidade. O Bot
 
 O acesso ao banco aplica regras por usuário. Resultados públicos de preço e visita são agregados; contribuições brutas e identificadores individuais não são expostos ao público.
 
+O uso de localização do aparelho, foto de perfil e notificações externas é opcional. Você pode negar as permissões do aparelho e continuar consultando postos no mapa; funções que dependem dessas permissões ficam indisponíveis. Desativar a permissão nas configurações do aparelho impede novos acessos pelo aplicativo, mas não apaga dados que já tenham sido enviados. Para solicitar acesso ou eliminação de dados existentes, use o contato abaixo.
+
 Para diagnóstico técnico, o aplicativo pode manter no próprio aparelho uma lista curta de falhas sanitizadas e métricas agregadas de duração e sucesso das buscas. Esse diagnóstico não inclui coordenadas, e-mail, token, termo pesquisado ou posto selecionado e somente sai do aparelho quando o usuário escolhe compartilhá-lo manualmente.
 
 ## Retenção
@@ -38,4 +40,6 @@ O prazo planejado para remover comentários livres de avaliações é de 12 mese
 
 Você pode remover os dados do veículo a qualquer momento no Perfil. Também pode excluir sua conta dentro do aplicativo. Essa exclusão remove autenticação, perfil, foto enviada ao armazenamento do Botali, preços enviados e solicitações pessoais, além do veículo e dos favoritos dessa conta salvos neste aparelho. No pedido por e-mail, os dados locais precisam ser removidos no próprio aparelho ou com a desinstalação do aplicativo. Postos já publicados e registros de moderação podem permanecer de forma anônima para manter a integridade do mapa e da auditoria.
 
-Para pedir acesso, correção, informações sobre compartilhamento ou exclusão dos seus dados, escreva para **rogerforapani@gmail.com**. Se não tiver mais o aplicativo, veja [como pedir a exclusão da conta pela Web](https://github.com/RogerForapani/botali/blob/main/docs/ACCOUNT_DELETION.md). Não envie senha ou código de autenticação por e-mail.
+Você pode solicitar confirmação de tratamento, acesso e correção dos seus dados; anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados irregularmente; portabilidade, quando aplicável; informações sobre compartilhamento; e, quando o tratamento depender de consentimento, informações sobre a recusa e revogação. Também pode se opor a tratamento irregular e apresentar petição à ANPD. Pedidos são gratuitos e serão avaliados conforme a LGPD, inclusive quanto a eventual conservação legalmente permitida. Para proteger sua conta, poderemos confirmar sua titularidade antes de fornecer ou apagar dados, sem pedir senha por e-mail.
+
+Para exercer esses direitos ou pedir a exclusão da conta, escreva para **rogerforapani@gmail.com**. Se não tiver mais o aplicativo, veja [como pedir a exclusão da conta pela Web](https://github.com/RogerForapani/botali/blob/main/docs/ACCOUNT_DELETION.md). Não envie senha ou código de autenticação por e-mail.

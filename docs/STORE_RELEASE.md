@@ -10,7 +10,7 @@ Antes do beta público Android, permanecem como portões:
 - [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
 - [x] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador. O usuário confirmou 6/6 em cada conta no APK de homologação em 10/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
 - [x] Identificar o responsável na política de privacidade: Roger Junio Marques Forapani, pessoa física; contato público rogerforapani@gmail.com.
-- [ ] Revisar juridicamente a política de privacidade antes da publicação.
+- [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. A análise preliminar e correções de transparência foram feitas em 10/10/2026.
 - [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
 - [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
 - [ ] Testar no aparelho o novo APK-base sem permissão de localização em segundo plano e revisar as declarações da Play Store. A compilação e a conferência do manifesto foram concluídas em 10/10/2026.
