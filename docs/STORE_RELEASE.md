@@ -2,7 +2,7 @@
 
 ## Estado em 09/10/2026
 
-O APK Android `preview` 1.0.2 permanece em homologação. O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto. A consulta posterior no bucket privado de avatares retornou zero arquivos. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
+O APK Android `preview` 1.0.2 permanece em homologação. O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto. A consulta posterior no bucket privado de avatares retornou zero arquivos. A OTA de 10/10/2026 desativou os lembretes automáticos na versão instalada; o novo APK-base 1.0.3 removerá também a permissão nativa de segundo plano. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
 
 Antes do beta público Android, permanecem como portões:
 
