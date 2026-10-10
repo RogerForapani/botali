@@ -8,7 +8,7 @@ Antes do beta público Android, permanecem como portões:
 
 - [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
 - [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
-- [ ] Exercitar autorização/RLS com contas reais de papéis diferentes além da inspeção de permissões; registrar resultados sem dados pessoais.
+- [ ] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador, incluindo tentativas de escrita indevida. A simulação `READ ONLY` dos papéis no PostgreSQL passou em 09/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
 - [ ] Revisar a política de privacidade, publicá-la em URL acessível e definir o contato de suporte.
 - [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
 - [ ] Revisar as declarações da Play Store, sobretudo localização opcional em segundo plano, e testar o build candidato em aparelho.

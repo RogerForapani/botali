@@ -21,6 +21,19 @@ Estado em 09/10/2026. A auditoria inicial foi somente de leitura no banco `botal
 | Confirmação presencial de preço | Aprovada no Android pelo usuário | O usuário confirmou o preço estando no posto e verificou que a contagem de confirmações aumentou, a ação apareceu na Atividade e a pontuação da conta que confirmou mudou. |
 | Retenção | Somente simulação aprovada | `private.apply_data_retention(false)` retornou `dry-run` com 0 itens elegíveis em todas as categorias. Nenhuma limpeza foi executada. |
 
+## Permissões/RLS — teste de sessão simulada em 09/10/2026
+
+No SQL Editor da homologação, as consultas foram executadas em transações `READ ONLY`, com `SET LOCAL ROLE` para `anon` ou `authenticated` e `request.jwt.claim.sub` apontando para contas já existentes. Nenhum identificador pessoal foi exportado. Isto exercita as políticas no PostgreSQL, mas **não substitui requisições reais com JWT pela API do aplicativo**.
+
+| Cenário | Resultado observado |
+| --- | --- |
+| Visitante (`anon`) | Não tem `SELECT` em `profiles` nem `price_submissions`; vê 0 postos pendentes e 10.005 verificados. Também não tem `EXECUTE` nas duas RPCs de moderação testadas. |
+| Conta comum com um preço enviado | `private.is_moderator()` retornou `false`; viu 1 perfil e 1 relato próprios, nenhum perfil ou relato de outra conta. |
+| Conta moderadora | `private.is_moderator()` retornou `true`; viu os 7 perfis, relatos de outras contas e 6 ações de moderação de postos. |
+| Tentativa de moderação por conta comum | `moderate_station` e `moderate_station_edit_request`, chamadas com UUID inexistente dentro de transação somente de leitura, falharam com `Moderator access required`. Não houve nova ação de moderação. |
+
+Uma contagem inicial com junção ampla falhou por falta de espaço **temporário** no banco; consultas menores terminaram normalmente. O tamanho informado para o banco foi 58 MB. Evitar essa consulta ampla e acompanhar espaço/consultas temporárias antes de testes de carga. Ainda falta repetir o isolamento pela API com sessões reais de usuário comum e moderador e verificar escrita indevida, sem usar dados de produção.
+
 ## Achado de isolamento entre contas
 
 Corrigido no código: cada conta usa uma chave local própria e o visitante tem uma lista separada. A lista antiga, sem dono identificável, permanece acessível apenas ao visitante e é mantida como backup. Testes automatizados cobrem isolamento, migração e toques rápidos. Após a OTA de identificação da conta, o usuário confirmou no Android que um favorito novo da conta A não apareceu na conta B e que o preço passou a caber no cartão de Favoritos. **Isolamento de favoritos e layout do preço aprovados no aparelho.**
