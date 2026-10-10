@@ -34,6 +34,8 @@ No SQL Editor da homologação, as consultas foram executadas em transações `R
 
 Uma contagem inicial com junção ampla falhou por falta de espaço **temporário** no banco; consultas menores terminaram normalmente. O tamanho informado para o banco foi 58 MB. Evitar essa consulta ampla e acompanhar espaço/consultas temporárias antes de testes de carga. Ainda falta repetir o isolamento pela API com sessões reais de usuário comum e moderador e verificar escrita indevida, sem usar dados de produção.
 
+**API real como visitante:** o script `scripts/audit-anon-rls.mjs`, executado com as variáveis públicas do EAS `preview` e restrito por código ao domínio da homologação, passou em 09/10/2026. A Data API retornou um posto verificado, nenhum pendente e negou acesso a perfis, relatos brutos e à RPC de moderação. `npm run lint` passou com 3 avisos preexistentes e `npm run build` passou. As sessões autenticadas continuam pendentes; nenhuma credencial ou token de usuário foi extraído do aparelho.
+
 ## Achado de isolamento entre contas
 
 Corrigido no código: cada conta usa uma chave local própria e o visitante tem uma lista separada. A lista antiga, sem dono identificável, permanece acessível apenas ao visitante e é mantida como backup. Testes automatizados cobrem isolamento, migração e toques rápidos. Após a OTA de identificação da conta, o usuário confirmou no Android que um favorito novo da conta A não apareceu na conta B e que o preço passou a caber no cartão de Favoritos. **Isolamento de favoritos e layout do preço aprovados no aparelho.**
