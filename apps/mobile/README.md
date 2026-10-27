@@ -26,7 +26,7 @@ Aplicativo principal do botali para Android e iOS, construído com React Native,
 - testes automatizados de filtros, conectividade, tratamento de erros e contratos de confiança/privacidade das migrações
 - componentes reutilizáveis alinhados ao Design System oficial
 - perfis EAS para builds de desenvolvimento, preview e produção
-- atualizações remotas compatíveis com o APK alpha atual; a migração para fingerprint será feita junto do próximo APK-base
+- atualizações remotas compatíveis com o APK instalado; o APK-base 1.0.4 usa runtime por `fingerprint` e exige validação do canal `preview` antes do beta público
 
 ## Executar
 

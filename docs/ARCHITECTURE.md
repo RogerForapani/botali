@@ -38,7 +38,7 @@
 - Os favoritos ficam no armazenamento local do aparelho, em lista separada por identificador de conta. O visitante tem sua própria lista. A chave antiga, que não identificava o dono, é copiada somente para a lista do visitante e preservada como backup; não é atribuída automaticamente a nenhuma conta. Não há sincronização de favoritos entre aparelhos.
 - Alertas de preço usam uma regra por conta em PostgreSQL, com centro da área arredondado a duas casas decimais. Triggers geram avisos internos somente para preço recente e confiável; RLS limita a leitura aos próprios avisos. Um Edge Function server-side opcional envia push via Expo e verifica recibos, com token em `private.price_alert_devices` e segredo de agendamento no Vault, verificado por RPC restrita a `service_role`. Não há consulta de rotas nem GPS de fundo para esses alertas.
 - A aba Atividade consulta os avisos da conta e os apresenta acima das contribuições. O push inclui o identificador do evento e do posto; ao tocá-lo, o aplicativo consulta a posição do posto quando necessário, busca a região correspondente e abre seu detalhe. A consulta direta pelo identificador cobre postos além da primeira página geográfica.
-- Enquanto o aplicativo está em alpha, builds e atualizações EAS usam a versão do aplicativo como runtime. Antes do beta público, a migração para runtime por `fingerprint` deve ocorrer junto de um novo APK-base, impedindo atualizações nativas incompatíveis.
+- Os APKs alpha até 1.0.3 usam a versão do aplicativo como runtime. A partir do APK-base 1.0.4, builds e atualizações EAS usam `fingerprint` para identificar a compatibilidade nativa. Uma OTA da nova base não deve ser publicada para o runtime 1.0.3.
 
 ## Organização evolutiva
 
