@@ -7,6 +7,7 @@ O usuário validou Google, visitante, troca de contas, mapa, contribuição offl
 Antes do beta público Android, permanecem como portões:
 
 - [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
+- [x] Aplicar e validar em homologação a migração da progressão comunitária; conferir pontos, níveis e badges antes e depois de uma retenção simulada com `ROLLBACK`. A retenção permanente continua pendente do backup recente.
 - [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
 - [x] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador. O usuário confirmou 6/6 em cada conta no APK de homologação em 10/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
 - [x] Identificar o responsável na política de privacidade: Roger Junio Marques Forapani, pessoa física; contato público rogerforapani@gmail.com.

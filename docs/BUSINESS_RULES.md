@@ -23,6 +23,7 @@
 - O nível reconhece contribuições úteis e não altera confiança, moderação ou peso no consenso de preços.
 - Cada preço confirmado por outra pessoa vale 5 pontos; confirmação presencial vale 1 ponto, limitada a 50 pontos; posto aprovado vale 12 pontos; correção aprovada vale 8 pontos.
 - Envios ainda não validados não geram pontos.
+- Pontos e conquistas validados permanecem no perfil enquanto a conta existir, mesmo depois da remoção dos registros operacionais pela política de retenção. A exclusão da conta remove esse histórico.
 - Níveis: Explorador (0), Colaborador (25), Parceiro da Estrada (75), Referência Local (180) e Guardião Botali (400).
 - Badges de conquistas comuns são derivados dos dados validados. O badge Pioneiro do Beta é permanente, concedido pelo servidor e mantém data e motivo da concessão.
 - Marcos das quatro conquistas comuns: 3 preços confirmados por outras pessoas, 20 confirmações de preço, 2 postos aprovados e 3 correções de posto aprovadas. O badge beta e o identificador de moderador não dependem desses marcos.

@@ -1,12 +1,12 @@
 # Política de retenção de dados do botali
 
-Última atualização: 10 de outubro de 2026.
+Última atualização: 27 de outubro de 2026.
 
 ## Princípios
 
 O botali mantém somente o necessário para mostrar preços, proteger a comunidade, atender solicitações do usuário e medir o produto. A política reduz vínculos pessoais com o tempo e preserva estatísticas agregadas e a trilha essencial de moderação.
 
-Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas porque ainda não foi validado um backup restaurável. Até lá, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
+Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas até a validação de um backup recente e restaurável para a execução permanente. Até lá, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
 
 ## Prazos
 
@@ -25,6 +25,7 @@ Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos
 | Estatísticas agregadas arquivadas | 36 meses | Exclui o agregado vencido |
 | Diagnóstico no aparelho | 20 falhas e 20 grupos de métricas | Substituição automática pelos registros mais recentes |
 | Conta, perfil e dados ativos | Enquanto a conta existir | Exclusão ou anonimização conforme a função “Excluir minha conta” |
+| Progressão comunitária (tipo de contribuição, UUID da fonte e data) | Enquanto a conta existir | Exclusão em cascata com o perfil; preserva pontos e conquistas após a limpeza dos registros operacionais |
 
 Dados cadastrais públicos do posto são informações do estabelecimento e permanecem enquanto ele existir no mapa. Correções continuam passando por moderação.
 
@@ -33,6 +34,7 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 - A coordenada precisa nunca permanece em `price_submissions`; somente a distância aproximada calculada pode ser gravada.
 - A rotina não remove o último preço conhecido de um posto/combustível, mesmo após 24 meses, para preservar o aviso de preço desatualizado.
 - Tabelas agregadas ficam no schema `private`, sem acesso de visitantes ou usuários autenticados.
+- A trilha privada de progressão não guarda preço, endereço nem localização; mantém o vínculo com a conta somente para exibir pontos e conquistas até sua exclusão.
 - A função de retenção fica no schema `private` e não pode ser chamada pelo aplicativo.
 - Cada execução efetiva gera um resumo em `private.data_retention_runs` por até 12 meses.
 - A exclusão de conta remove a autenticação e rompe vínculos pessoais conforme as chaves estrangeiras; decisões de moderação e dados públicos podem permanecer anonimizados.
@@ -47,6 +49,16 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 6. Conferir `private.data_retention_runs`, volume das tabelas e erros do Postgres.
 
 Não há agendamento automático nesta etapa. O projeto gratuito atual não oferece backup restaurável incluído; a rotina efetiva será agendada com `pg_cron` apenas depois do checklist acima e da definição de backup do beta.
+
+## Ensaio transacional da progressão em homologação — 27/10/2026
+
+A migração `202610270001_preserve_community_progress.sql` foi ensaiada em `botali-homologacao` dentro de uma transação encerrada por `ROLLBACK`. Os perfis das 8 contas foram comparados antes e depois, incluindo contagens, pontos, níveis e badges, sem divergências. O preenchimento da trilha privada coincidiu com os registros de origem para relatos, confirmações, postos verificados, correções aprovadas e relatos validados.
+
+Uma consulta separada após esse primeiro ensaio confirmou que a tabela nova não permaneceu no banco, o hash da função de perfil voltou a `babf258e79fcd51f843bb5297213c281`, os 80.015 relatos e as 3 confirmações permaneceram, e `private.data_retention_runs` continuou com 0 linhas.
+
+Em seguida, a migração foi **aplicada somente em homologação**. A conferência durável encontrou 80.015 eventos de relato, 3 de confirmação, 3 de relato validado, 10.005 de posto verificado e 2 de correção aprovada; RLS ativa e nenhuma permissão de leitura direta para `anon` ou `authenticated`. Seis gatilhos registram novas contribuições.
+
+Dois ensaios de `private.apply_data_retention(true)` foram executados com `ROLLBACK`: um envelheceu uma confirmação positiva; o outro envelheceu um relato com sucessor, a autoria de um posto verificado e uma correção aprovada. A rotina processou os alvos dentro das transações, enquanto os 8 perfis mantiveram contagens, pontos, níveis e badges idênticos. Após as reversões, os 80.015 relatos, as 3 confirmações, os 10.005 autores de postos verificados e os 2 autores de correções aprovadas permaneceram; `private.data_retention_runs` ficou com 0 linhas e o `dry-run` retornou zero em todas as categorias. **Nenhuma limpeza efetiva foi mantida ou agendada.** O backup recente continua sendo requisito antes de uma execução permanente.
 
 ## Validação inicial em produção
 
