@@ -1,12 +1,12 @@
 # Política de retenção de dados do botali
 
-Última atualização: 10 de outubro de 2026.
+Última atualização: 27 de outubro de 2026.
 
 ## Princípios
 
 O botali mantém somente o necessário para mostrar preços, proteger a comunidade, atender solicitações do usuário e medir o produto. A política reduz vínculos pessoais com o tempo e preserva estatísticas agregadas e a trilha essencial de moderação.
 
-Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas porque ainda não foi validado um backup restaurável. Até lá, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
+Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas até a validação de um backup recente e restaurável para a execução permanente. Até lá, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
 
 ## Prazos
 
