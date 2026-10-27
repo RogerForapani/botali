@@ -1,4 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import * as Updates from 'expo-updates'
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native'
@@ -110,10 +111,13 @@ export function AuthModal({ visible, user, vehicle, vehicleLoading, fuelOptions,
 
   async function shareDiagnostics() {
     const [entries, metrics] = await Promise.all([loadAppDiagnostics(), loadAppMetrics()])
-    if (!entries.length && !metrics.length) return setMessage('Nenhum diagnóstico técnico foi registrado neste aparelho.')
     const lines = entries.map((entry) => `${entry.occurredAt} | ${entry.context} | ${entry.code ?? '-'} | ${entry.status ?? '-'} | ${entry.message}`)
     const metricLines = metrics.map((metric) => `${metric.context} | ${metric.count} operações | ${metric.successRate}% sucesso | média ${metric.averageDurationMs} ms | p95 ${metric.p95DurationMs} ms | máx. ${metric.maxDurationMs} ms`)
+    const activeUpdate = Updates.isEnabled
+      ? `${Updates.updateId ?? 'ID indisponível'} | runtime ${Updates.runtimeVersion ?? 'indisponível'} | ${Updates.isEmbeddedLaunch ? 'versão do APK' : 'OTA'}`
+      : 'atualizações desativadas'
     const sections = [
+      `Atualização ativa\n${activeUpdate}`,
       metricLines.length ? `Desempenho agregado\n${metricLines.join('\n')}` : '',
       lines.length ? `Falhas recentes\n${lines.join('\n')}` : '',
     ].filter(Boolean)

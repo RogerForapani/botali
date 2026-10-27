@@ -44,7 +44,7 @@ O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de comb
 - `StationMarker`: bandeira textual, preço, percentual flex e recarga no mapa com hierarquia compacta.
 - `StationClusterMarker`: quantidade de postos próximos; ao tocar, o mapa aproxima e separa progressivamente os marcadores.
 - `StationFilters`: catálogo dinâmico de combustíveis e serviços, aberto sob demanda para manter o mapa limpo.
-- `StationSearch`: busca expansível com raio, classificação por distância, preço e confiança e paginação adicional sob demanda.
+- `StationSearch`: busca expansível com resultados como área principal rolável; raio, classificação e litros planejados ficam sob demanda em “Ajustar busca”. A lista oferece paginação adicional sob demanda.
 - `StationSheet`: detalhes, confiança, favorito, atualização e rota do posto.
 - `ActivityScreen`: histórico real de contribuições com estados autenticado, vazio, carregando e erro.
 - `CommunityProfileCard`: identidade pública opcional, resumo agregado de contribuições e edição com privacidade explícita.

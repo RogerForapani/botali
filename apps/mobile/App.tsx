@@ -34,7 +34,7 @@ import { confirmPriceAtStation, loadStationById, loadStationOptions, type MapBou
 import { loadPriceAlertEvent, markPriceAlertRead, restorePriceAlertDevice } from './src/services/priceAlerts'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { disableSmartVisits } from './src/services/smartVisits'
-import { recordAppFailure } from './src/services/diagnostics'
+import { recordAppFailure, recordAppMetric } from './src/services/diagnostics'
 import { useTheme } from './src/theme/ThemeProvider'
 import { radius, shadow, spacing, typography, type ThemeColors } from './src/theme/tokens'
 import type { MapMode, Station } from './src/types'
@@ -53,6 +53,9 @@ export default function App() {
   const lastNativeMapRegion = useRef<Region>(initialRegion)
   const wasOffline = useRef(false)
   const handledNotificationId = useRef<string | null>(null)
+  const processingNotificationId = useRef<string | null>(null)
+  const pendingNotificationResponse = useRef<Notifications.NotificationResponse | null>(null)
+  const [notificationResponseVersion, setNotificationResponseVersion] = useState(0)
   const { user, loading: sessionLoading, error: sessionError } = useSession()
   const { stations, loading: stationsLoading, error: stationsError, stale, cachedAt, hasMore, refresh, loadMore, refreshBounds, loadMoreBounds, includeStation } = useStations(initialCenter, 10)
   const stationSnapshotRef = useRef(stations)
@@ -216,41 +219,63 @@ export default function App() {
       mapRef.current?.animateToRegion(region, 450)
       if (alertId) await markPriceAlertRead(alertId).catch((error) => recordAppFailure('price-alert.read', error))
       refreshActivity()
+      return true
     } catch (error) {
       recordAppFailure('price-alert.open-station', error).catch(() => undefined)
       setLocationMessage(userMessageForError(error, 'Não foi possível abrir o posto deste alerta.'))
       setTab('explore')
+      return false
     }
   }, [includeStation, radiusKm, refresh, refreshActivity])
 
   useEffect(() => {
-    if (sessionLoading || !mapPreferencesReady) return
     let active = true
-    const openNotificationStation = async (response: Notifications.NotificationResponse | null) => {
+    const rememberNotification = (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return
-      const data = response.notification.request.content.data ?? {}
-      const stationId = typeof data.stationId === 'string' ? data.stationId : null
-      if (!stationId) return
-      if (data.kind === 'price-alert' && !user?.id) return
-      const responseId = response.notification.request.identifier
-      if (handledNotificationId.current === responseId) return
-      handledNotificationId.current = responseId
-      await Notifications.clearLastNotificationResponseAsync().catch(() => undefined)
-      await openAlertStation({
-        stationId,
-        alertId: typeof data.alertId === 'string' ? data.alertId : undefined,
-        fuelCode: typeof data.fuelCode === 'string' ? data.fuelCode : undefined,
-        latitude: Number(data.latitude),
-        longitude: Number(data.longitude),
-      })
+      recordAppMetric('price-alert.tap.received', 0, true).catch(() => undefined)
+      pendingNotificationResponse.current = response
+      setNotificationResponseVersion((version) => version + 1)
     }
-    Notifications.getLastNotificationResponseAsync().then(openNotificationStation)
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(openNotificationStation)
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(rememberNotification)
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!pendingNotificationResponse.current) rememberNotification(response)
+    })
+      .catch((error) => recordAppFailure('price-alert.last-response', error))
+    return () => { active = false; responseSubscription.remove() }
+  }, [])
+
+  useEffect(() => {
     const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
       if (notification.request.content.data?.kind === 'price-alert') refreshActivity()
     })
-    return () => { active = false; responseSubscription.remove(); receivedSubscription.remove() }
-  }, [mapPreferencesReady, openAlertStation, refreshActivity, sessionLoading, user?.id])
+    return () => receivedSubscription.remove()
+  }, [refreshActivity])
+
+  useEffect(() => {
+    if (sessionLoading || !mapPreferencesReady) return
+    const response = pendingNotificationResponse.current
+    if (!response) return
+    const data = response.notification.request.content.data ?? {}
+    const stationId = typeof data.stationId === 'string' ? data.stationId : null
+    if (!stationId) { pendingNotificationResponse.current = null; return }
+    if (data.kind === 'price-alert' && !user?.id) return
+    const responseId = response.notification.request.identifier
+    if (handledNotificationId.current === responseId || processingNotificationId.current === responseId) return
+    processingNotificationId.current = responseId
+    void openAlertStation({
+      stationId,
+      alertId: typeof data.alertId === 'string' ? data.alertId : undefined,
+      fuelCode: typeof data.fuelCode === 'string' ? data.fuelCode : undefined,
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
+    }).then((opened) => {
+      recordAppMetric('price-alert.tap.open-station', 0, opened).catch(() => undefined)
+      if (!opened) return
+      handledNotificationId.current = responseId
+      if (pendingNotificationResponse.current?.notification.request.identifier === responseId) pendingNotificationResponse.current = null
+      return Notifications.clearLastNotificationResponseAsync().catch(() => undefined)
+    }).finally(() => { processingNotificationId.current = null })
+  }, [mapPreferencesReady, notificationResponseVersion, openAlertStation, sessionLoading, user?.id])
 
   function changeTab(next: AppTab) {
     if (next === 'profile') { setTab('explore'); setShowAuth(true); return }
