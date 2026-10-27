@@ -54,7 +54,11 @@ Não há agendamento automático nesta etapa. O projeto gratuito atual não ofer
 
 A migração `202610270001_preserve_community_progress.sql` foi ensaiada em `botali-homologacao` dentro de uma transação encerrada por `ROLLBACK`. Os perfis das 8 contas foram comparados antes e depois, incluindo contagens, pontos, níveis e badges, sem divergências. O preenchimento da trilha privada coincidiu com os registros de origem para relatos, confirmações, postos verificados, correções aprovadas e relatos validados.
 
-Uma consulta separada após o ensaio confirmou que a tabela nova não permaneceu no banco, o hash da função de perfil voltou a `babf258e79fcd51f843bb5297213c281`, os 80.015 relatos e as 3 confirmações permaneceram, e `private.data_retention_runs` continuou com 0 linhas. A migração **não foi aplicada**; a limpeza efetiva permanece desligada. Este ensaio confirma compatibilidade com os dados presentes, mas não substitui o backup recente nem o teste posterior de retenção com dados vencidos.
+Uma consulta separada após esse primeiro ensaio confirmou que a tabela nova não permaneceu no banco, o hash da função de perfil voltou a `babf258e79fcd51f843bb5297213c281`, os 80.015 relatos e as 3 confirmações permaneceram, e `private.data_retention_runs` continuou com 0 linhas.
+
+Em seguida, a migração foi **aplicada somente em homologação**. A conferência durável encontrou 80.015 eventos de relato, 3 de confirmação, 3 de relato validado, 10.005 de posto verificado e 2 de correção aprovada; RLS ativa e nenhuma permissão de leitura direta para `anon` ou `authenticated`. Seis gatilhos registram novas contribuições.
+
+Dois ensaios de `private.apply_data_retention(true)` foram executados com `ROLLBACK`: um envelheceu uma confirmação positiva; o outro envelheceu um relato com sucessor, a autoria de um posto verificado e uma correção aprovada. A rotina processou os alvos dentro das transações, enquanto os 8 perfis mantiveram contagens, pontos, níveis e badges idênticos. Após as reversões, os 80.015 relatos, as 3 confirmações, os 10.005 autores de postos verificados e os 2 autores de correções aprovadas permaneceram; `private.data_retention_runs` ficou com 0 linhas e o `dry-run` retornou zero em todas as categorias. **Nenhuma limpeza efetiva foi mantida ou agendada.** O backup recente continua sendo requisito antes de uma execução permanente.
 
 ## Validação inicial em produção
 

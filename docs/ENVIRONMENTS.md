@@ -68,6 +68,12 @@
 - Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `2e0a28f8-b9a9-45b4-8802-e6d01c65666a` e commit `6a50384`: veículo com vários combustíveis e consumo separado, migração local do cadastro anterior e comparação visual do custo por combustível no posto. Registro conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
 - Atualização OTA Android publicada no canal `preview`, ambiente `preview`, runtime `1.0.1`, grupo `609303ff-6ab1-42da-a6da-188036b93efd` e commit `5600469`: custo personalizado por 100 km e comparação de gasto mínimo de abastecimento mais deslocamento na busca e no detalhe. Registro conferido no EAS; teste no aparelho ainda pendente. Nenhum novo APK foi gerado.
 
+### Validação em 27/10/2026
+
+- `202610270001_preserve_community_progress.sql` aplicada somente em `botali-homologacao`. A trilha privada foi preenchida com 80.015 relatos, 3 confirmações, 3 relatos validados, 10.005 postos verificados e 2 correções aprovadas; RLS e restrições de acesso conferidas.
+- Dois ensaios da retenção efetiva rodaram dentro de transações revertidas: confirmação positiva vencida; depois relato arquivável, autor de posto e autor de correção. Os 8 perfis conservaram pontuação, nível e badges. Após `ROLLBACK`, o `dry-run` voltou a zero e `private.data_retention_runs` permaneceu vazio. Não há limpeza efetiva nem agendamento de retenção.
+- Produção não recebeu esta migração. Aplicação em produção e retenção permanente dependem de backup recente e promoção controlada.
+
 ## Estratégia de entrega
 
 - Priorizar OTA para mudanças de JavaScript, estilos e imagens compatíveis com o runtime do APK instalado. Gerar novo APK quando houver alteração nativa ou mudança de runtime; manter os canais e ambientes de `preview` e `production` separados.
