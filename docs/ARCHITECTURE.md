@@ -28,6 +28,7 @@
 - Fotos de perfil ficam em um bucket privado, limitadas a JPEG de 2 MB e acessíveis somente pela pasta do próprio usuário; o banco guarda apenas o caminho do arquivo.
 - Antes de excluir a conta, o aplicativo confere a sessão ativa e remove a foto da pasta dessa conta pela Storage API. Se a consulta ou remoção falhar, a exclusão é interrompida para evitar um arquivo pessoal remanescente ou um bloqueio do Supabase; arquivos não devem ser apagados diretamente por SQL.
 - Níveis são calculados no PostgreSQL com preços confirmados por terceiros, confirmações limitadas, postos verificados e correções aprovadas. Badges permanentes têm concessão, data, motivo e origem no servidor e não influenciam o consenso.
+- A progressão comunitária usa eventos privados de contribuição, identificados apenas pelo usuário, tipo, UUID da fonte e data. Os eventos sobrevivem à retenção dos relatos/confirmações, mas são apagados em cascata na exclusão da conta; não armazenam preço, endereço ou coordenadas.
 - A aprovação e rejeição de postos ocorre por função protegida e gera registro em `station_moderation_actions`.
 - O aplicativo consulta `user_roles` ao abrir o perfil e apresenta a fila de moderação somente a `moderator` e `admin`; a autorização definitiva continua no PostgreSQL.
 - O mobile mantém somente o último resultado agregado de postos em cache local por até sete dias; ao reconectar, o Supabase volta a ser a fonte de verdade e atualiza o cache.

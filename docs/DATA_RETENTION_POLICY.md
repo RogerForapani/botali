@@ -25,6 +25,7 @@ Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos
 | Estatísticas agregadas arquivadas | 36 meses | Exclui o agregado vencido |
 | Diagnóstico no aparelho | 20 falhas e 20 grupos de métricas | Substituição automática pelos registros mais recentes |
 | Conta, perfil e dados ativos | Enquanto a conta existir | Exclusão ou anonimização conforme a função “Excluir minha conta” |
+| Progressão comunitária (tipo de contribuição, UUID da fonte e data) | Enquanto a conta existir | Exclusão em cascata com o perfil; preserva pontos e conquistas após a limpeza dos registros operacionais |
 
 Dados cadastrais públicos do posto são informações do estabelecimento e permanecem enquanto ele existir no mapa. Correções continuam passando por moderação.
 
@@ -33,6 +34,7 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 - A coordenada precisa nunca permanece em `price_submissions`; somente a distância aproximada calculada pode ser gravada.
 - A rotina não remove o último preço conhecido de um posto/combustível, mesmo após 24 meses, para preservar o aviso de preço desatualizado.
 - Tabelas agregadas ficam no schema `private`, sem acesso de visitantes ou usuários autenticados.
+- A trilha privada de progressão não guarda preço, endereço nem localização; mantém o vínculo com a conta somente para exibir pontos e conquistas até sua exclusão.
 - A função de retenção fica no schema `private` e não pode ser chamada pelo aplicativo.
 - Cada execução efetiva gera um resumo em `private.data_retention_runs` por até 12 meses.
 - A exclusão de conta remove a autenticação e rompe vínculos pessoais conforme as chaves estrangeiras; decisões de moderação e dados públicos podem permanecer anonimizados.
