@@ -50,6 +50,12 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 
 Não há agendamento automático nesta etapa. O projeto gratuito atual não oferece backup restaurável incluído; a rotina efetiva será agendada com `pg_cron` apenas depois do checklist acima e da definição de backup do beta.
 
+## Ensaio transacional da progressão em homologação — 27/10/2026
+
+A migração `202610270001_preserve_community_progress.sql` foi ensaiada em `botali-homologacao` dentro de uma transação encerrada por `ROLLBACK`. Os perfis das 8 contas foram comparados antes e depois, incluindo contagens, pontos, níveis e badges, sem divergências. O preenchimento da trilha privada coincidiu com os registros de origem para relatos, confirmações, postos verificados, correções aprovadas e relatos validados.
+
+Uma consulta separada após o ensaio confirmou que a tabela nova não permaneceu no banco, o hash da função de perfil voltou a `babf258e79fcd51f843bb5297213c281`, os 80.015 relatos e as 3 confirmações permaneceram, e `private.data_retention_runs` continuou com 0 linhas. A migração **não foi aplicada**; a limpeza efetiva permanece desligada. Este ensaio confirma compatibilidade com os dados presentes, mas não substitui o backup recente nem o teste posterior de retenção com dados vencidos.
+
 ## Validação inicial em produção
 
 Em 28/09/2026, a estrutura desta política foi aplicada no projeto Supabase e validada sem executar a limpeza efetiva. O `dry-run` encontrou zero registros vencidos em todas as categorias. A auditoria anterior confirmou 1.230 relatos de preço e nenhuma coordenada exata armazenada em `price_submissions`.
