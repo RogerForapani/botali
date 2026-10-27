@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { isStationId } from '../utils/stationId'
 import type { FuelCode, Station } from '../types'
 import { isPriceStale } from '../utils/priceFreshness'
 
@@ -139,7 +140,7 @@ export async function loadStationProfile(stationId: string): Promise<StationProf
 
 export async function submitPrices(input: { stationId: string; prices: { fuel: FuelCode; price: number }[]; userId: string }) {
   if (!supabase) throw new Error('Supabase não configurado.')
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.stationId)) throw new Error('Não foi possível identificar este posto. Atualize a lista e tente novamente.')
+  if (!isStationId(input.stationId)) throw new Error('Não foi possível identificar este posto. Atualize a lista e tente novamente.')
   const fuelCodes = input.prices.map((item) => item.fuel)
   const { data: fuelTypes, error: fuelError } = await supabase.from('fuel_types').select('id,code').in('code', fuelCodes)
   if (fuelError) throw fuelError
