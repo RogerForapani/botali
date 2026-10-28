@@ -4,6 +4,10 @@
 
 O usuário validou Google, visitante, troca de contas, mapa, contribuição offline/online, moderação, confirmação presencial e exclusão de conta descartável com foto no APK `preview` 1.0.2. A consulta posterior no bucket privado de avatares retornou zero arquivos. A OTA de 10/10/2026 desativou os lembretes automáticos na versão instalada. O [novo APK `preview` 1.0.3](https://expo.dev/accounts/ningas/projects/botali/builds/5f09a0dc-2e06-4fc8-8b12-087c3eef7680) foi compilado; a inspeção do `AndroidManifest.xml` empacotado não encontrou `ACCESS_BACKGROUND_LOCATION` nem `FOREGROUND_SERVICE_LOCATION`, mas encontrou `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION`. Ainda falta testar esse APK no aparelho. Esses resultados autorizam continuar os testes fechados; **não equivalem à liberação do beta público ou à promoção para produção**.
 
+## Validação do APK 1.0.4 em 27/10/2026
+
+O [APK `preview` 1.0.4 (11)](https://expo.dev/accounts/ningas/projects/botali/builds/36676d9a-b74a-42c9-b4e0-9e6c6a8fff40) foi instalado no Android do responsável. A [OTA de teste](https://expo.dev/accounts/ningas/projects/botali/updates/684e5116-d79d-4797-918b-4f46b869b0c4) foi confirmada pelo diagnóstico enviado do aparelho: `01a18009-59a8-7ea4-b4d6-8aa3e478bf49 | runtime 1.0.4 | OTA`. O manifesto empacotado no APK 1.0.4 contém `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION`, sem `ACCESS_BACKGROUND_LOCATION` ou `FOREGROUND_SERVICE_LOCATION`. O primeiro build por `fingerprint` falhou porque o EAS calculou hashes diferentes antes e depois do prebuild Android; esta base usa `appVersion`. O canal OTA funciona nesta base, mas a migração para `fingerprint` continua pendente para o beta público.
+
 Antes do beta público Android, permanecem como portões:
 
 - [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
@@ -13,8 +17,10 @@ Antes do beta público Android, permanecem como portões:
 - [x] Identificar o responsável na política de privacidade: Roger Junio Marques Forapani, pessoa física; contato público rogerforapani@gmail.com.
 - [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. A análise preliminar e correções de transparência foram feitas em 10/10/2026.
 - [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
-- [ ] Preparar um novo APK-base com runtime por `fingerprint` antes do beta público e validar seu canal OTA.
-- [ ] Testar no aparelho o novo APK-base sem permissão de localização em segundo plano e revisar as declarações da Play Store. A compilação e a conferência do manifesto foram concluídas em 10/10/2026.
+- [x] Gerar o APK-base 1.0.4 e validar no aparelho a OTA do canal `preview` com runtime compatível.
+- [ ] Resolver a divergência do runtime por `fingerprint` no EAS e gerar uma base compatível antes do beta público.
+- [x] Conferir no APK 1.0.4 a ausência de permissão de localização em segundo plano.
+- [ ] Revisar as declarações da Play Store e repetir a inspeção do manifesto no APK-base final antes da publicação.
 
 A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
 
