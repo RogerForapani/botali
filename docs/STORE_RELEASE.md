@@ -8,6 +8,12 @@ O usuário validou Google, visitante, troca de contas, mapa, contribuição offl
 
 O [APK `preview` 1.0.4 (11)](https://expo.dev/accounts/ningas/projects/botali/builds/36676d9a-b74a-42c9-b4e0-9e6c6a8fff40) foi instalado no Android do responsável. A [OTA de teste](https://expo.dev/accounts/ningas/projects/botali/updates/684e5116-d79d-4797-918b-4f46b869b0c4) foi confirmada pelo diagnóstico enviado do aparelho: `01a18009-59a8-7ea4-b4d6-8aa3e478bf49 | runtime 1.0.4 | OTA`. O manifesto empacotado no APK 1.0.4 contém `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION`, sem `ACCESS_BACKGROUND_LOCATION` ou `FOREGROUND_SERVICE_LOCATION`. O primeiro build por `fingerprint` falhou porque o EAS calculou hashes diferentes antes e depois do prebuild Android; esta base usa `appVersion`. O canal OTA funciona nesta base, mas a migração para `fingerprint` continua pendente para o beta público.
 
+## Ensaio de fingerprint no APK 1.0.5 em 27/10/2026
+
+O diff do build com falha mostrou apenas `expoConfig.platforms` como diferença efetiva: antes do prebuild, `android,ios,web`; depois, `android,ios`. A entrada `bareNativeDir` adicionada tinha hash nulo. Fixamos `platforms: ['android', 'ios']` no `app.config.js` e mudamos o runtime para `fingerprint`. O hash local ficou igual antes e depois de `expo prebuild --platform android`.
+
+O [APK `preview` 1.0.5 (12)](https://expo.dev/accounts/ningas/projects/botali/builds/3e1fe37f-7332-4e85-8547-bef265075231) terminou com runtime `424585fc47a5de21ca3c31c17a46d41b1d343867`. A [OTA de teste](https://expo.dev/accounts/ningas/projects/botali/updates/cc648025-5acb-4d15-8321-71eed3ed6b9c) foi publicada com o mesmo runtime; uma consulta ao servidor do canal `preview` retornou HTTP 200 e o ID correto da atualização (`01a18021-371e-7521-ac77-38ab82c6939c`). O manifesto empacotado no APK contém localização em primeiro plano e não contém `ACCESS_BACKGROUND_LOCATION` nem `FOREGROUND_SERVICE_LOCATION`. Falta instalar o APK 1.0.5 no aparelho e confirmar a OTA pelo diagnóstico do Botali antes de considerar o ensaio completo no dispositivo.
+
 Antes do beta público Android, permanecem como portões:
 
 - [ ] Validar backup restaurável em ambiente isolado. Enquanto isso, não ativar retenção destrutiva nem limpeza automática.
@@ -18,7 +24,7 @@ Antes do beta público Android, permanecem como portões:
 - [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. A análise preliminar e correções de transparência foram feitas em 10/10/2026.
 - [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
 - [x] Gerar o APK-base 1.0.4 e validar no aparelho a OTA do canal `preview` com runtime compatível.
-- [ ] Resolver a divergência do runtime por `fingerprint` no EAS e gerar uma base compatível antes do beta público.
+- [x] Resolver a divergência do runtime por `fingerprint` no EAS e gerar uma base compatível no canal `preview`; resta confirmar a OTA no aparelho com o APK 1.0.5.
 - [x] Conferir no APK 1.0.4 a ausência de permissão de localização em segundo plano.
 - [ ] Revisar as declarações da Play Store e repetir a inspeção do manifesto no APK-base final antes da publicação.
 
@@ -28,7 +34,7 @@ A assinatura Apple Developer e a publicação iOS continuam adiadas; não são d
 
 - Identificadores: `com.botali.app` no Android e iOS.
 - Builds EAS separados em `development`, `preview` (APK) e `production` (AAB/lojas).
-- Canais de atualização separados e runtime compatível derivado da versão do aplicativo.
+- Canais de atualização separados. APKs até 1.0.4 usam runtime derivado da versão do aplicativo; o APK de ensaio 1.0.5 usa fingerprint das dependências e da configuração nativa.
 - Google Maps configurado para receber chaves restritas específicas de Android e iOS.
 - Ícones adaptativos, splash, temas claro/escuro e deep link `botali://auth/callback`.
 - Exclusão de conta iniciada dentro do aplicativo.
