@@ -12,7 +12,7 @@ O [APK `preview` 1.0.4 (11)](https://expo.dev/accounts/ningas/projects/botali/bu
 
 O diff do build com falha mostrou apenas `expoConfig.platforms` como diferença efetiva: antes do prebuild, `android,ios,web`; depois, `android,ios`. A entrada `bareNativeDir` adicionada tinha hash nulo. Fixamos `platforms: ['android', 'ios']` no `app.config.js` e mudamos o runtime para `fingerprint`. O hash local ficou igual antes e depois de `expo prebuild --platform android`.
 
-O [APK `preview` 1.0.5 (12)](https://expo.dev/accounts/ningas/projects/botali/builds/3e1fe37f-7332-4e85-8547-bef265075231) terminou com runtime `424585fc47a5de21ca3c31c17a46d41b1d343867`. A [OTA de teste](https://expo.dev/accounts/ningas/projects/botali/updates/cc648025-5acb-4d15-8321-71eed3ed6b9c) foi publicada com o mesmo runtime; uma consulta ao servidor do canal `preview` retornou HTTP 200 e o ID correto da atualização (`01a18021-371e-7521-ac77-38ab82c6939c`). O manifesto empacotado no APK contém localização em primeiro plano e não contém `ACCESS_BACKGROUND_LOCATION` nem `FOREGROUND_SERVICE_LOCATION`. Falta instalar o APK 1.0.5 no aparelho e confirmar a OTA pelo diagnóstico do Botali antes de considerar o ensaio completo no dispositivo.
+O [APK `preview` 1.0.5 (12)](https://expo.dev/accounts/ningas/projects/botali/builds/3e1fe37f-7332-4e85-8547-bef265075231) terminou com runtime `424585fc47a5de21ca3c31c17a46d41b1d343867`. A [OTA de teste](https://expo.dev/accounts/ningas/projects/botali/updates/cc648025-5acb-4d15-8321-71eed3ed6b9c) foi publicada com o mesmo runtime; uma consulta ao servidor do canal `preview` retornou HTTP 200 e o ID correto da atualização (`01a18021-371e-7521-ac77-38ab82c6939c`). O responsável instalou o APK e enviou o diagnóstico do aparelho confirmando `01a18021-371e-7521-ac77-38ab82c6939c | runtime 424585fc47a5de21ca3c31c17a46d41b1d343867 | OTA`. O manifesto empacotado contém localização em primeiro plano e não contém `ACCESS_BACKGROUND_LOCATION` nem `FOREGROUND_SERVICE_LOCATION`. As falhas exibidas nesse diagnóstico têm registros anteriores à OTA e não demonstram uma falha nova nesta versão.
 
 Antes do beta público Android, permanecem como portões:
 
@@ -24,7 +24,7 @@ Antes do beta público Android, permanecem como portões:
 - [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. A análise preliminar e correções de transparência foram feitas em 10/10/2026.
 - [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
 - [x] Gerar o APK-base 1.0.4 e validar no aparelho a OTA do canal `preview` com runtime compatível.
-- [x] Resolver a divergência do runtime por `fingerprint` no EAS e gerar uma base compatível no canal `preview`; resta confirmar a OTA no aparelho com o APK 1.0.5.
+- [x] Resolver a divergência do runtime por `fingerprint` no EAS, gerar uma base compatível no canal `preview` e confirmar a OTA no aparelho com o APK 1.0.5.
 - [x] Conferir no APK 1.0.4 a ausência de permissão de localização em segundo plano.
 - [ ] Revisar as declarações da Play Store e repetir a inspeção do manifesto no APK-base final antes da publicação.
 
