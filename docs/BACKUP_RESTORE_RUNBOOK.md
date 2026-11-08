@@ -34,6 +34,8 @@ A branch `codex/restore-drill-apk-20261108` prepara o perfil EAS `restore-drill-
 
 **Escopo encerrado por decisão do responsável em 08/11:** não fazer o teste de login Google nem de ações autenticadas neste projeto restaurado. O provedor Google permanece desligado, nenhuma URL de retorno ou credencial OAuth temporária será criada para este ensaio, e a Data API permanece desligada. Isso limita a evidência móvel ao fluxo de visitante. O critério de autenticação sintética descrito abaixo não foi comprovado por este ensaio; por isso ele não serve, sozinho, para aprovar retenção efetiva ou afirmar recuperação completa do serviço. A próxima revisão pode tratar de tempo de corte e reversão sem alterar o aplicativo principal.
 
+O [plano de troca e retorno](RECOVERY_CUTOVER_PLAN.md) separa os tempos medidos das etapas ainda não ensaiadas e define os portões antes de qualquer alteração do aplicativo principal.
+
 Este procedimento valida que um backup do banco pode ser restaurado antes de qualquer retenção efetiva ou promoção para produção.
 
 ## Estado atual
