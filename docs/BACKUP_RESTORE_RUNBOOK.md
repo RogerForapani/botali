@@ -6,6 +6,8 @@ O backup novo `20261108-124003-homologacao-YU4Thg` foi enviado ao Backblaze B2, 
 
 O reparo protegido é gerado por `supabase/backup/prepare_migration_history_repair.py` e executado por `reconcile_migration_history_live.ps1` após uma cópia recente verificada. O script só aceita o histórico inicial de três versões, verifica a presença das tabelas essenciais, acrescenta os registros faltantes em uma transação e confere o inventário antes/depois. Ele **não executa novamente as migrações**. Se o esquema, os catálogos, o histórico ou o backup mudarem, refaça a auditoria antes de usar o reparo.
 
+**Resultado na homologação em 08/11:** o reparo protegido concluiu em transação, passando de 3 para 28 versões; a última é `202610270001`. Uma segunda leitura do banco confirmou a lista completa de versões. O inventário JSON imediatamente anterior e posterior coincidiu em contagens de postos, preços, usuários, Storage, tabelas públicas, RLS, privilégios e configuração padrão; a única diferença foi `latest_migration`. Os registros protegidos da operação estão em `/home/ningas/botali-backups/history-repair-20261108-124910/`, fora do repositório. Não houve nova execução do SQL das migrações nem alteração nos dados do aplicativo. A conciliação do histórico fica concluída para a homologação; um ensaio de recuperação cronometrado e a retenção seguem como portões separados.
+
 Este procedimento valida que um backup do banco pode ser restaurado antes de qualquer retenção efetiva ou promoção para produção.
 
 ## Estado atual
