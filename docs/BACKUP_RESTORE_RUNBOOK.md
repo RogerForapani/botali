@@ -8,6 +8,14 @@ O reparo protegido é gerado por `supabase/backup/prepare_migration_history_repa
 
 **Resultado na homologação em 08/11:** o reparo protegido concluiu em transação, passando de 3 para 28 versões; a última é `202610270001`. Uma segunda leitura do banco confirmou a lista completa de versões. O inventário JSON imediatamente anterior e posterior coincidiu em contagens de postos, preços, usuários, Storage, tabelas públicas, RLS, privilégios e configuração padrão; a única diferença foi `latest_migration`. Os registros protegidos da operação estão em `/home/ningas/botali-backups/history-repair-20261108-124910/`, fora do repositório. Não houve nova execução do SQL das migrações nem alteração nos dados do aplicativo. A conciliação do histórico fica concluída para a homologação; um ensaio de recuperação cronometrado e a retenção seguem como portões separados.
 
+## Ensaio cronometrado da cópia externa — 08/11/2026
+
+Depois da conciliação, a rotina criou `20261108-125815-homologacao-tVce3O.gpg` no bucket privado do Backblaze B2 e conferiu o download pelo SHA-256 `8c4e404e1fe5ad3bd999f52477baad1da14317ffb47e4241921bdb5fdf1d6bd9`. O ensaio começou às **13:04:35** (São Paulo), baixou o arquivo novamente do B2 e restaurou seus dados em PostgreSQL 17/PostGIS local isolado, sem escutar na rede. O arquivo do Storage foi conferido pelo manifesto e pelo hash. A leitura local passou para 8 perfis, 10.006 postos, 80.014 relatos, 90.028 eventos de contribuição, 22 tabelas públicas com RLS e 28 migrações, além de uma consulta geográfica. Em seguida, uma conexão independente confirmou que a homologação original continuava acessível.
+
+**Tempos medidos:** 34,751 s para download; 0,723 s para abrir e verificar o pacote; 9,743 s para restaurar o banco e consultar; 1,269 s para conferir a origem; **46,651 s no total**. A cópia tinha 6,3 minutos no início do ensaio; essa é a idade observada do ponto de recuperação, não uma garantia para incidentes futuros. O registro local está em `%LOCALAPPDATA%/BotaliBackup/recovery-drills/20261108-130435/result.json` e os dados extraídos, com acesso restrito, em `/home/ningas/botali-backups/recovery-drills/20261108-130435/`.
+
+**Escopo:** o ensaio comprova obtenção da cópia externa, descriptografia, integridade, recuperação das tabelas do aplicativo e leitura da origem após o teste. O PostgreSQL local usa identificadores de usuários em uma tabela Auth substituta; não restaura o serviço Supabase Auth nem testa login. O aplicativo não foi apontado para o destino, não houve congelamento real de escritas, virada ou reversão de tráfego. Portanto, 46,651 s **não é o tempo de recuperação completo do serviço**. O ensaio ponta a ponta ainda exige um novo projeto Supabase isolado e configuração móvel de teste; não usar o projeto principal para essa etapa.
+
 Este procedimento valida que um backup do banco pode ser restaurado antes de qualquer retenção efetiva ou promoção para produção.
 
 ## Estado atual
