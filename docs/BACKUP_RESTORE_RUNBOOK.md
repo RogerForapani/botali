@@ -1,5 +1,11 @@
 # Backup e restauração do Botali
 
+## Conciliação do histórico de migrações — 08/11/2026
+
+O backup novo `20261108-124003-homologacao-YU4Thg` foi enviado ao Backblaze B2, baixado e conferido pelo SHA-256 `9a955cfa84dc595430b87cfa65b41d118811ea46b590ec600cc6acb340424545`. Antes do reparo, a homologação ainda registrava somente `202610070001`, `202610070002` e `202610070003` no histórico. A sequência de **28 arquivos da branch principal**, incluindo `202610270001_preserve_community_progress.sql`, foi reproduzida em PostgreSQL 17/PostGIS local isolado. O esquema do backup e o esquema reproduzido coincidiram em 28 tabelas, 33 políticas, 18 gatilhos, 9 índices, 42 chaves estrangeiras, 34 restrições, 23 tabelas com RLS e uma sequência. A única função extra no backup é `public.rls_auto_enable()`, gerenciada pelo Supabase. As definições em comum não tiveram divergências funcionais na comparação normalizada; os catálogos de combustíveis, serviços, bandeiras, badges e programa coincidiram. O reparo foi ensaiado em uma restauração local do backup: o histórico passou de 3 para 28 versões e as contagens de 10.006 postos, 80.014 relatos de preço e 90.028 eventos de contribuição permaneceram iguais. Esse ensaio não substitui uma restauração em projeto Supabase separado nem comprova que cada migração foi executada historicamente.
+
+O reparo protegido é gerado por `supabase/backup/prepare_migration_history_repair.py` e executado por `reconcile_migration_history_live.ps1` após uma cópia recente verificada. O script só aceita o histórico inicial de três versões, verifica a presença das tabelas essenciais, acrescenta os registros faltantes em uma transação e confere o inventário antes/depois. Ele **não executa novamente as migrações**. Se o esquema, os catálogos, o histórico ou o backup mudarem, refaça a auditoria antes de usar o reparo.
+
 Este procedimento valida que um backup do banco pode ser restaurado antes de qualquer retenção efetiva ou promoção para produção.
 
 ## Estado atual

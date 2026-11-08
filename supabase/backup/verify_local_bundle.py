@@ -2,6 +2,7 @@
 """Verify a local Botali backup bundle without connecting to Supabase."""
 
 import hashlib
+import csv
 import json
 import re
 import subprocess
@@ -53,17 +54,36 @@ def verify(bundle: Path) -> None:
     if len(covered_inventories) != 1:
         fail("é necessário exatamente um inventário JSON coberto por hash")
     try:
-        json.loads(covered_inventories[0].read_text(encoding="utf-8"))
+        inventory = json.loads(covered_inventories[0].read_text(encoding="utf-8"))
     except (UnicodeError, json.JSONDecodeError) as error:
         fail(f"inventário JSON ilegível: {error}")
 
     storage = root / "storage"
+    storage_files = []
     if storage.exists():
         if not storage.is_dir():
             fail("storage não é uma pasta")
-        for file in storage.rglob("*"):
-            if file.is_file() and file.resolve() not in checked:
+        storage_files = [file for file in storage.rglob("*") if file.is_file()]
+        for file in storage_files:
+            if file.resolve() not in checked:
                 fail(f"arquivo do Storage sem hash: {file.relative_to(root)}")
+    expected_objects = inventory.get("storage", {}).get("objects")
+    if expected_objects is not None and len(storage_files) != expected_objects:
+        fail(f"Storage: inventário registra {expected_objects} objetos, mas o pacote contém {len(storage_files)} arquivos")
+
+    object_list = root / "storage-objects.csv"
+    if object_list.exists():
+        if object_list not in checked:
+            fail("lista de objetos do Storage sem hash")
+        with object_list.open(newline="", encoding="utf-8") as stream:
+            reader = csv.DictReader(stream)
+            if reader.fieldnames != ["bucket_id", "name"]:
+                fail("cabeçalho da lista de objetos inválido")
+            names = [(row["bucket_id"], row["name"]) for row in reader]
+        expected_paths = {f"storage/{bucket}/{name}" for bucket, name in names}
+        actual_paths = {file.relative_to(root).as_posix() for file in storage_files}
+        if len(names) != len(expected_paths) or expected_paths != actual_paths:
+            fail("lista de objetos do Storage diverge dos arquivos copiados")
 
     result = subprocess.run(
         ["pg_restore", "--list", str(root / "database.dump")],
