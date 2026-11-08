@@ -1,4 +1,4 @@
-module.exports = () => ({
+const baseConfig = () => ({
   name: 'Botali',
   slug: 'botali',
   owner: 'ningas',
@@ -56,3 +56,26 @@ module.exports = () => ({
   web: { favicon: './assets/favicon.png' },
   extra: { eas: { projectId: 'fc640c3a-b4f6-411c-84c7-511dc68b7626' } },
 });
+
+module.exports = () => {
+  const config = baseConfig()
+  if (process.env.EXPO_PUBLIC_APP_VARIANT !== 'restore-drill') return config
+
+  return {
+    ...config,
+    name: 'Botali (teste de restauro)',
+    scheme: 'botali-restore',
+    updates: { enabled: false },
+    android: {
+      ...config.android,
+      package: 'com.botali.app.restoreauth',
+      googleServicesFile: undefined,
+    },
+    ios: {
+      ...config.ios,
+      bundleIdentifier: 'com.botali.app.restoreauth',
+      usesAppleSignIn: false,
+      config: undefined,
+    },
+  }
+}

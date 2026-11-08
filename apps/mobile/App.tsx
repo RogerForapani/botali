@@ -45,6 +45,7 @@ import { userMessageForError } from './src/utils/appError'
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
 const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
 const fallbackFuels = [{ code: 'gasolina', name: 'Gasolina comum' }, { code: 'etanol', name: 'Etanol' }, { code: 'diesel_s10', name: 'Diesel S10' }]
+const restoreDrill = process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill'
 
 export default function App() {
   const { colors, mode: themeMode } = useTheme()
@@ -62,7 +63,7 @@ export default function App() {
   useEffect(() => { stationSnapshotRef.current = stations }, [stations])
   const isOnline = useConnectivity()
   useEffect(() => {
-    if (!user?.id || isOnline === false) return
+    if (restoreDrill || !user?.id || isOnline === false) return
     restorePriceAlertDevice(user.id).catch((error) => recordAppFailure('price-alert.restore-device', error))
   }, [isOnline, user?.id])
   const favorites = useFavorites(user?.id ?? null)
@@ -145,6 +146,7 @@ export default function App() {
   }, [user])
 
   useEffect(() => {
+    if (restoreDrill) return
     let active = true
     loadMapPreferences().then(async (preferences) => {
       if (!active || !preferences) return
@@ -245,6 +247,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (restoreDrill) return
     const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
       if (notification.request.content.data?.kind === 'price-alert') refreshActivity()
     })
@@ -252,7 +255,7 @@ export default function App() {
   }, [refreshActivity])
 
   useEffect(() => {
-    if (sessionLoading || !mapPreferencesReady) return
+    if (restoreDrill || sessionLoading || !mapPreferencesReady) return
     const response = pendingNotificationResponse.current
     if (!response) return
     const data = response.notification.request.content.data ?? {}

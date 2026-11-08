@@ -74,6 +74,7 @@ export async function markPriceAlertRead(id: string): Promise<void> {
 }
 
 export async function registerPriceAlertDevice(): Promise<void> {
+  if (process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill') throw new Error('Push desativado neste teste de restauro.')
   if (Platform.OS === 'web') throw new Error('As notificações externas estão disponíveis no aplicativo Android/iOS.')
   if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync('price-alerts', { name: 'Alertas de preço', importance: Notifications.AndroidImportance.LOW })
   const permission = await Notifications.requestPermissionsAsync()
@@ -86,6 +87,7 @@ export async function registerPriceAlertDevice(): Promise<void> {
 }
 
 export async function restorePriceAlertDevice(userId: string): Promise<void> {
+  if (process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill') return
   if (Platform.OS === 'web') return
   const rule = await loadPriceAlertRule(userId)
   if (!rule?.push_enabled) return
@@ -97,6 +99,7 @@ export async function restorePriceAlertDevice(userId: string): Promise<void> {
 }
 
 export async function removePriceAlertDevice(): Promise<void> {
+  if (process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill') return
   const { error } = await client().rpc('remove_my_price_alert_device')
   if (error) throw error
 }

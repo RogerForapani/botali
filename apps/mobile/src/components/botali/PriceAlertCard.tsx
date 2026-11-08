@@ -7,6 +7,7 @@ import { userMessageForError } from '../../utils/appError'
 
 type Props = { userId: string; visible: boolean; center: { latitude: number; longitude: number }; fuels: { code: string; name: string }[] }
 const distances = [2, 5, 10, 25, 50]
+const restoreDrill = process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill'
 
 export function PriceAlertCard({ userId, visible, center, fuels }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
@@ -27,7 +28,7 @@ export function PriceAlertCard({ userId, visible, center, fuels }: Props) {
       setRule(saved)
       if (saved) {
         setFuel(saved.fuel_code); setPrice(String(saved.max_price).replace('.', ',')); setRadiusKm(saved.radius_km)
-        setPush(saved.push_enabled); setArea({ latitude: saved.center_lat, longitude: saved.center_long })
+        setPush(restoreDrill ? false : saved.push_enabled); setArea({ latitude: saved.center_lat, longitude: saved.center_long })
       }
     }).catch(() => { if (!cancelled) setMessage('Não foi possível carregar os alertas. Tente abrir o Perfil novamente.') })
     return () => { cancelled = true }
@@ -40,9 +41,11 @@ export function PriceAlertCard({ userId, visible, center, fuels }: Props) {
     setBusy(true); setMessage('')
     try {
       // Register before enabling push, so a failed permission cannot leave an active remote rule.
-      if (push) await registerPriceAlertDevice()
-      else await removePriceAlertDevice()
-      const next: PriceAlertRule = { user_id: userId, fuel_code: fuel, center_lat: area.latitude, center_long: area.longitude, radius_km: radiusKm, max_price: maxPrice, push_enabled: push }
+      if (!restoreDrill) {
+        if (push) await registerPriceAlertDevice()
+        else await removePriceAlertDevice()
+      }
+      const next: PriceAlertRule = { user_id: userId, fuel_code: fuel, center_lat: area.latitude, center_long: area.longitude, radius_km: radiusKm, max_price: maxPrice, push_enabled: restoreDrill ? false : push }
       await savePriceAlertRule(next)
       setRule(next)
       setMessage('Alerta salvo. Avisaremos quando surgir um preço recente e confiável nessa área.')
@@ -68,7 +71,7 @@ export function PriceAlertCard({ userId, visible, center, fuels }: Props) {
     <View style={styles.options}>{distances.map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: radiusKm === value }} style={[styles.option, radiusKm === value && styles.selected]} onPress={() => setRadiusKm(value)}><Text style={[styles.optionText, radiusKm === value && styles.selectedText]}>{value} km</Text></Pressable>)}</View>
     <Pressable accessibilityRole="button" style={styles.areaButton} onPress={() => { setArea(center); setMessage('Área do mapa selecionada. Salve para atualizar o alerta.') }}><Text style={styles.areaText}>Usar área exibida no mapa</Text></Pressable>
     <Text style={styles.hint}>Centro aproximado: {area.latitude.toFixed(2)}, {area.longitude.toFixed(2)}. A área é arredondada antes de ser salva.</Text>
-    <Pressable accessibilityRole="switch" accessibilityState={{ checked: push }} style={styles.pushRow} onPress={() => setPush(!push)}><Text style={styles.pushLabel}>Notificar também fora do aplicativo</Text><Text style={styles.pushValue}>{push ? 'Ativado' : 'Desativado'}</Text></Pressable>
+    {restoreDrill ? <Text style={styles.hint}>Notificações externas desativadas neste teste de restauro.</Text> : <Pressable accessibilityRole="switch" accessibilityState={{ checked: push }} style={styles.pushRow} onPress={() => setPush(!push)}><Text style={styles.pushLabel}>Notificar também fora do aplicativo</Text><Text style={styles.pushValue}>{push ? 'Ativado' : 'Desativado'}</Text></Pressable>}
     <Pressable disabled={busy} accessibilityRole="button" style={styles.saveButton} onPress={save}><Text style={styles.saveText}>{busy ? 'Aguarde…' : rule ? 'Atualizar alerta' : 'Criar alerta'}</Text></Pressable>
     {rule ? <Pressable disabled={busy} accessibilityRole="button" style={styles.removeButton} onPress={disable}><Text style={styles.removeText}>Desativar alerta</Text></Pressable> : null}
     {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
