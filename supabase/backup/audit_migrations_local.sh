@@ -77,6 +77,10 @@ pg_dump -s -n public -n private --no-owner --no-acl -h "$out_dir" \
   -U postgres -d botali_migrations -f "$out_dir/candidate-schema.sql"
 pg_dump -Fc -s -n public -n private --no-owner --no-acl -h "$out_dir" \
   -U postgres -d botali_migrations -f "$out_dir/candidate-schema.dump"
+pg_dump --data-only --no-owner --no-acl -h "$out_dir" -U postgres -d botali_migrations \
+  --table=public.fuel_types --table=public.services --table=public.station_brands \
+  --table=public.community_badges --table=public.community_programs \
+  -f "$out_dir/candidate-catalog.sql"
 pg_restore --list "$out_dir/candidate-schema.dump" > "$out_dir/candidate-objects.txt"
 printf 'Sequência local aplicada: %s migrações\n' "$(wc -l < "$out_dir/results.tsv")"
 printf 'Resultado: %s\n' "$out_dir"
