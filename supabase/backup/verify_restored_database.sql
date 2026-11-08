@@ -45,6 +45,20 @@ begin
     raise exception 'RLS desabilitada em: %', array_to_string(tables_without_rls, ', ');
   end if;
 
+  if exists (
+    select 1 from pg_class relation
+    join pg_namespace namespace on namespace.oid = relation.relnamespace
+    where namespace.nspname = 'public' and relation.relkind = 'r'
+      and has_table_privilege('anon', relation.oid, 'INSERT')
+  ) then
+    raise exception 'Papel anon pode inserir diretamente em tabelas publicas';
+  end if;
+
+  if has_table_privilege('anon', 'public.price_submissions', 'SELECT')
+     or has_table_privilege('authenticated', 'public.stations', 'INSERT') then
+    raise exception 'Privilegios de tabelas sensiveis mais amplos que a origem';
+  end if;
+
   select array_agg(function_name order by function_name)
   into missing_functions
   from unnest(array[
@@ -65,6 +79,16 @@ begin
     raise exception 'Funcoes obrigatorias ausentes: %', array_to_string(missing_functions, ', ');
   end if;
 
+  if exists (
+    select 1 from pg_proc procedure
+    join pg_namespace namespace on namespace.oid = procedure.pronamespace
+    where namespace.nspname = 'public'
+      and procedure.proname in ('delete_my_account', 'moderate_station_edit_request')
+      and has_function_privilege('anon', procedure.oid, 'EXECUTE')
+  ) then
+    raise exception 'Papel anon pode executar funcoes sensiveis';
+  end if;
+
   if not exists (select 1 from pg_extension where extname = 'postgis') then
     raise exception 'Extensao PostGIS ausente';
   end if;
@@ -82,7 +106,7 @@ end;
 $validation$;
 
 select jsonb_build_object(
-  'verification_version', 1,
+  'verification_version', 4,
   'checked_at', now(),
   'migration_history_present', (select present from botali_backup_migration_state),
   'latest_migration', (select latest_version from botali_backup_migration_state),
@@ -97,6 +121,56 @@ select jsonb_build_object(
     from pg_class relation
     join pg_namespace namespace on namespace.oid = relation.relnamespace
     where namespace.nspname = 'public' and relation.relkind = 'r' and relation.relrowsecurity
+  ),
+  'table_privileges', jsonb_build_object(
+    'acl_hash', (
+      select md5(string_agg(relation.relname || '=' || coalesce(relation.relacl::text, ''), '|' order by relation.relname))
+      from pg_class relation
+      join pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public' and relation.relkind = 'r'
+    ),
+    'anon_insert', (
+      select count(*) from pg_class relation
+      join pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public' and relation.relkind = 'r'
+        and has_table_privilege('anon', relation.oid, 'INSERT')
+    ),
+    'anon_select', (
+      select count(*) from pg_class relation
+      join pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public' and relation.relkind = 'r'
+        and has_table_privilege('anon', relation.oid, 'SELECT')
+    ),
+    'authenticated_insert', (
+      select count(*) from pg_class relation
+      join pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public' and relation.relkind = 'r'
+        and has_table_privilege('authenticated', relation.oid, 'INSERT')
+    )
+  ),
+  'function_privileges', jsonb_build_object(
+    'effective_acl_hash', (
+      select md5(string_agg(
+        procedure.proname || '=' ||
+        has_function_privilege('anon', procedure.oid, 'EXECUTE')::text || ',' ||
+        has_function_privilege('authenticated', procedure.oid, 'EXECUTE')::text || ',' ||
+        has_function_privilege('service_role', procedure.oid, 'EXECUTE')::text,
+        '|' order by procedure.proname
+      ))
+      from pg_proc procedure
+      join pg_namespace namespace on namespace.oid = procedure.pronamespace
+      where namespace.nspname = 'public'
+    )
+  ),
+  'postgres_public_default_privileges', (
+    select coalesce(jsonb_object_agg(default_acl.defaclobjtype, default_acl.defaclacl::text), '{}'::jsonb)
+    from pg_default_acl default_acl
+    where default_acl.defaclrole = 'postgres'::regrole
+      and default_acl.defaclnamespace = 'public'::regnamespace
+  ),
+  'storage', jsonb_build_object(
+    'buckets', (select count(*) from storage.buckets),
+    'objects', (select count(*) from storage.objects)
   ),
   'counts', jsonb_build_object(
     'auth_users', (select count(*) from auth.users),
