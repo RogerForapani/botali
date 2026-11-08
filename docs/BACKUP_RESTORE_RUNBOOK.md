@@ -26,6 +26,10 @@ O projeto temporário `botali-restore-drill-20261108` (`madrjvnuycxvrahqhizg`) f
 
 **Ainda não é um RTO completo:** não houve login, teste no APK separado, troca de tráfego, congelamento de escritas ou reversão do aplicativo. A idade do snapshot é uma observação deste ensaio, não um limite garantido de perda de dados. Não liberar retenção destrutiva nem classificar o plano completo como aprovado antes dessas verificações.
 
+### APK separado do ensaio
+
+A branch `codex/restore-drill-apk-20261108` prepara o perfil EAS `restore-drill-20261108` para o projeto temporário `madrjvnuycxvrahqhizg`. O APK usa o pacote Android `com.botali.app.restoreauth`, o nome **Botali (teste de restauro)**, o retorno `botali-restore://auth/callback` e uma chave publicável própria do projeto restaurado. As atualizações OTA, o cadastro de push e a exclusão de conta ficam desativados nesse perfil; o pacote principal `com.botali.app` mantém sua configuração. A compilação EAS `d2b6cc62-a08b-4250-b7fc-f800008f1e49` terminou com sucesso: versão 1.0.5, build 4, APK em `https://expo.dev/accounts/ningas/projects/botali/builds/d2b6cc62-a08b-4250-b7fc-f800008f1e49`. A checagem de tipos, `npm run lint` e `npm run build` passaram. Antes de testar o APK no aparelho, autorizar temporariamente o pacote na chave Android Maps e abrir a Data API somente durante o teste. Para login Google, preparar um cliente OAuth e retorno exclusivos do restauro, com remoção depois do ensaio. Registrar o resultado no aparelho e reverter todos os acessos temporários.
+
 Este procedimento valida que um backup do banco pode ser restaurado antes de qualquer retenção efetiva ou promoção para produção.
 
 ## Estado atual
