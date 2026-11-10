@@ -22,12 +22,12 @@ Antes do beta público Android, permanecem como portões:
 - [ ] Testar o acesso legado por e-mail/senha com conta descartável, já que o método continua disponível para contas antigas.
 - [x] Repetir autorização/RLS pela API com sessões reais de usuário comum e moderador. O usuário confirmou 6/6 em cada conta no APK de homologação em 10/10/2026; ver `CRITICAL_FLOWS_VALIDATION.md`.
 - [x] Identificar o responsável na política de privacidade: Roger Junio Marques Forapani, pessoa física; contato público rogerforapani@gmail.com.
-- [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. A análise preliminar e correções de transparência foram feitas em 10/10/2026.
-- [ ] Validar o canal Web/e-mail de exclusão de conta e seu atendimento antes da Play Store.
+- [ ] Concluir as pendências da revisão de privacidade em `PRIVACY_REVIEW.md` e obter avaliação jurídica profissional antes da publicação. O inventário de finalidades, fornecedores e declarações da loja está em `PRIVACY_BETA_WORKSHEET.md`; hipóteses legais e transferências ainda não estão aprovadas.
+- [x] Ensaiar o canal Web/e-mail de exclusão de conta na homologação. Em 09/11/2026, pedido, titularidade, remoção e resposta passaram com conta descartável; conferir novamente no ambiente final.
 - [x] Gerar o APK-base 1.0.4 e validar no aparelho a OTA do canal `preview` com runtime compatível.
 - [x] Resolver a divergência do runtime por `fingerprint` no EAS, gerar uma base compatível no canal `preview` e confirmar a OTA no aparelho com o APK 1.0.5.
 - [x] Conferir no APK 1.0.4 a ausência de permissão de localização em segundo plano.
-- [ ] Revisar as declarações da Play Store e repetir a inspeção do manifesto no APK-base final antes da publicação.
+- [ ] Revisar as declarações da Play Store com o AAB final e repetir a inspeção do manifesto antes da publicação. O primeiro beta foi definido para motoristas adultos no Brasil.
 
 A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
 
@@ -35,7 +35,7 @@ A assinatura Apple Developer e a publicação iOS continuam adiadas; não são d
 
 1. **Conferir o agendamento e o aviso de falha do backup diário:** a execução manual de 09/11 gerou uma cópia externa conferida, após uma interrupção anterior ainda sem causa determinada. Confirmar que a próxima execução agendada conclui sem intervenção e definir como detectar cópia vencida ou falha; ver `BACKUP_RESTORE_RUNBOOK.md`.
 2. **Validar a exclusão por e-mail:** fazer um pedido com conta descartável, conferir recebimento, verificação da titularidade, remoção no banco e no Storage e resposta ao solicitante. Não usar a conta principal; seguir `ACCOUNT_DELETION_SUPPORT_RUNBOOK.md`.
-3. **Concluir a revisão de privacidade e loja:** registrar bases legais e fornecedores, confirmar o público e o país de lançamento, submeter o texto à avaliação jurídica profissional e preparar as declarações da Play Store com o APK final.
+3. **Concluir a revisão de privacidade e loja:** o inventário e a decisão de público/país estão em `PRIVACY_BETA_WORKSHEET.md`. Falta a decisão jurídica sobre bases legais e transferências, confirmar contratos/regiões dos fornecedores e conferir as declarações da Play Store com o AAB final.
 4. **Preparar a versão candidata Android:** conferir segredos por ambiente, manifesto e assinatura do APK/AAB, executar os fluxos críticos no build final e decidir a promoção de migrações e código para produção em operação separada.
 
 O [plano de troca e retorno](RECOVERY_CUTOVER_PLAN.md) registra os limites do restauro. A decisão de pular o teste autenticado do projeto temporário permanece respeitada nesta fase. Esse ensaio não pode fundamentar uma afirmação de recuperação completa, a retenção destrutiva ou uma troca real do projeto atendido pelo aplicativo principal.

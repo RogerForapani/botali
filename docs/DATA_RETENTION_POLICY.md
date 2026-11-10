@@ -25,6 +25,7 @@ Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos
 | Estatísticas agregadas arquivadas | 36 meses | Exclui o agregado vencido |
 | Diagnóstico no aparelho | 20 falhas e 20 grupos de métricas | Substituição automática pelos registros mais recentes |
 | Conta, perfil e dados ativos | Enquanto a conta existir | Exclusão ou anonimização conforme a função “Excluir minha conta” |
+| Cópias de segurança criptografadas | Prazo específico ainda não definido | Definir expurgo verificável antes do beta público; não alterar arquivos já criados ao excluir uma conta no banco ativo |
 | Progressão comunitária (tipo de contribuição, UUID da fonte e data) | Enquanto a conta existir | Exclusão em cascata com o perfil; preserva pontos e conquistas após a limpeza dos registros operacionais |
 
 Dados cadastrais públicos do posto são informações do estabelecimento e permanecem enquanto ele existir no mapa. Correções continuam passando por moderação.
@@ -49,6 +50,8 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 6. Conferir `private.data_retention_runs`, volume das tabelas e erros do Postgres.
 
 Não há agendamento automático nesta etapa. O projeto gratuito atual não oferece backup restaurável incluído; a rotina efetiva será agendada com `pg_cron` apenas depois do checklist acima e da definição de backup do beta.
+
+O backup diário criptografado tem uma rotina separada; a execução manual de 09/11/2026 foi conferida, mas a execução agendada seguinte ainda precisa ser observada. Não há, neste documento, prazo comprovado de expurgo dos arquivos externos ou locais de backup. Antes do beta público, definir retenção e destruição verificável das cópias, incluindo o tratamento de dados de contas já excluídas, sem eliminar a última cópia restaurável sem substituta validada.
 
 ## Ensaio transacional da progressão em homologação — 27/10/2026
 
