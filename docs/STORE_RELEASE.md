@@ -34,7 +34,7 @@ A assinatura Apple Developer e a publicação iOS continuam adiadas; não são d
 ## Próxima sequência após o ensaio de 08/11/2026
 
 1. **Conferir o agendamento e o aviso de falha do backup diário:** a execução manual de 09/11 gerou uma cópia externa conferida, após uma interrupção anterior ainda sem causa determinada. Confirmar que a próxima execução agendada conclui sem intervenção e definir como detectar cópia vencida ou falha; ver `BACKUP_RESTORE_RUNBOOK.md`.
-2. **Validar a exclusão por e-mail:** fazer um pedido com conta descartável, conferir recebimento, verificação da titularidade, remoção no banco e no Storage e resposta ao solicitante. Não usar a conta principal.
+2. **Validar a exclusão por e-mail:** fazer um pedido com conta descartável, conferir recebimento, verificação da titularidade, remoção no banco e no Storage e resposta ao solicitante. Não usar a conta principal; seguir `ACCOUNT_DELETION_SUPPORT_RUNBOOK.md`.
 3. **Concluir a revisão de privacidade e loja:** registrar bases legais e fornecedores, confirmar o público e o país de lançamento, submeter o texto à avaliação jurídica profissional e preparar as declarações da Play Store com o APK final.
 4. **Preparar a versão candidata Android:** conferir segredos por ambiente, manifesto e assinatura do APK/AAB, executar os fluxos críticos no build final e decidir a promoção de migrações e código para produção em operação separada.
 
