@@ -36,6 +36,8 @@ Não escolher consentimento apenas porque uma função é opcional. Se legítimo
 
 Um fornecedor sediado fora do Brasil ou um fluxo internacional exige análise do mecanismo de transferência aplicável. Não afirmar que a hospedagem em São Paulo mantém todos os dados no Brasil. [Regulamento da ANPD sobre transferência internacional](https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-19-de-23-de-agosto-de-2024).
 
+**Verificação operacional de 09/11/2026:** o painel do projeto de homologação Supabase `phsvoeljsaksglqrpstm` mostra **South America (São Paulo)**. A configuração local do destino externo do backup aponta para `us-east-005` do Backblaze B2; segundo a [documentação de regiões da Backblaze](https://www.backblaze.com/docs/cloud-storage-data-regions), a região US East guarda os arquivos em Reston, Virgínia, EUA. Trata-se de cópia criptografada fora do Brasil. Esta conferência não prova onde os demais serviços, logs e suboperadores processam dados nem valida um mecanismo jurídico de transferência. O material de contratos e transferências deve ser fechado por revisão jurídica antes do beta público.
+
 ## Rascunho para “Segurança dos dados” na Play Console
 
 Este quadro **não é um formulário aprovado**. “Coletado” e “compartilhado” têm definições próprias do Google Play, inclusive para SDKs e processamento transitório. Preencher somente após examinar o AAB final e as declarações dos SDKs. [Guia oficial](https://support.google.com/googleplay/android-developer/answer/10787469).
@@ -53,11 +55,15 @@ Este quadro **não é um formulário aprovado**. “Coletado” e “compartilha
 
 Respostas ainda pendentes no formulário: criptografia em trânsito de **todos** os fluxos, possibilidade de exclusão, uso de dados por SDKs, categorias de compartilhamento, coleta opcional/obrigatória e declaração de anúncios. Conferir o [caminho externo de exclusão](ACCOUNT_DELETION.md) e a [política pública](PRIVACY_POLICY.md) com URLs acessíveis sem login. A confirmação por e-mail foi ensaiada em homologação em 09/11; o pacote final ainda precisa ser testado.
 
+O [rascunho operacional da declaração para Google Play](PLAY_DATA_SAFETY_DRAFT.md) detalha cada fluxo identificado no código, a evidência e o ponto que precisa ser confirmado no AAB final. Não copiar respostas provisórias diretamente para a loja.
+
 ## Portões restantes deste passo
 
 1. Responsável e profissional jurídico revisarem as bases por finalidade, o atendimento aos direitos, a retenção e as transferências; registrar versão e decisões.
 2. Conferir contratos/DPAs efetivamente aplicáveis e a região configurada de Supabase e Backblaze, sem colocar credenciais no repositório.
 3. Definir e testar o ciclo de vida das cópias externas e a retenção efetiva antes de prometer prazos como executados. O backup de 09/11 passou manualmente; o agendamento de 10/11 ainda precisa ser observado.
 4. Inspecionar o AAB final e os dados de SDKs; então transcrever as respostas para a Play Console, conferir URLs públicas e revisar o texto da loja.
+
+O [pacote de revisão jurídica](LEGAL_REVIEW_BRIEF.md) reúne as decisões que exigem análise profissional. O descarte de backups continua sem prazo aprovado e sem execução automática; não ativar uma exclusão periódica até haver decisão documentada, duas cópias recentes recuperáveis e ensaio de descarte sem perda da última cópia restaurável.
 
 Esta preparação não autoriza limpeza automática, publicação na loja ou declaração de conformidade jurídica.

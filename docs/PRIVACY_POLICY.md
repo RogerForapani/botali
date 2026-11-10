@@ -24,7 +24,7 @@ Contribuições podem incluir preços, cadastros e correções de postos. O mapa
 
 ## Compartilhamento e segurança
 
-Não vendemos dados pessoais e não usamos localização para publicidade. O Botali usa Google para entrada na conta, mapas e entrega de notificações no Android; Supabase para autenticação, banco e armazenamento privado de fotos; e Expo para distribuição, atualizações e notificações externas opcionais. Usamos o Backblaze B2 para guardar cópias de segurança criptografadas do banco e dos arquivos. O e-mail de suporte é atendido pelo Gmail. Esses fornecedores podem processar os dados necessários para cada serviço conforme os contratos e as políticas aplicáveis. A escolha da região principal do banco não significa que todos os serviços e suboperadores processem dados somente no Brasil.
+Não vendemos dados pessoais e não usamos localização para publicidade. O Botali usa Google para entrada na conta, mapas e entrega de notificações no Android; Supabase para autenticação, banco e armazenamento privado de fotos; e Expo para distribuição, atualizações e notificações externas opcionais. Usamos o Backblaze B2 para guardar cópias de segurança criptografadas do banco e dos arquivos na região **US East, nos Estados Unidos**. O e-mail de suporte é atendido pelo Gmail. Esses fornecedores podem processar os dados necessários para cada serviço conforme os contratos e as políticas aplicáveis. A escolha da região principal do banco não significa que todos os serviços e suboperadores processem dados somente no Brasil.
 
 O acesso ao banco aplica regras por usuário. Resultados públicos de preço e visita são agregados; contribuições brutas e identificadores individuais não são expostos ao público.
 
