@@ -10,6 +10,8 @@ A política identifica Roger Junio Marques Forapani como responsável, oferece c
 
 **Atualização operacional de 09/11/2026:** uma cópia externa criptografada foi restaurada em PostgreSQL local e em projeto Supabase isolado; banco, arquivo sintético do Storage e consulta como visitante passaram. O teste autenticado deste ensaio foi dispensado pelo responsável, e a retenção permanente não foi executada. A execução manual de backup de 09/11 concluiu após uma interrupção anterior; a próxima execução agendada ainda precisa ser observada. Esta evidência reduz a pendência técnica do item 1, mas não encerra a revisão jurídica nem comprova recuperação completa do serviço.
 
+As páginas públicas de [política de privacidade](https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md) e [pedido de exclusão](https://github.com/RogerForapani/botali/blob/main/docs/ACCOUNT_DELETION.md) abriram sem login em 09/11/2026. Isso confere a disponibilidade das instruções; o recebimento e o atendimento de um pedido por e-mail continuam sem teste.
+
 ## Pendências prioritárias
 
 1. **Retenção efetiva e backup — bloqueante para beta público.** A cópia externa foi restaurada em um projeto isolado, com leitura de visitante aprovada; o teste autenticado foi dispensado e a rotina de limpeza/anonimização continua desativada. A permanência além dos prazos-alvo precisa ser reduzida. Definir, ensaiar e conferir a rotina antes de agendá-la ou afirmar que os prazos são cumpridos. Não prometer ao usuário que a exclusão de conta remove imediatamente cópias de backup sem verificar o ciclo de vida delas.
