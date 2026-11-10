@@ -13,7 +13,7 @@ Este procedimento valida o caminho externo descrito em [Solicitar exclusão da c
 1. Localizar arquivos da conta no bucket privado `profile-avatars`. Excluir os arquivos pelo **Storage do Supabase**, não por `DELETE` SQL em `storage.objects`; conferir que nenhum arquivo da conta restou. A remoção do objeto antes do usuário é necessária quando ele é seu proprietário.
 2. Excluir o usuário correto em Authentication → Users. A exclusão de `auth.users` aciona as relações do banco; não apagar tabelas do aplicativo manualmente sem conferir as regras de cascata e anonimização.
 3. Em leitura restrita, confirmar ausência da conta em Auth, perfil, preços, correções, confirmações, alertas e eventos vinculados; conferir que postos públicos aprovados permaneceram sem autor pessoal. Verificar o bucket novamente.
-4. Responder ao remetente que o pedido foi concluído, informando com precisão o que pode permanecer anonimizado e o ciclo de vida das cópias de backup. Não afirmar exclusão imediata dos arquivos de backup ou do armazenamento local do aparelho.
+4. Responder ao remetente que o pedido foi concluído, informando com precisão o que pode permanecer anonimizado. Não afirmar exclusão imediata dos arquivos de backup ou do armazenamento local do aparelho, nem prometer um prazo de expurgo dos backups enquanto ele não estiver definido e comprovado.
 
 ## Registro do ensaio
 
