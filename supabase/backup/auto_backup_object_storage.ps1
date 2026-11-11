@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('ConfigureFromStdin', 'Check', 'CheckRemote', 'Run')]
+    [ValidateSet('ConfigureFromStdin', 'Check', 'CheckRemote', 'PlanRetention', 'Run')]
     [string]$Action = 'Check'
 )
 
@@ -103,6 +103,33 @@ if ($Action -eq 'CheckRemote') {
         $usage = & $rcloneExe --config NUL size $remoteRoot --json | ConvertFrom-Json
         if ($LASTEXITCODE -ne 0 -or -not $usage) { throw 'Não foi possível listar o bucket externo.' }
         Write-Host "Bucket externo acessível. Arquivos: $($usage.count); bytes: $($usage.bytes)."
+    } finally {
+        Clear-RemoteEnvironment
+    }
+    exit 0
+}
+if ($Action -eq 'PlanRetention') {
+    Set-RemoteEnvironment $destination
+    try {
+        $remoteRoot = "${remoteName}:$($destination.bucket)"
+        $listing = & $rcloneExe --config NUL lsjson $remoteRoot --files-only | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0) { throw 'Não foi possível listar os backups externos.' }
+        $now = [DateTimeOffset]::UtcNow
+        $backups = @($listing | Where-Object { $_.Path -match '^\d{8}-\d{6}-homologacao-[A-Za-z0-9]+\.gpg$' } | ForEach-Object {
+            [pscustomobject]@{ Name = $_.Path; UploadedAt = [DateTimeOffset]::Parse($_.ModTime); Bytes = [long]$_.Size }
+        } | Sort-Object UploadedAt -Descending)
+        $recent = @($backups | Where-Object { ($now - $_.UploadedAt).TotalDays -le 30 })
+        $expired = @($backups | Where-Object { ($now - $_.UploadedAt).TotalDays -gt 30 })
+        [pscustomobject]@{
+            checked_at_utc = $now.ToString('o')
+            backup_count = $backups.Count
+            recent_count = $recent.Count
+            expired_count = $expired.Count
+            expired_bytes = ($expired | Measure-Object -Property Bytes -Sum).Sum
+            eligible_for_cleanup = ($recent.Count -ge 2)
+            expired_names = @($expired | Select-Object -ExpandProperty Name)
+            action = 'dry-run; nenhum arquivo removido'
+        } | ConvertTo-Json -Depth 3
     } finally {
         Clear-RemoteEnvironment
     }
