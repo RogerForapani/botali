@@ -61,9 +61,9 @@ O [rascunho operacional da declaração para Google Play](PLAY_DATA_SAFETY_DRAFT
 
 1. Responsável e profissional jurídico revisarem as bases por finalidade, o atendimento aos direitos, a retenção e as transferências; registrar versão e decisões.
 2. Conferir contratos/DPAs efetivamente aplicáveis e a região configurada de Supabase e Backblaze, sem colocar credenciais no repositório.
-3. Definir e testar o ciclo de vida das cópias externas e a retenção efetiva antes de prometer prazos como executados. O backup de 09/11 passou manualmente; o agendamento de 10/11 ainda precisa ser observado.
+3. Implantar e testar o ciclo de 30 dias aprovado em 11/11 para cópias externas e locais e a retenção efetiva dos dados antes de prometer prazos como executados. Uma execução única agendada em 11/11 passou; o horário diário das 10h ainda precisa ser observado em um dia com o computador ligado.
 4. Inspecionar o AAB final e os dados de SDKs; então transcrever as respostas para a Play Console, conferir URLs públicas e revisar o texto da loja.
 
-O [pacote de revisão jurídica](LEGAL_REVIEW_BRIEF.md) reúne as decisões que exigem análise profissional. O descarte de backups continua sem prazo aprovado e sem execução automática; não ativar uma exclusão periódica até haver decisão documentada, duas cópias recentes recuperáveis e ensaio de descarte sem perda da última cópia restaurável.
+O [pacote de revisão jurídica](LEGAL_REVIEW_BRIEF.md) reúne as decisões que exigem análise profissional. O prazo de 30 dias foi aprovado pelo responsável, mas o descarte de backups continua sem execução automática; não ativar uma exclusão periódica até haver duas cópias recentes recuperáveis e ensaio de descarte sem perda da última cópia restaurável.
 
 Esta preparação não autoriza limpeza automática, publicação na loja ou declaração de conformidade jurídica.
