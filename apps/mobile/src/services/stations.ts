@@ -6,6 +6,7 @@ import { isPriceStale } from '../utils/priceFreshness'
 type Relation<T> = T | T[] | null
 type ServiceRow = { station_id: string; services: Relation<{ code: string; name: string }> }
 type StationFuelRow = { station_id: string; fuel_types: Relation<{ code: string }> }
+type StationImportSourceRow = { station_id: string; provider: 'ANP'; coordinate_reviewed: boolean }
 type NearbyRow = { id: string; name: string; brand: string | null; latitude: number; longitude: number; address: string | null; distance_m: number; status: 'pending' | 'verified' }
 type CommunityPriceRow = { station_id: string; fuel_code: string; price: number; confidence: number; reports: number; confirmations: number; disagreements: number; updated_at: string; submission_id: string | null }
 export type MapCenter = { latitude: number; longitude: number }
@@ -50,14 +51,17 @@ export async function loadStationById(stationId: string): Promise<Station> {
 async function hydrateStations(client: NonNullable<typeof supabase>, nearby: NearbyRow[]): Promise<Station[]> {
   const stationIds = nearby.map((station) => station.id)
   if (!stationIds.length) return []
-  const [priceResult, serviceResult, fuelResult] = await Promise.all([
+  const [priceResult, serviceResult, fuelResult, sourceResult] = await Promise.all([
     client.rpc('community_prices_for_stations', { target_station_ids: stationIds }),
     client.from('station_services').select('station_id,services(code,name)').in('station_id', stationIds).eq('status', 'confirmed'),
     client.from('station_fuels').select('station_id,fuel_types(code)').in('station_id', stationIds),
+    client.from('station_import_sources').select('station_id,provider,coordinate_reviewed').in('station_id', stationIds),
   ])
   if (priceResult.error) throw priceResult.error
   if (serviceResult.error) throw serviceResult.error
   if (fuelResult.error) throw fuelResult.error
+  // Older environments have no ANP provenance table yet; keep community search usable.
+  if (sourceResult.error && !['42P01', 'PGRST205'].includes(sourceResult.error.code)) throw sourceResult.error
 
   const communityPrices = (priceResult.data ?? []) as CommunityPriceRow[]
 
@@ -76,6 +80,9 @@ async function hydrateStations(client: NonNullable<typeof supabase>, nearby: Nea
     const code = first(row.fuel_types)?.code as FuelCode | undefined
     if (code) stationFuels.set(row.station_id, [...(stationFuels.get(row.station_id) ?? []), code])
   }
+  const importedSources = new Map(
+    ((sourceResult.data ?? []) as StationImportSourceRow[]).map((source) => [source.station_id, source]),
+  )
 
   return nearby.map((row) => {
     const prices: Station['prices'] = {}
@@ -92,7 +99,8 @@ async function hydrateStations(client: NonNullable<typeof supabase>, nearby: Nea
         stale: !item.submission_id || isPriceStale(item.updated_at),
       }
     }
-    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', status: row.status, address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], serviceCodes: services.get(row.id)?.codes ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }
+    const source = importedSources.get(row.id)
+    return { id: row.id, name: row.name, brand: row.brand ?? 'Sem bandeira', status: row.status, source: source?.provider, coordinateReviewed: source?.coordinate_reviewed, address: row.address ?? 'Endereço não informado', latitude: row.latitude, longitude: row.longitude, distanceKm: Number(row.distance_m) / 1000, rating: 0, hasElectricCharging: services.get(row.id)?.electric ?? false, services: services.get(row.id)?.names ?? [], serviceCodes: services.get(row.id)?.codes ?? [], fuelCodes: stationFuels.get(row.id) ?? [], prices }
   })
 }
 
