@@ -50,6 +50,13 @@ sem importação em massa.
 - O backup do estado **após a importação**,
   `20261112-105120-homologacao-eva5AF.gpg`, também terminou com sucesso e foi
   recuperado do B2 para conferir o hash.
+- A indicação de origem foi publicada por OTA Android no canal `preview`, grupo
+  `ba882c97-b8a9-4886-b52c-90605b1e3b50`, runtime
+  `7521bcdb88bac400fd916706c405b0038c4df545`. Esse runtime coincide com
+  o AAB candidato 1.0.5 (13). O APK anterior com runtime
+  `424585fc47a5de21ca3c31c17a46d41b1d343867` continua lendo os postos do
+  banco, mas não receberá esta etiqueta pela OTA por incompatibilidade de
+  runtime; requer novo build compatível para mostrar a indicação.
 
 ## Próximas verificações
 
