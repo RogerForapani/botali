@@ -64,6 +64,6 @@ O [rascunho operacional da declaração para Google Play](PLAY_DATA_SAFETY_DRAFT
 3. Implantar e testar o ciclo de 30 dias aprovado em 11/11 para cópias externas e locais e a retenção efetiva dos dados antes de prometer prazos como executados. Uma execução única agendada em 11/11 passou; o horário diário das 10h ainda precisa ser observado em um dia com o computador ligado.
 4. Inspecionar o AAB final e os dados de SDKs; então transcrever as respostas para a Play Console, conferir URLs públicas e revisar o texto da loja.
 
-O [pacote de revisão jurídica](LEGAL_REVIEW_BRIEF.md) reúne as decisões que exigem análise profissional. O prazo de 30 dias foi aprovado pelo responsável. O descarte externo foi ativado com proteções para duas cópias recentes e backup recém-conferido, após ensaio com amostra descartável; a primeira cópia real vencida e as pastas locais ainda não foram expurgadas e conferidas.
+O [pacote de revisão jurídica](LEGAL_REVIEW_BRIEF.md) reúne as decisões que exigem análise profissional. O prazo de 30 dias foi aprovado pelo responsável. O descarte externo foi ensaiado com amostra vencida e proteção para duas cópias recentes; a primeira cópia externa real vencida ainda precisa ser observada. O descarte local passou com amostra e removeu uma pasta real vencida de 10/10.
 
 Esta preparação não autoriza limpeza automática, publicação na loja ou declaração de conformidade jurídica.
