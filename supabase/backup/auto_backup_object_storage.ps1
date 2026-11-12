@@ -197,3 +197,6 @@ try {
     Clear-RemoteEnvironment
     $payload = $null
 }
+if ($status.success) {
+    & (Join-Path $PSScriptRoot 'retention_b2.ps1') -Action Apply
+}
