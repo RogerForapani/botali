@@ -3,6 +3,7 @@
   "build": {
     "development": { "developmentClient": true, "distribution": "internal", "channel": "development", "environment": "development" },
     "preview": { "distribution": "internal", "channel": "preview", "environment": "preview", "autoIncrement": true, "android": { "buildType": "apk" } },
+    "beta-hml": { "channel": "preview", "environment": "preview", "autoIncrement": true, "android": { "buildType": "app-bundle" } },
     "restore-drill-20261108": { "distribution": "internal", "channel": "restore-drill-20261108", "environment": "preview", "autoIncrement": true, "env": { "EXPO_PUBLIC_APP_VARIANT": "restore-drill", "EXPO_PUBLIC_RESTORE_SUPABASE_URL": "https://madrjvnuycxvrahqhizg.supabase.co", "EXPO_PUBLIC_RESTORE_SUPABASE_ANON_KEY": "sb_publishable_I0g0VQnc8CC22xSb-JTIAQ_ZtHevnWV" }, "android": { "buildType": "apk" } },
     "production": { "autoIncrement": true, "channel": "production", "environment": "production", "android": { "buildType": "app-bundle" } }
   }
