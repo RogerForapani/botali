@@ -57,6 +57,11 @@ sem importação em massa.
   `424585fc47a5de21ca3c31c17a46d41b1d343867` continua lendo os postos do
   banco, mas não receberá esta etiqueta pela OTA por incompatibilidade de
   runtime; requer novo build compatível para mostrar a indicação.
+- APK de revisão `preview` 1.0.5 (14) concluído no EAS: build
+  `d9b6edd3-350e-4e1b-a026-e70000d24fe9`, runtime
+  `7521bcdb88bac400fd916706c405b0038c4df545`. Cópia local:
+  `C:\Users\roger\Downloads\Botali-beta\botali-preview-anp-1.0.5-14.apk`
+  (SHA-256 `1CC2127F5E109A92930B38509202E504D805CE8C3836BA2DBDA1EF46806DCD1F`).
 
 ## Próximas verificações
 
