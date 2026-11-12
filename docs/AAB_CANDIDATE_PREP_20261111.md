@@ -1,6 +1,15 @@
 # Preparação do AAB Android do beta Botali
 
-Verificação de 11/11/2026. Este registro prepara o build de loja; **ainda não é o AAB final**.
+Verificação de 11/11/2026. O AAB de homologação foi compilado; **ainda não é o AAB final de produção**.
+
+## Candidato gerado
+
+- Build EAS: `fad6789d-3161-4b0e-9c9e-bb9b4feac9c0` (`FINISHED`), perfil `beta-hml`, distribuição de loja.
+- App `com.botali.app`, versão `1.0.5`, versionCode `13`; ambiente e canal `preview` apontados à homologação testada.
+- Código do build: commit `01ee409` da branch de preparação; assinatura com as credenciais Android remotas já existentes no EAS.
+- Arquivo local: `C:\Users\roger\Downloads\Botali-beta\botali-beta-hml-1.0.5-13.aab` (60.994.778 bytes).
+- SHA-256: `DECE96D509C6B34477C14ECF55828C7BF5D10F4EF3C87AEBCA880FC35C1B078B`.
+- O arquivo abre como pacote ZIP e contém `base/manifest/AndroidManifest.xml`, `BundleConfig.pb` e assinatura em `META-INF`. O manifesto compilado e o certificado da loja ainda precisam de inspeção com ferramentas Android ou pelo Play Console.
 
 ## Conferido
 
