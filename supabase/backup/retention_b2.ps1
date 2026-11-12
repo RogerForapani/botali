@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Plan', 'Test', 'Apply')]
+    [ValidateSet('Plan', 'Test', 'TestExpired', 'Apply')]
     [string]$Action = 'Plan'
 )
 
@@ -22,13 +22,37 @@ function RemoteFiles([switch]$Versions) {
     if ($Versions) { $args += '--b2-versions' }
     $json = & $rclone @args
     if ($LASTEXITCODE -ne 0) { throw 'Falha ao listar arquivos no B2.' }
-    @($json | ConvertFrom-Json)
+    $parsed = ConvertFrom-Json -InputObject ($json -join "`n")
+    foreach ($entry in $parsed) { $entry }
 }
 $env:RCLONE_CONFIG_BOTALIRETENTION_TYPE = 'b2'
 $env:RCLONE_CONFIG_BOTALIRETENTION_ACCOUNT = Reveal $destination.access_key_id
 $env:RCLONE_CONFIG_BOTALIRETENTION_KEY = Reveal $destination.secret_access_key
 $remoteRoot = "botaliretention:$($destination.bucket)"
 try {
+    if ($Action -eq 'TestExpired') {
+        $dated = (Get-Date).AddDays(-31).ToString('yyyyMMdd-HHmmss')
+        $fixture = "$dated-homologacao-TEST$([guid]::NewGuid().ToString('N').Substring(0,8)).gpg"
+        $local = Join-Path $vaultDir $fixture
+        [IO.File]::WriteAllText($local, 'Amostra descartável; não contém backup nem dados pessoais.')
+        try {
+            & $rclone --config NUL copyto $local "$remoteRoot/$fixture" --immutable
+            if ($LASTEXITCODE -ne 0) { throw 'Falha no envio da amostra vencida.' }
+            if (-not (@(RemoteFiles) | Where-Object Path -eq $fixture)) { throw 'A amostra vencida não apareceu no B2.' }
+            & powershell.exe -NoProfile -NonInteractive -File $PSCommandPath -Action Apply
+            if ($LASTEXITCODE -ne 0) { throw 'A rotina de descarte recusou a amostra vencida.' }
+            if (@(RemoteFiles -Versions) | Where-Object { $_.Path -eq $fixture -or $_.Path -like "$($fixture.Substring(0,$fixture.Length-4))-v*.gpg" }) {
+                throw 'A amostra vencida ainda possui versão no B2.'
+            }
+            'Teste de prazo: amostra com data de 31 dias eliminada pela rotina real; nenhuma versão remanescente.'
+        } finally {
+            if (@(RemoteFiles) | Where-Object Path -eq $fixture) {
+                & $rclone --config NUL deletefile "$remoteRoot/$fixture" --b2-hard-delete
+            }
+            Remove-Item -LiteralPath $local -Force -ErrorAction SilentlyContinue
+        }
+        exit 0
+    }
     if ($Action -eq 'Test') {
         $fixture = "botali-retention-test-$([guid]::NewGuid().ToString('N')).txt"
         $local = Join-Path $vaultDir $fixture
@@ -50,7 +74,11 @@ try {
     $now = [DateTimeOffset]::UtcNow
     $localNow = Get-Date
     $backups = @(RemoteFiles | Where-Object { $_.Path -match '^\d{8}-\d{6}-homologacao-[A-Za-z0-9]+\.gpg$' } | ForEach-Object {
-        [pscustomobject]@{ Name = $_.Path; CreatedLocal = [DateTime]::ParseExact($_.Path.Substring(0,15), 'yyyyMMdd-HHmmss', [Globalization.CultureInfo]::InvariantCulture); Bytes = [long]$_.Size }
+        $created = [DateTime]::MinValue
+        if (-not [DateTime]::TryParseExact($_.Path.Substring(0,15), 'yyyyMMdd-HHmmss', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$created)) {
+            throw "Nome de backup com data inválida: $($_.Path)"
+        }
+        [pscustomobject]@{ Name = $_.Path; CreatedLocal = $created; Bytes = [long]$_.Size }
     } | Sort-Object CreatedLocal -Descending)
     $recent = @($backups | Where-Object { ($localNow - $_.CreatedLocal).TotalDays -le 30 })
     $expired = @($backups | Where-Object { ($localNow - $_.CreatedLocal).TotalDays -gt 30 })

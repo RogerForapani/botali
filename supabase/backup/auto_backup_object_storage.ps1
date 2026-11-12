@@ -199,4 +199,8 @@ try {
 }
 if ($status.success) {
     & (Join-Path $PSScriptRoot 'retention_b2.ps1') -Action Apply
+    $localRetention = Join-Path $PSScriptRoot 'retention_local.py'
+    $wslLocalRetention = '/mnt/' + $localRetention.Substring(0, 1).ToLower() + $localRetention.Substring(2).Replace('\', '/')
+    wsl.exe -d Ubuntu --exec python3 $wslLocalRetention apply --verified-archive $status.archive
+    if ($LASTEXITCODE -ne 0) { throw 'Falha ao eliminar backups locais vencidos.' }
 }
