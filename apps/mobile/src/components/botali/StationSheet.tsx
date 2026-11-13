@@ -61,6 +61,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
       <View style={styles.title}>
         <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
         <Text style={styles.stationName}>{station.name}</Text>
+        {station.source === 'ANP' ? <Text style={styles.sourceNotice}>{station.coordinateReviewed ? 'Cadastro da ANP' : 'Cadastro da ANP · ponto no mapa a conferir'}</Text> : null}
         <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{userDistanceKm === null ? 'Distância indisponível' : `${userDistanceKm.toFixed(1).replace('.', ',')} km de você`}</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : null}</View>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} onPress={onToggleFavorite} style={styles.close}><MaterialCommunityIcons name={favorite ? 'heart' : 'heart-outline'} size={22} color={colors.brandText} /></Pressable>
@@ -115,6 +116,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   eyebrow: { color: colors.brandText, fontFamily: typography.black, fontSize: 10, letterSpacing: 1.2 },
   pending: { color: colors.warningText, fontFamily: typography.black, fontSize: 8 },
   stationName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: typography.h2, marginTop: 3 },
+  sourceNotice: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 11, marginTop: 4 },
   stationMetaRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing[1], marginTop: 4 },
   stationMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small },
   stationMetaSeparator: { color: colors.textMuted, fontFamily: typography.regular },

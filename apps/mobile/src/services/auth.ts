@@ -4,7 +4,9 @@ import * as Crypto from 'expo-crypto'
 import { Platform } from 'react-native'
 import { supabase } from '../lib/supabase'
 
-export const authRedirectUrl = 'botali://auth/callback'
+export const authRedirectUrl = process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill'
+  ? 'botali-restore://auth/callback'
+  : 'botali://auth/callback'
 
 export async function finishAuthRedirect(url: string) {
   if (!supabase || !url.startsWith(authRedirectUrl)) return

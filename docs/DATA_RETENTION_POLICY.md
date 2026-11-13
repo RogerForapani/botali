@@ -6,7 +6,7 @@
 
 O botali mantém somente o necessário para mostrar preços, proteger a comunidade, atender solicitações do usuário e medir o produto. A política reduz vínculos pessoais com o tempo e preserva estatísticas agregadas e a trilha essencial de moderação.
 
-Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas até a validação de um backup recente e restaurável para a execução permanente. Até lá, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
+Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos efetivamente executados hoje**. A limpeza e anonimização automáticas continuam desativadas. Em 08/11/2026, o backup do banco foi restaurado em projeto isolado e a leitura como visitante passou, mas o ensaio autenticado foi dispensado e a retenção efetiva ainda não foi conferida. Até completar esses portões, dados identificáveis podem permanecer além dos períodos indicados. Os prazos e suas bases devem ser revisados antes do lançamento público e sempre que surgir nova finalidade de tratamento.
 
 ## Prazos
 
@@ -25,6 +25,7 @@ Os prazos abaixo são metas iniciais de produto para alpha e beta, **não prazos
 | Estatísticas agregadas arquivadas | 36 meses | Exclui o agregado vencido |
 | Diagnóstico no aparelho | 20 falhas e 20 grupos de métricas | Substituição automática pelos registros mais recentes |
 | Conta, perfil e dados ativos | Enquanto a conta existir | Exclusão ou anonimização conforme a função “Excluir minha conta” |
+| Cópias de segurança criptografadas | 30 dias, prazo aprovado pelo responsável em 11/11/2026; execução ainda pendente | Eliminar cópias locais e externas vencidas após novo backup conferido, preservando ao menos duas cópias recuperáveis; não alterar arquivos já criados ao excluir uma conta no banco ativo |
 | Progressão comunitária (tipo de contribuição, UUID da fonte e data) | Enquanto a conta existir | Exclusão em cascata com o perfil; preserva pontos e conquistas após a limpeza dos registros operacionais |
 
 Dados cadastrais públicos do posto são informações do estabelecimento e permanecem enquanto ele existir no mapa. Correções continuam passando por moderação.
@@ -49,6 +50,8 @@ Dados cadastrais públicos do posto são informações do estabelecimento e perm
 6. Conferir `private.data_retention_runs`, volume das tabelas e erros do Postgres.
 
 Não há agendamento automático nesta etapa. O projeto gratuito atual não oferece backup restaurável incluído; a rotina efetiva será agendada com `pg_cron` apenas depois do checklist acima e da definição de backup do beta.
+
+O backup diário criptografado tem uma rotina separada. Em 11/11/2026, uma execução única agendada concluiu sem intervenção e conferiu o arquivo recuperado do Backblaze; a execução diária das 10h ainda não foi observada com o computador ligado nesse horário. O responsável aprovou 30 dias para as cópias diárias. No B2, 9 cópias reais estavam dentro desse prazo. A rotina de expurgo foi ligada ao backup diário: após novo backup conferido e com pelo menos duas cópias recentes, elimina permanentemente arquivos externos vencidos pelo protocolo nativo do B2 e pastas locais de backup com nome e caminho verificados. Uma amostra externa datada de 31 dias foi eliminada pelo caminho real, sem versões remanescentes; a primeira cópia externa real vencida ainda precisa ser observada. No computador, uma amostra vencida e uma pasta real de 10/10 foram removidas; o inventário final encontrou 30 pastas recentes e nenhuma vencida no conjunto de backups elegíveis. Outras pastas de ensaio/restauro, fora do padrão de backup diário, permanecem fora desta rotina. Se o novo backup falhar, nenhum descarte é executado.
 
 ## Ensaio transacional da progressão em homologação — 27/10/2026
 
