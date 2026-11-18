@@ -46,7 +46,11 @@ const baseConfig = () => ({
     infoPlist: {},
   },
   android: {
-    blockedPermissions: ['android.permission.ACCESS_BACKGROUND_LOCATION', 'android.permission.FOREGROUND_SERVICE_LOCATION'],
+    blockedPermissions: [
+      'android.permission.ACCESS_BACKGROUND_LOCATION',
+      'android.permission.FOREGROUND_SERVICE_LOCATION',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+    ],
     adaptiveIcon: { backgroundColor: '#171717', foregroundImage: './assets/android-icon-foreground.png', monochromeImage: './assets/android-icon-monochrome.png' },
     predictiveBackGestureEnabled: false,
     package: 'com.botali.app',
