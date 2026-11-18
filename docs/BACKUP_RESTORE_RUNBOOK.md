@@ -1,5 +1,11 @@
 # Backup e restauração do Botali
 
+## Conferência do agendamento — 18/11/2026
+
+Às 08:26, a tarefa Windows `Botali - backup diario criptografado` foi iniciada pelo próprio Agendador, sem executar o script manualmente. Ela terminou com código `0` às 08:27 e registrou a cópia `20261118-082622-homologacao-ItE2bS.gpg` como íntegra após baixá-la novamente do destino externo; SHA-256 `3037bee84674d6c165b22e508d84d88d2be64b9a3621f33986b931639881443c`. A execução anterior de 17/11 às 21:04 terminou com `3221225786`; a causa da interrupção não foi determinada. O sucesso iniciado pelo Agendador comprova o caminho da tarefa, mas a execução normal das 10h de 18/11 ainda precisa ser observada.
+
+A tarefa `Botali - verificar backup diario` foi criada para 11h e 18h, com execução após ligar o computador quando um horário for perdido. Ela usa a cópia local de `supabase/backup/check_daily_backup.ps1` em `%LOCALAPPDATA%\BotaliBackup`, confere o resultado do Agendador e o comprovante mais recente, grava `backup-health.json` e, em caso de falha, cria `ALERTA-Botali-backup.txt` na Área de Trabalho e tenta mostrar uma mensagem no Windows. O teste de sucesso executado pelo Agendador às 08:35 terminou com código `0`; o teste com comprovante ausente gerou o aviso e código `1`. O alerta é local e só aparece enquanto este computador estiver ligado e a conta do Windows estiver conectada. O log operacional do Agendador está desativado e a conta atual não tem permissão para ativá-lo.
+
 ## Estado da rotina automática — 09/11/2026
 
 O Agendador de Tarefas do Windows mantém `Botali - backup diario criptografado` habilitada, com próxima execução prevista para 10/11 às 10:00. A última execução registrada em 09/11 às 22:27 terminou com código `3221225786`, sem comprovante novo. O arquivo local `object-storage-last-run.json` ainda registra como último sucesso a cópia de 08/11 às 13:00, `20261108-125815-homologacao-tVce3O.gpg`, cujo download e hash foram conferidos no ensaio abaixo. Uma consulta de leitura ao bucket externo em 09/11 passou: 5 arquivos, 32.036.564 bytes.
