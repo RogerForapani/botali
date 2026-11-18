@@ -6,6 +6,8 @@
 
 A tarefa `Botali - verificar backup diario` foi criada para 11h e 18h, com execução após ligar o computador quando um horário for perdido. Ela usa a cópia local de `supabase/backup/check_daily_backup.ps1` em `%LOCALAPPDATA%\BotaliBackup`, confere o resultado do Agendador e o comprovante mais recente, grava `backup-health.json` e, em caso de falha, cria `ALERTA-Botali-backup.txt` na Área de Trabalho e tenta mostrar uma mensagem no Windows. O teste de sucesso executado pelo Agendador às 08:35 terminou com código `0`; o teste com comprovante ausente gerou o aviso e código `1`. O alerta é local e só aparece enquanto este computador estiver ligado e a conta do Windows estiver conectada. O log operacional do Agendador está desativado e a conta atual não tem permissão para ativá-lo.
 
+**Execução normal confirmada:** a tarefa diária iniciou sozinha em 18/11 às 10:00, terminou com código `0` às 10:00:54 e registrou `20261118-100002-homologacao-Yao0GU.gpg` como cópia concluída. A tarefa verificadora iniciou às 11:00, terminou com código `0` e gravou `healthy: true` para essa cópia. Próximo agendamento diário: 19/11 às 10:00.
+
 ## Estado da rotina automática — 09/11/2026
 
 O Agendador de Tarefas do Windows mantém `Botali - backup diario criptografado` habilitada, com próxima execução prevista para 10/11 às 10:00. A última execução registrada em 09/11 às 22:27 terminou com código `3221225786`, sem comprovante novo. O arquivo local `object-storage-last-run.json` ainda registra como último sucesso a cópia de 08/11 às 13:00, `20261108-125815-homologacao-tVce3O.gpg`, cujo download e hash foram conferidos no ensaio abaixo. Uma consulta de leitura ao bucket externo em 09/11 passou: 5 arquivos, 32.036.564 bytes.
