@@ -82,8 +82,13 @@ try {
     } | Sort-Object CreatedLocal -Descending)
     $recent = @($backups | Where-Object { ($localNow - $_.CreatedLocal).TotalDays -le 30 })
     $expired = @($backups | Where-Object { ($localNow - $_.CreatedLocal).TotalDays -gt 30 })
+    $finishedAt = if ($lastRun.finished_at -is [datetime]) {
+        [DateTimeOffset]$lastRun.finished_at
+    } else {
+        [DateTimeOffset]::Parse([string]$lastRun.finished_at, [Globalization.CultureInfo]::InvariantCulture)
+    }
     $fresh = $lastRun.success -eq $true -and $lastRun.archive -eq $backups[0].Name -and
-        ($now - [DateTimeOffset]::Parse($lastRun.finished_at)).TotalHours -le 24 -and
+        ($now - $finishedAt).TotalHours -le 24 -and
         -not [string]::IsNullOrWhiteSpace($lastRun.sha256)
     if ($Action -eq 'Plan') {
         [pscustomobject]@{ Backups=$backups.Count; Recent=$recent.Count; Expired=$expired.Count; FreshVerified=$fresh; Eligible=($recent.Count -ge 2 -and $fresh); ExpiredNames=@($expired | Select-Object -ExpandProperty Name) } | ConvertTo-Json -Depth 3
