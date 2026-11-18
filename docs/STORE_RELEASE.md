@@ -28,6 +28,7 @@ Antes do beta público Android, permanecem como portões:
 - [x] Resolver a divergência do runtime por `fingerprint` no EAS, gerar uma base compatível no canal `preview` e confirmar a OTA no aparelho com o APK 1.0.5.
 - [x] Conferir no APK 1.0.4 a ausência de permissão de localização em segundo plano.
 - [ ] Revisar as declarações da Play Store com o AAB final e repetir a inspeção do manifesto antes da publicação. O primeiro beta foi definido para motoristas adultos no Brasil.
+- [ ] Fazer uma revisão de segurança antes de convidar participantes para o beta fechado: autenticação, permissões do banco e do Storage, funções administrativas, chaves, dependências, abuso de contribuições, configurações do APK/AAB e atualizações OTA. Registrar achados, corrigir os críticos e repetir os testes. Roteiro em `SECURITY_REVIEW_PLAN.md`.
 
 A assinatura Apple Developer e a publicação iOS continuam adiadas; não são dependências para os testes Android em homologação. A promoção de migrações, alertas e OTA ao ambiente de produção exige aprovação separada.
 
