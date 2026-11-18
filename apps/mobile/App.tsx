@@ -14,6 +14,7 @@ import { EditModerationModal } from './src/components/EditModerationModal'
 import { PriceModal } from './src/components/PriceModal'
 import { NewStationModal } from './src/components/NewStationModal'
 import { ModerationModal } from './src/components/ModerationModal'
+import { StationReportsModal } from './src/components/StationReportsModal'
 import { BottomNavigation, type AppTab } from './src/components/botali/BottomNavigation'
 import { ActivityScreen } from './src/components/botali/ActivityScreen'
 import { ConfidenceBadge } from './src/components/botali/ConfidenceBadge'
@@ -31,6 +32,7 @@ import { useStations } from './src/hooks/useStations'
 import { useConnectivity } from './src/hooks/useConnectivity'
 import { useVehicle } from './src/hooks/useVehicle'
 import { confirmPriceAtStation, loadStationById, loadStationOptions, type MapBounds, type MapCenter } from './src/services/stations'
+import { reportStationMissing } from './src/services/stationReports'
 import { loadPriceAlertEvent, markPriceAlertRead, restorePriceAlertDevice } from './src/services/priceAlerts'
 import { loadMapPreferences, saveMapPreferences } from './src/services/mapPreferences'
 import { disableSmartVisits } from './src/services/smartVisits'
@@ -96,6 +98,7 @@ export default function App() {
   const [showNewStation, setShowNewStation] = useState(false)
   const [showModeration, setShowModeration] = useState(false)
   const [showEditModeration, setShowEditModeration] = useState(false)
+  const [showStationReports, setShowStationReports] = useState(false)
   const [confirmingPrice, setConfirmingPrice] = useState(false)
   const [fuelOptions, setFuelOptions] = useState(fallbackFuels)
   const [serviceOptions, setServiceOptions] = useState<{ code: string; name: string }[]>([])
@@ -120,7 +123,7 @@ export default function App() {
     : `radius:${mapCenter.latitude.toFixed(5)}:${mapCenter.longitude.toFixed(5)}:${radiusKm}`
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const filtersActive = mode !== 'gasolina' || selectedServices.length > 0
-  const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration
+  const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration || showStationReports
   const rejectionDecisionIds = useMemo(() => activity.items.filter((item) => item.status === 'rejected' && item.resolvedAt).map((item) => `${item.id}:${item.resolvedAt}`), [activity.items])
   const unreadDecisionCount = rejectionDecisionIds.filter((id) => !seenDecisionIds.includes(id)).length
   const unreadAlertCount = activity.items.filter((item) => item.kind === 'alert' && !item.readAt).length
@@ -141,6 +144,7 @@ export default function App() {
     setShowNewStation(false)
     setShowModeration(false)
     setShowEditModeration(false)
+    setShowStationReports(false)
     setContributionIntent(false)
     setLocationMessage('')
     if (!user) setContinuedAsGuest(true)
@@ -177,13 +181,13 @@ export default function App() {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      const mapIsClear = tab === 'explore' && !showSearch && !showFilters && !selected && !showAuth && !showPrice && !showEditStation && !showNewStation && !showModeration && !showEditModeration && !locationMessage && (Boolean(user) || continuedAsGuest)
+      const mapIsClear = tab === 'explore' && !showSearch && !showFilters && !selected && !showAuth && !showPrice && !showEditStation && !showNewStation && !showModeration && !showEditModeration && !showStationReports && !locationMessage && (Boolean(user) || continuedAsGuest)
       if (mapIsClear || sessionLoading) return false
       returnToMap()
       return true
     })
     return () => subscription.remove()
-  }, [continuedAsGuest, locationMessage, returnToMap, selected, sessionLoading, showAuth, showEditModeration, showEditStation, showFilters, showModeration, showNewStation, showPrice, showSearch, tab, user])
+  }, [continuedAsGuest, locationMessage, returnToMap, selected, sessionLoading, showAuth, showEditModeration, showEditStation, showFilters, showModeration, showNewStation, showPrice, showSearch, showStationReports, tab, user])
 
   useEffect(() => {
     let active = true
@@ -211,7 +215,7 @@ export default function App() {
       }
       const region = { ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }
       setActiveBounds(null); setSelectedId(null); setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false)
-      setShowPrice(false); setShowEditStation(false); setShowNewStation(false); setShowModeration(false); setShowEditModeration(false)
+      setShowPrice(false); setShowEditStation(false); setShowNewStation(false); setShowModeration(false); setShowEditModeration(false); setShowStationReports(false)
       setSelectedServices([]); setMapRenderVersion((version) => version + 1)
       setMapCenter(center); setPendingCenter(center); setVisibleRegion(region); setShowSearchArea(false)
       if (selectedFuel) setMode(selectedFuel)
@@ -427,10 +431,11 @@ export default function App() {
 
         {tab === 'explore' ? <Pressable accessibilityRole="button" accessibilityLabel="Usar minha localização" style={[styles.locate, selected ? styles.locateWithSheet : styles.locateFree]} onPress={locate}><MaterialCommunityIcons name="crosshairs-gps" size={25} color={colors.graphite} /></Pressable> : null}
         {locationMessage ? <Pressable onPress={() => setLocationMessage('')} style={styles.toast}><Text style={styles.toastText}>{locationMessage}</Text></Pressable> : null}
-        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} vehicle={vehicle} userLocation={userLocation} plannedLiters={plannedLiters} onPlannedLitersChange={setPlannedLiters} onRequestLocation={requestUserLocation} onOpenProfile={() => setShowAuth(true)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onConfirmPrice={confirmSelectedPrice} /> : null}
-        <AuthModal visible={showAuth} user={user} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} mapCenter={mapCenter} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} />
+        {tab === 'explore' && !showSearch && !modalOpen && selected ? <StationSheet key={selected.id} station={selected} mode={mode} favorite={favorites.ids.includes(selected.id)} confirmingPrice={confirmingPrice} vehicle={vehicle} userLocation={userLocation} plannedLiters={plannedLiters} onPlannedLitersChange={setPlannedLiters} onRequestLocation={requestUserLocation} onOpenProfile={() => setShowAuth(true)} onToggleFavorite={() => favorites.toggle(selected.id)} onClose={() => setSelectedId(null)} onContribute={() => user ? setShowPrice(true) : setShowAuth(true)} onEdit={() => user ? setShowEditStation(true) : setShowAuth(true)} onReportMissing={async (reason) => { if (!user) { setShowAuth(true); return false } await reportStationMissing(selected.id, reason); return true }} onConfirmPrice={confirmSelectedPrice} /> : null}
+        <AuthModal visible={showAuth} user={user} vehicle={vehicle} vehicleLoading={vehicleLoading} fuelOptions={fuelOptions} mapCenter={mapCenter} onSaveVehicle={updateVehicle} onClose={() => setShowAuth(false)} onBack={returnToMap} onSignedOut={() => setContinuedAsGuest(false)} onOpenModeration={() => setShowModeration(true)} onOpenEditModeration={() => setShowEditModeration(true)} onOpenStationReports={() => setShowStationReports(true)} />
         <ModerationModal visible={showModeration} onClose={() => setShowModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <EditModerationModal visible={showEditModeration} onClose={() => setShowEditModeration(false)} onBack={returnToMap} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
+        <StationReportsModal visible={showStationReports} onClose={() => setShowStationReports(false)} onModerated={() => { refreshCurrentSearch(); setSelectedId(null) }} />
         <PriceModal visible={showPrice} station={selected} initialFuel={mode === 'electric' ? 'gasolina' : mode} userId={user?.id ?? null} isOnline={isOnline} onClose={() => setShowPrice(false)} onBack={returnToMap} onSent={async () => { setShowPrice(false); setLocationMessage('Preço enviado! Valeu pela ajuda.'); await refreshCurrentSearch(); activity.refresh() }} />
         <EditStationModal visible={showEditStation} station={selected} onClose={() => setShowEditStation(false)} onBack={returnToMap} onSent={() => { setShowEditStation(false); setLocationMessage('Correção enviada para revisão. Obrigado!'); activity.refresh() }} />
         <NewStationModal visible={showNewStation} userId={user?.id ?? null} onClose={() => setShowNewStation(false)} onBack={returnToMap} onSent={() => { setShowNewStation(false); setLocationMessage('Posto cadastrado como pendente e visível apenas para você até a revisão.'); refreshCurrentSearch() }} />
