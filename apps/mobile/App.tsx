@@ -115,9 +115,10 @@ export default function App() {
   useEffect(() => { if (isOnline !== false) reloadStationOptions() }, [isOnline, reloadStationOptions])
   const scopedStations = useMemo(() => activeBounds ? stations.filter((station) => isStationInBounds(station, activeBounds)) : stations, [activeBounds, stations])
   const visibleStations = useMemo(() => filterStations(scopedStations, { mode, radiusKm: activeBounds ? Number.POSITIVE_INFINITY : radiusKm, serviceCodes: selectedServices }), [activeBounds, mode, radiusKm, scopedStations, selectedServices])
+  const mapStations = useMemo(() => visibleStations.filter((station) => isStationInBounds(station, regionToBounds(visibleRegion))), [visibleRegion, visibleStations])
   const selected = useMemo(() => selectedId ? stations.find((station) => station.id === selectedId) ?? null : null, [selectedId, stations])
-  const bestStationId = useMemo(() => findBestPriceStationId(visibleStations, mode), [mode, visibleStations])
-  const mapItems = useMemo(() => clusterStations(visibleStations, visibleRegion, selectedId), [selectedId, visibleRegion, visibleStations])
+  const bestStationId = useMemo(() => findBestPriceStationId(mapStations, mode), [mapStations, mode])
+  const mapItems = useMemo(() => clusterStations(mapStations, visibleRegion, selectedId), [mapStations, selectedId, visibleRegion])
   const markerScopeKey = activeBounds
     ? `bounds:${activeBounds.north.toFixed(5)}:${activeBounds.south.toFixed(5)}:${activeBounds.east.toFixed(5)}:${activeBounds.west.toFixed(5)}`
     : `radius:${mapCenter.latitude.toFixed(5)}:${mapCenter.longitude.toFixed(5)}:${radiusKm}`
@@ -417,8 +418,8 @@ export default function App() {
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
         {tab === 'explore' ? <MapView key={`google-map-${themeMode}-${mapRenderVersion}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={handleRegionChangeComplete}>
           {mapItems.map((item) => item.kind === 'cluster'
-            ? <StationClusterMarker key={`${markerScopeKey}:${item.id}`} cluster={item} onPress={() => openCluster(item)} />
-            : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
+            ? <StationClusterMarker key={`${markerScopeKey}:${item.id}:${item.stations.some((station) => station.id === bestStationId)}`} cluster={item} featured={item.stations.some((station) => station.id === bestStationId)} onPress={() => openCluster(item)} />
+            : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}:${item.station.id === bestStationId}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} alertError={activity.alertError} onRetry={refreshActivity} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} onOpenAlert={openAlertFromActivity} /> : <LibraryScreen stations={favoriteStations} accountLabel={user?.email ?? 'Visitante'} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
