@@ -88,7 +88,7 @@ export default function App() {
   const [visibleRegion, setVisibleRegion] = useState<Region>(initialRegion)
   const [mapPreferencesReady, setMapPreferencesReady] = useState(false)
   const [activeBounds, setActiveBounds] = useState<MapBounds | null>(null)
-  const [mapRenderVersion, setMapRenderVersion] = useState(0)
+  const [markerRenderVersion, setMarkerRenderVersion] = useState(0)
   const [showSearchArea, setShowSearchArea] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [continuedAsGuest, setContinuedAsGuest] = useState(false)
@@ -122,6 +122,7 @@ export default function App() {
   const markerScopeKey = activeBounds
     ? `bounds:${activeBounds.north.toFixed(5)}:${activeBounds.south.toFixed(5)}:${activeBounds.east.toFixed(5)}:${activeBounds.west.toFixed(5)}`
     : `radius:${mapCenter.latitude.toFixed(5)}:${mapCenter.longitude.toFixed(5)}:${radiusKm}`
+  const markerLayerKey = `${markerScopeKey}:${markerRenderVersion}`
   const favoriteStations = stations.filter((station) => favorites.ids.includes(station.id))
   const filtersActive = mode !== 'gasolina' || selectedServices.length > 0
   const modalOpen = showAuth || showPrice || showEditStation || showNewStation || showModeration || showEditModeration || showStationReports
@@ -217,7 +218,7 @@ export default function App() {
       const region = { ...center, latitudeDelta: 0.025, longitudeDelta: 0.025 }
       setActiveBounds(null); setSelectedId(null); setTab('explore'); setShowAuth(false); setShowSearch(false); setShowFilters(false)
       setShowPrice(false); setShowEditStation(false); setShowNewStation(false); setShowModeration(false); setShowEditModeration(false); setShowStationReports(false)
-      setSelectedServices([]); setMapRenderVersion((version) => version + 1)
+      setSelectedServices([]); setMarkerRenderVersion((version) => version + 1)
       setMapCenter(center); setPendingCenter(center); setVisibleRegion(region); setShowSearchArea(false)
       if (selectedFuel) setMode(selectedFuel)
       const rows = await refresh(center, Math.max(2, radiusKm))
@@ -343,7 +344,7 @@ export default function App() {
     }
   }
 
-  function openCluster(cluster: StationClusterItem) {
+  const openCluster = useCallback((cluster: StationClusterItem) => {
     const latitudes = cluster.stations.map((station) => station.latitude)
     const longitudes = cluster.stations.map((station) => station.longitude)
     const latitudeSpan = Math.max(...latitudes) - Math.min(...latitudes)
@@ -354,11 +355,11 @@ export default function App() {
       latitudeDelta: Math.max(.0008, latitudeSpan * 2.4, visibleRegion.latitudeDelta * .45),
       longitudeDelta: Math.max(.0008, longitudeSpan * 2.4, visibleRegion.longitudeDelta * .45),
     }, 350)
-  }
+  }, [visibleRegion])
 
   function searchVisibleArea() {
     const bounds = regionToBounds(visibleRegion)
-    setMapRenderVersion((version) => version + 1)
+    setMarkerRenderVersion((version) => version + 1)
     setActiveBounds(bounds)
     setMapCenter(pendingCenter)
     setShowSearchArea(false)
@@ -375,7 +376,7 @@ export default function App() {
     setShowSearchArea(Math.abs(next.latitude - mapCenter.latitude) > .002 || Math.abs(next.longitude - mapCenter.longitude) > .002)
     if (rebuildNativeMarkers) {
       lastNativeMapRegion.current = region
-      setMapRenderVersion((version) => version + 1)
+      setMarkerRenderVersion((version) => version + 1)
     }
   }
 
@@ -416,10 +417,10 @@ export default function App() {
     <SafeAreaProvider>
       <View style={styles.container}>
         <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        {tab === 'explore' ? <MapView key={`google-map-${themeMode}-${mapRenderVersion}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={handleRegionChangeComplete}>
+        {tab === 'explore' ? <MapView key={`google-map-${themeMode}`} ref={mapRef} provider={PROVIDER_GOOGLE} style={StyleSheet.absoluteFill} initialRegion={visibleRegion} customMapStyle={themeMode === 'dark' ? darkMapStyle : []} userInterfaceStyle={themeMode} showsCompass={false} showsUserLocation showsMyLocationButton={false} toolbarEnabled={false} onRegionChangeComplete={handleRegionChangeComplete}>
           {mapItems.map((item) => item.kind === 'cluster'
-            ? <StationClusterMarker key={`${markerScopeKey}:${item.id}:${item.stations.some((station) => station.id === bestStationId)}`} cluster={item} featured={item.stations.some((station) => station.id === bestStationId)} onPress={() => openCluster(item)} />
-            : <StationMarker key={`${markerScopeKey}:${item.station.id}:${mode}:${item.station.id === bestStationId}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={() => setSelectedId(item.station.id)} />)}
+            ? <StationClusterMarker key={`${markerLayerKey}:${item.id}:${item.stations.some((station) => station.id === bestStationId)}`} cluster={item} featured={item.stations.some((station) => station.id === bestStationId)} onPress={openCluster} />
+            : <StationMarker key={`${markerLayerKey}:${item.station.id}:${mode}:${item.station.id === bestStationId}:${selected?.id === item.station.id}`} station={item.station} mode={mode} selected={selected?.id === item.station.id} featured={item.station.id === bestStationId} onPress={setSelectedId} />)}
         </MapView> : tab === 'activity' ? <ActivityScreen authenticated={Boolean(user)} items={activity.items} loading={activity.loading} error={activity.error} alertError={activity.alertError} onRetry={refreshActivity} onSignIn={() => { setTab('explore'); setShowAuth(true) }} onExplore={() => setTab('explore')} onOpenAlert={openAlertFromActivity} /> : <LibraryScreen stations={favoriteStations} accountLabel={user?.email ?? 'Visitante'} onExplore={() => setTab('explore')} onSelect={(station) => { setSelectedId(station.id); setTab('explore') }} />}
 
         {tab === 'explore' ? <SafeAreaView edges={['top']} style={styles.topArea} pointerEvents="box-none">
