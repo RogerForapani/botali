@@ -41,6 +41,7 @@ import type { MapMode, Station } from './src/types'
 import { filterStations, findBestPriceStationId, isStationInBounds } from './src/utils/stationFilters'
 import { clusterStations, shouldRebuildMapAfterZoom, type StationClusterItem } from './src/utils/mapClustering'
 import { userMessageForError } from './src/utils/appError'
+import { stationDisplayBrand, stationDisplayName } from './src/utils/stationDisplay'
 
 const initialRegion: Region = { latitude: -20.0247, longitude: -44.0562, latitudeDelta: 0.08, longitudeDelta: 0.08 }
 const initialCenter = { latitude: initialRegion.latitude, longitude: initialRegion.longitude }
@@ -462,8 +463,8 @@ function LibraryScreen({ stations, accountLabel, onExplore, onSelect }: { statio
         const price = station.prices.gasolina
         return <Pressable key={station.id} style={styles.stationCard} onPress={() => onSelect(station)}>
           <View style={styles.stationCardDetails}>
-            <Text numberOfLines={1} style={styles.stationCardBrand}>{station.brand}</Text>
-            <Text numberOfLines={2} style={styles.stationCardName}>{station.name}</Text>
+            <Text numberOfLines={1} style={styles.stationCardBrand}>{stationDisplayBrand(station)}</Text>
+            <Text numberOfLines={2} style={styles.stationCardName}>{stationDisplayName(station)}</Text>
             <Text numberOfLines={2} style={styles.stationCardMeta}>{station.address}</Text>
           </View>
           <View style={styles.stationCardPrice}>

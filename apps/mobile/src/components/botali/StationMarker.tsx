@@ -4,6 +4,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useTheme } from '../../theme/ThemeProvider'
 import { radius, shadow, typography, type ThemeColors } from '../../theme/tokens'
 import type { MapMode, Station } from '../../types'
+import { stationDisplayBrand } from '../../utils/stationDisplay'
 
 type Props = { station: Station; mode: MapMode; selected: boolean; featured: boolean; onPress: () => void }
 
@@ -16,7 +17,7 @@ export function StationMarker({ station, mode, selected, featured, onPress }: Pr
 
   return <Marker coordinate={{ latitude: station.latitude, longitude: station.longitude }} onPress={onPress} tracksViewChanges={false}>
     <View style={[styles.marker, featured && styles.featured, selected && styles.selected, mode === 'electric' && styles.electric]}>
-      <Text numberOfLines={1} style={[styles.brand, featured && styles.coloredMarkerText]}>{compactBrand(station.brand)}</Text>
+      <Text numberOfLines={1} style={[styles.brand, featured && styles.coloredMarkerText]}>{compactBrand(stationDisplayBrand(station))}</Text>
       {mode === 'electric' ? <View style={styles.electricRow}><MaterialCommunityIcons name="ev-station" size={14} color="#FFFFFF" /><Text style={styles.electricText}>Recarga</Text></View> : <Text style={[styles.price, !price && styles.noPrice, featured && styles.coloredMarkerText]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Sem preço recente'}</Text>}
       {price?.stale ? <Text style={styles.stale}>Sem atualização há 5 dias</Text> : ratio && mode !== 'electric' ? <Text style={[styles.ratio, ratio <= 70 && styles.goodRatio, featured && styles.featuredRatio]}>Etanol {ratio}%</Text> : null}
     </View>

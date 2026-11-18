@@ -7,6 +7,7 @@ import { radius, shadow, spacing, typography, type ThemeColors } from '../../the
 import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
+import { stationDisplayBrand, stationDisplayName } from '../../utils/stationDisplay'
 import { compareVehicleTrips, estimatePurchaseTotal, parsePlannedLiters, type Vehicle } from '../../utils/vehicle'
 import { userMessageForError } from '../../utils/appError'
 import { Button } from '../ui/Button'
@@ -59,8 +60,8 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
     </View>
     <View style={styles.head}>
       <View style={styles.title}>
-        <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
-        <Text style={styles.stationName}>{station.name}</Text>
+        <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{stationDisplayBrand(station).toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
+        <Text style={styles.stationName}>{stationDisplayName(station)}</Text>
         {station.source === 'ANP' ? <Text style={styles.sourceNotice}>{station.coordinateReviewed ? 'Cadastro da ANP' : 'Cadastro da ANP · ponto no mapa a conferir'}</Text> : null}
         <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{userDistanceKm === null ? 'Distância indisponível' : `${userDistanceKm.toFixed(1).replace('.', ',')} km de você`}</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : null}</View>
       </View>
@@ -92,6 +93,7 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
           </>}
         </View>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
+        {station.source === 'ANP' ? <View style={styles.detailRow}><Text style={styles.detailLabel}>RAZÃO SOCIAL NA ANP</Text><Text style={styles.detailValue}>{station.name}</Text></View> : null}
         <View style={styles.allPrices}>
           {(Object.entries(station.prices) as [string, { value: number; stale?: boolean }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text>{item.stale ? <Text style={styles.fuelStale}>Sem atualização há 5 dias</Text> : null}</View>)}
         </View>

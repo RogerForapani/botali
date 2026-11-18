@@ -7,6 +7,7 @@ import { radius, shadow, spacing, typography, type ThemeColors } from '../../the
 import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
+import { stationDisplayBrand, stationDisplayName } from '../../utils/stationDisplay'
 import { userMessageForError } from '../../utils/appError'
 import { compareStationsByPurchaseTotal, estimatePurchaseTotal, parsePlannedLiters, type Vehicle } from '../../utils/vehicle'
 
@@ -54,9 +55,9 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
   const distanceFromUser = (station: Station) => userLocation ? distanceKmBetween(userLocation, station) : null
   const distanceOrder = (a: Station, b: Station) => userLocation
     ? distanceKmBetween(userLocation, a) - distanceKmBetween(userLocation, b)
-    : a.name.localeCompare(b.name, 'pt-BR')
+    : stationDisplayName(a).localeCompare(stationDisplayName(b), 'pt-BR')
   const results = stations
-    .filter((station) => !normalizedQuery || `${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
+    .filter((station) => !normalizedQuery || `${stationDisplayName(station)} ${stationDisplayBrand(station)} ${station.name} ${station.brand} ${station.address ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery))
     .sort((a, b) => {
       if (activeSort === 'total' && vehicle && userLocation && liters) return compareStationsByPurchaseTotal(vehicle, mode, userLocation, liters, a, b) || distanceOrder(a, b)
       if (activeSort === 'price' && mode !== 'electric') return Number(Boolean(a.prices[mode]?.stale)) - Number(Boolean(b.prices[mode]?.stale)) || (a.prices[mode]?.value ?? Number.POSITIVE_INFINITY) - (b.prices[mode]?.value ?? Number.POSITIVE_INFINITY) || distanceOrder(a, b)
@@ -103,7 +104,7 @@ export function StationSearch({ query, radiusKm, mode, stations, hasMore, loadin
         const distance = distanceFromUser(station)
         const total = totalFor(station)
         return <Pressable key={station.id} style={styles.card} onPress={() => onSelect(station)}>
-          <View style={styles.cardCopy}><Text style={styles.brand}>{station.brand.toUpperCase()}</Text><Text numberOfLines={2} style={styles.name}>{station.name}</Text><Text numberOfLines={1} style={styles.meta}>{distance === null ? 'Distância indisponível' : `${distance.toFixed(1).replace('.', ',')} km de você`}{station.address ? ` · ${station.address}` : ''}</Text>{total ? <Text style={styles.total}>Gasto mínimo ~R$ {total.totalCost.toFixed(2).replace('.', ',')}{total.stale ? ' · preço antigo' : ''}</Text> : null}</View>
+          <View style={styles.cardCopy}><Text style={styles.brand}>{stationDisplayBrand(station).toUpperCase()}</Text><Text numberOfLines={2} style={styles.name}>{stationDisplayName(station)}</Text><Text numberOfLines={1} style={styles.meta}>{distance === null ? 'Distância indisponível' : `${distance.toFixed(1).replace('.', ',')} km de você`}{station.address ? ` · ${station.address}` : ''}</Text>{total ? <Text style={styles.total}>Gasto mínimo ~R$ {total.totalCost.toFixed(2).replace('.', ',')}{total.stale ? ' · preço antigo' : ''}</Text> : null}</View>
           {mode === 'electric' ? <MaterialCommunityIcons name="ev-station" size={25} color={colors.brandText} style={styles.priceIcon} /> : <View style={styles.priceGroup}><Text style={[styles.price, !price && styles.noPrice]}>{price ? `R$ ${price.value.toFixed(2).replace('.', ',')}` : 'Ainda sem preço'}</Text>{price?.stale ? <Text style={styles.stalePrice}>Sem atualização há 5 dias</Text> : null}</View>}
         </Pressable>
       }} ListEmptyComponent={<Text style={styles.empty}>Nenhum posto nesse raio. Aumente a distância ou altere a busca.</Text>} ListFooterComponent={<>
