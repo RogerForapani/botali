@@ -8,28 +8,42 @@ export const authRedirectUrl = process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-
   ? 'botali-restore://auth/callback'
   : 'botali://auth/callback'
 
-export async function finishAuthRedirect(url: string) {
-  if (!supabase || !url.startsWith(authRedirectUrl)) return
+const pendingExchanges = new Map<string, Promise<void>>()
+const exchangedCodes = new Set<string>()
 
-  const parsed = new URL(url)
+export async function finishAuthRedirect(url: string): Promise<boolean> {
+  if (!supabase) return false
+
+  let parsed: URL
+  try { parsed = new URL(url) } catch { return false }
+  const expected = new URL(authRedirectUrl)
+  if (parsed.protocol !== expected.protocol || parsed.host !== expected.host || parsed.pathname !== expected.pathname
+    || parsed.username || parsed.password) return false
+
   const fragment = new URLSearchParams(parsed.hash.replace(/^#/, ''))
   const errorDescription = fragment.get('error_description') ?? parsed.searchParams.get('error_description')
   if (errorDescription) throw new Error(errorDescription)
 
   const code = parsed.searchParams.get('code')
-  const accessToken = fragment.get('access_token') ?? parsed.searchParams.get('access_token')
-  const refreshToken = fragment.get('refresh_token') ?? parsed.searchParams.get('refresh_token')
-
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) throw error
-    return
+  if (!code || parsed.searchParams.getAll('code').length !== 1
+    || fragment.has('access_token') || fragment.has('refresh_token')
+    || parsed.searchParams.has('access_token') || parsed.searchParams.has('refresh_token')) {
+    throw new Error('Retorno do login inválido. Tente entrar novamente.')
   }
 
-  if (accessToken && refreshToken) {
-    const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-    if (error) throw error
+  if (exchangedCodes.has(code)) return true
+  let exchange = pendingExchanges.get(code)
+  if (!exchange) {
+    exchange = (async () => {
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) throw error
+      exchangedCodes.add(code)
+      if (exchangedCodes.size > 5) exchangedCodes.delete(exchangedCodes.values().next().value!)
+    })()
+    pendingExchanges.set(code, exchange)
   }
+  try { await exchange } finally { pendingExchanges.delete(code) }
+  return true
 }
 
 export async function signInWithGoogle() {
@@ -43,7 +57,9 @@ export async function signInWithGoogle() {
   if (!data.url) throw new Error('Não foi possível abrir o login do Google.')
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, authRedirectUrl)
-  if (result.type === 'success') await finishAuthRedirect(result.url)
+  if (result.type === 'success' && !await finishAuthRedirect(result.url)) {
+    throw new Error('Retorno do login inválido. Tente entrar novamente.')
+  }
   return result.type
 }
 

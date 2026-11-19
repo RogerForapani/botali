@@ -7,5 +7,5 @@ const url = restoreDrill ? process.env.EXPO_PUBLIC_RESTORE_SUPABASE_URL : proces
 const key = restoreDrill ? process.env.EXPO_PUBLIC_RESTORE_SUPABASE_ANON_KEY : process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 
 export const supabase = url && key ? createClient(url, key, {
-  auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+  auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
 }) : null
