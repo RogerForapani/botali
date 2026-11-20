@@ -55,7 +55,7 @@ Após a atualização, 85 testes móveis em 14 arquivos, o `typecheck`, o lint d
 
 O EAS concluiu o [AAB 1.0.5 (17)](https://expo.dev/accounts/ningas/projects/botali/builds/47939cf5-d387-4e9f-a936-5f43cf737ca2) a partir do commit `a363bec`, com runtime/fingerprint Android `af1c4150fda4ebf6d9b848c35506f55c360525cb`, diferente do runtime anterior `bb7d339e41234bef3a4b9628bc0a1b740d59db70`. O arquivo tem SHA-256 `0E6E7ECDFFFE3D0BB758BDF199102986F688900C741EFDE9B04A0CD2674B75AF`. A Play aceitou o pacote sem perda de aparelhos compatíveis e disponibilizou `Botali 1.0.5 (17) - teste interno` à faixa interna em 19/11. O único aviso da Play foi a ausência do arquivo opcional de desofuscação. Nenhuma versão foi promovida para teste fechado ou produção.
 
-O responsável instalou a atualização pela Play e confirmou no Android que o mapa e os postos apareceram, o login Google concluiu e o perfil carregou. O teste de contribuição com este AAB ainda não foi repetido. A versão permanece restrita à faixa interna.
+O responsável instalou a atualização pela Play e confirmou no Android que o mapa e os postos apareceram, o login Google concluiu e o perfil carregou. Também informou em 19/11 que enviou uma contribuição real nesta versão. Esta confirmação cobre o envio observado pelo usuário; o registro no banco não foi conferido nesta rodada. A versão permanece restrita à faixa interna.
 
 ## Verificações concluídas e limites
 
@@ -74,4 +74,4 @@ O responsável instalou a atualização pela Play e confirmou no Android que o m
 2. Testar cadastro pendente e fila de moderação com contas de teste após a migração. Visitante, envio de preço e sugestão de alteração pelo RPC passaram no aplicativo Play; o banco isolado cobriu também o acesso de moderador.
 3. O login PKCE passou na instalação Play para persistência de sessão, nova entrada com Google, cancelamento e troca de conta. Links malformados foram rejeitados em teste local; avaliar armazenamento protegido da sessão em etapa compatível com novo AAB.
 4. A foto permaneceu separada entre as contas no aplicativo Play e as políticas do Storage foram inspecionadas. Falta um teste direto de leitura cruzada pela API, além de inventário de credenciais e escopo de cada serviço. As permissões de confirmação e pontuação foram revisadas no banco; falta seguir com alertas e testes de abuso autenticados.
-5. Atualizar dependências de forma controlada em ambiente isolado, repetir `npm audit`, build e testes internos; conferir o fingerprint nativo e publicar novo AAB se necessário.
+5. A atualização isolada das dependências, os testes, o fingerprint nativo e o AAB 17 na faixa interna foram concluídos. Permanecem três alertas moderados nas dependências de produção, sem correção compatível com Expo SDK 57 nesta rodada. Reavaliar quando houver atualização do Expo ou dos pacotes afetados.
