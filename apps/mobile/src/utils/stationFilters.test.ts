@@ -36,6 +36,17 @@ describe('filtros de postos', () => {
     expect(findBestPriceStationId(rows, 'gasolina')).toBe('fresh')
   })
 
+  it('destaca o menor preço apenas entre postos visíveis na tela', () => {
+    const rows = [
+      station({ id: 'outside', latitude: 2, prices: { gasolina: { value: 4.5, confidence: 80 } } }),
+      station({ id: 'inside', latitude: 0, prices: { gasolina: { value: 5.8, confidence: 70 } } }),
+    ]
+    const bounds = { north: 1, south: -1, east: 1, west: -1 }
+    const mapStations = rows.filter((row) => isStationInBounds(row, bounds))
+    expect(findBestPriceStationId(mapStations, 'gasolina')).toBe('inside')
+    expect(findBestPriceStationId(mapStations, 'electric')).toBeNull()
+  })
+
   it('recalcula a distância de dados salvos para a região atual', () => {
     expect(distanceKmBetween({ latitude: 0, longitude: 0 }, { latitude: 0, longitude: 1 })).toBeCloseTo(111.2, 1)
   })

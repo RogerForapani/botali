@@ -37,6 +37,14 @@ describe('agrupamento visual do mapa', () => {
     expect(first[0].id).toBe(second[0].id)
   })
 
+  it('mantém o grupo estável ao mover o mapa sem alterar o zoom', () => {
+    const rows = [station('a', 0, 0), station('b', .001, .001)]
+    const first = clusterStations(rows, region)
+    const moved = clusterStations(rows, { ...region, latitude: .003, longitude: .003 })
+    expect(first[0].kind).toBe('cluster')
+    expect(moved[0].id).toBe(first[0].id)
+  })
+
   it('reconstrói a camada nativa depois de uma mudança relevante de zoom', () => {
     expect(shouldRebuildMapAfterZoom(region, { ...region, latitudeDelta: .04, longitudeDelta: .04 })).toBe(true)
   })

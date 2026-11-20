@@ -7,19 +7,19 @@ export type StationMapItemOrCluster = StationMapItem | StationClusterItem
 
 export function clusterStations(stations: Station[], region: RegionLike, selectedId?: string | null): StationMapItemOrCluster[] {
   if (stations.length < 2) return stations.map(toStationItem)
-  const latitudeCell = Math.max(region.latitudeDelta / 11, .00002)
-  const longitudeCell = Math.max(region.longitudeDelta / 6, .00002)
-  const south = region.latitude - region.latitudeDelta / 2
-  const west = region.longitude - region.longitudeDelta / 2
+  const latitudeCell = snapCellSize(region.latitudeDelta / 11)
+  const longitudeCell = snapCellSize(region.longitudeDelta / 6)
   const groups = new Map<string, Station[]>()
   const selected: StationMapItem[] = []
 
   for (const station of stations) {
     if (station.id === selectedId) { selected.push(toStationItem(station)); continue }
-    const row = Math.floor((station.latitude - south) / latitudeCell)
-    const column = Math.floor((station.longitude - west) / longitudeCell)
+    const row = Math.floor(station.latitude / latitudeCell)
+    const column = Math.floor(station.longitude / longitudeCell)
     const key = `${row}:${column}`
-    groups.set(key, [...(groups.get(key) ?? []), station])
+    const members = groups.get(key)
+    if (members) members.push(station)
+    else groups.set(key, [station])
   }
 
   const clustered = [...groups.entries()].map<StationMapItemOrCluster>(([key, members]) => {
@@ -33,6 +33,10 @@ export function clusterStations(stations: Station[], region: RegionLike, selecte
     }
   })
   return [...clustered, ...selected]
+}
+
+function snapCellSize(size: number) {
+  return 2 ** (Math.round(Math.log2(Math.max(size, .00002)) * 2) / 2)
 }
 
 export function shouldRebuildMapAfterZoom(previous: RegionLike, next: RegionLike, threshold = .15) {

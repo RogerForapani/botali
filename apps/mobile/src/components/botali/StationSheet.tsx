@@ -7,19 +7,24 @@ import { radius, shadow, spacing, typography, type ThemeColors } from '../../the
 import type { MapMode, Station } from '../../types'
 import type { MapCenter } from '../../services/stations'
 import { distanceKmBetween } from '../../utils/stationFilters'
+import { stationDisplayBrand, stationDisplayName } from '../../utils/stationDisplay'
 import { compareVehicleTrips, estimatePurchaseTotal, parsePlannedLiters, type Vehicle } from '../../utils/vehicle'
 import { userMessageForError } from '../../utils/appError'
 import { Button } from '../ui/Button'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { FlexRatioBadge } from './FlexRatioBadge'
 
-type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; vehicle: Vehicle | null; userLocation: MapCenter | null; plannedLiters: string; onPlannedLitersChange: (value: string) => void; onRequestLocation: () => Promise<MapCenter>; onOpenProfile: () => void; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onConfirmPrice: (agrees: boolean) => void }
+type Props = { station: Station; mode: MapMode; favorite: boolean; confirmingPrice: boolean; vehicle: Vehicle | null; userLocation: MapCenter | null; plannedLiters: string; onPlannedLitersChange: (value: string) => void; onRequestLocation: () => Promise<MapCenter>; onOpenProfile: () => void; onToggleFavorite: () => void; onClose: () => void; onContribute: () => void; onEdit: () => void; onReportMissing: (reason: string) => Promise<boolean>; onConfirmPrice: (agrees: boolean) => void }
 
-export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle, userLocation, plannedLiters, onPlannedLitersChange, onRequestLocation, onOpenProfile, onToggleFavorite, onClose, onContribute, onEdit, onConfirmPrice }: Props) {
+export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle, userLocation, plannedLiters, onPlannedLitersChange, onRequestLocation, onOpenProfile, onToggleFavorite, onClose, onContribute, onEdit, onReportMissing, onConfirmPrice }: Props) {
   const { colors } = useTheme(); const styles = createStyles(colors)
   const [expanded, setExpanded] = useState(false)
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState('')
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportBusy, setReportBusy] = useState(false)
+  const [reportMessage, setReportMessage] = useState('')
   const fuel = mode === 'electric' ? 'gasolina' : mode
   const price = station.prices[fuel]
   const flexRatio = station.prices.gasolina && station.prices.etanol && !station.prices.gasolina.stale && !station.prices.etanol.stale
@@ -38,6 +43,16 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
     try { await onRequestLocation() }
     catch (error) { setLocationError(userMessageForError(error, 'Não foi possível obter sua localização.')) }
     finally { setLocating(false) }
+  }
+  async function sendMissingReport() {
+    setReportBusy(true); setReportMessage('')
+    try {
+      if (await onReportMissing(reportReason)) {
+        setReportOpen(false)
+        setReportMessage('Sinalização enviada para revisão.')
+      }
+    } catch (error) { setReportMessage(userMessageForError(error, 'Não foi possível enviar a sinalização.')) }
+    finally { setReportBusy(false) }
   }
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
@@ -59,8 +74,9 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
     </View>
     <View style={styles.head}>
       <View style={styles.title}>
-        <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{station.brand.toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
-        <Text style={styles.stationName}>{station.name}</Text>
+        <View style={styles.brandRow}><MaterialCommunityIcons name="gas-station" size={14} color={colors.brandText} /><Text numberOfLines={1} style={styles.eyebrow}>{stationDisplayBrand(station).toUpperCase()}</Text>{station.status === 'pending' ? <Text style={styles.pending}>AGUARDANDO REVISÃO</Text> : null}</View>
+        <Text style={styles.stationName}>{stationDisplayName(station)}</Text>
+        {station.source === 'ANP' ? <Text style={styles.sourceNotice}>{station.coordinateReviewed ? 'Cadastro da ANP' : 'Cadastro da ANP · ponto no mapa a conferir'}</Text> : null}
         <View style={styles.stationMetaRow}><MaterialCommunityIcons name="map-marker-distance" size={15} color={colors.textMuted} /><Text style={styles.stationMeta}>{userDistanceKm === null ? 'Distância indisponível' : `${userDistanceKm.toFixed(1).replace('.', ',')} km de você`}</Text>{station.rating ? <><Text style={styles.stationMetaSeparator}>·</Text><MaterialCommunityIcons name="star" size={14} color={colors.amber} /><Text style={styles.stationMeta}>{station.rating.toFixed(1)}</Text></> : null}</View>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} onPress={onToggleFavorite} style={styles.close}><MaterialCommunityIcons name={favorite ? 'heart' : 'heart-outline'} size={22} color={colors.brandText} /></Pressable>
@@ -91,11 +107,15 @@ export function StationSheet({ station, mode, favorite, confirmingPrice, vehicle
           </>}
         </View>
         <View style={styles.detailRow}><Text style={styles.detailLabel}>ENDEREÇO</Text><Text style={styles.detailValue}>{station.address || 'Endereço ainda não informado'}</Text></View>
+        {station.source === 'ANP' ? <View style={styles.detailRow}><Text style={styles.detailLabel}>RAZÃO SOCIAL NA ANP</Text><Text style={styles.detailValue}>{station.name}</Text></View> : null}
         <View style={styles.allPrices}>
           {(Object.entries(station.prices) as [string, { value: number; stale?: boolean }][]).map(([code, item]) => <View key={code} style={styles.fuelPrice}><Text style={styles.fuelLabel}>{code.replaceAll('_', ' ').toUpperCase()}</Text><Text style={styles.fuelValue}>R$ {item.value.toFixed(2).replace('.', ',')}</Text>{item.stale ? <Text style={styles.fuelStale}>Sem atualização há 5 dias</Text> : null}</View>)}
         </View>
         {station.services?.length ? <View style={styles.detailRow}><Text style={styles.detailLabel}>SERVIÇOS</Text><Text style={styles.detailValue}>{station.services.join(' · ')}</Text></View> : null}
         {station.status !== 'pending' ? <Pressable accessibilityRole="button" onPress={onEdit} style={styles.editButton}><MaterialCommunityIcons name="pencil-outline" size={18} color={colors.brandText} /><Text style={styles.editText}>Sugerir correção deste posto</Text></Pressable> : null}
+        {station.status === 'verified' ? <Pressable accessibilityRole="button" onPress={() => { setReportOpen(true); setReportMessage('') }} style={styles.editButton}><MaterialCommunityIcons name="map-marker-off-outline" size={18} color={colors.warningText} /><Text style={styles.editText}>Sinalizar posto que não existe</Text></Pressable> : null}
+        {reportOpen ? <View style={styles.reportCard}><Text style={styles.reportTitle}>Este posto não existe neste local?</Text><Text style={styles.reportCopy}>Sua sinalização será analisada por um moderador. O posto continuará no mapa até a decisão.</Text><TextInput accessibilityLabel="Detalhes da sinalização" value={reportReason} onChangeText={setReportReason} maxLength={500} multiline placeholder="Conte o que encontrou (opcional)" placeholderTextColor={colors.textMuted} style={styles.reportInput} /><View style={styles.reportActions}><Pressable accessibilityRole="button" onPress={() => setReportOpen(false)} style={styles.tripButton}><Text style={styles.tripButtonText}>Cancelar</Text></Pressable><Pressable accessibilityRole="button" disabled={reportBusy} onPress={sendMissingReport} style={styles.tripButton}><Text style={styles.tripButtonText}>{reportBusy ? 'Enviando…' : 'Enviar sinalização'}</Text></Pressable></View></View> : null}
+        {reportMessage ? <Text accessibilityLiveRegion="polite" style={styles.reportCopy}>{reportMessage}</Text> : null}
         <Text style={styles.dragHint}>Role para ver tudo · arraste a alça para baixo para fechar</Text>
       </View> : <Text style={styles.dragHint}>Toque ou arraste a alça para cima para ver mais · arraste para baixo para fechar</Text>}
     </ScrollView>
@@ -115,6 +135,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   eyebrow: { color: colors.brandText, fontFamily: typography.black, fontSize: 10, letterSpacing: 1.2 },
   pending: { color: colors.warningText, fontFamily: typography.black, fontSize: 8 },
   stationName: { color: colors.offWhite, fontFamily: typography.bold, fontSize: typography.h2, marginTop: 3 },
+  sourceNotice: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 11, marginTop: 4 },
   stationMetaRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing[1], marginTop: 4 },
   stationMeta: { color: colors.textMuted, fontFamily: typography.regular, fontSize: typography.small },
   stationMetaSeparator: { color: colors.textMuted, fontFamily: typography.regular },
@@ -166,6 +187,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   fuelStale: { color: colors.warningText, fontFamily: typography.semibold, fontSize: 8, marginTop: 3 },
   editButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
   editText: { color: colors.brandText, fontFamily: typography.bold, fontSize: 12 },
+  reportCard: { marginTop: spacing[2], padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  reportTitle: { color: colors.offWhite, fontFamily: typography.bold, fontSize: 14 },
+  reportCopy: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 12, lineHeight: 18, marginTop: spacing[2] },
+  reportInput: { minHeight: 64, marginTop: spacing[3], padding: spacing[3], borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, color: colors.offWhite, textAlignVertical: 'top' },
+  reportActions: { flexDirection: 'row', gap: spacing[2] },
   dragHint: { color: colors.textMuted, fontFamily: typography.regular, fontSize: 10, textAlign: 'center', marginTop: spacing[2] },
   actions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] },
   action: { flex: 1 },

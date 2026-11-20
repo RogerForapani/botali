@@ -28,11 +28,12 @@ O crescimento do botali será tratado de forma incremental, medindo o uso real a
 - [x] Criar o projeto de homologação e aplicar o esquema completo com RLS validada.
 - [x] Carregar e validar em homologação 10 mil postos, 80 mil relatos e os limites geográficos de 200 resultados.
 - [x] Repetir o teste ponta a ponta em um projeto de homologação antes do beta público.
-- [ ] Validar restauração de backup e executar a retenção primeiro em homologação.
+- [x] Validar a restauração do banco em projeto isolado, o arquivo sintético do Storage e a leitura como visitante; ver o ensaio de 08/11/2026.
+- [ ] Ensaiar e conferir retenção efetiva primeiro em homologação antes de qualquer limpeza permanente.
 
-O procedimento reproduzível e o verificador estrutural da restauração estão em `docs/BACKUP_RESTORE_RUNBOOK.md` e `supabase/backup/verify_restored_database.sql`. A execução permanece pendente porque o plano gratuito não fornece backup físico restaurável e este computador ainda não possui Docker, `psql` nem uma conexão autenticada ao banco para o backup lógico.
+O procedimento, os tempos e os limites da restauração estão em `docs/BACKUP_RESTORE_RUNBOOK.md`; o verificador estrutural fica em `supabase/backup/verify_restored_database.sql`. A cópia externa criptografada foi recuperada localmente e em outro projeto Supabase em 08/11/2026. O teste autenticado desse projeto foi dispensado pelo responsável; portanto, a recuperação completa do serviço e a retenção efetiva continuam sem aprovação.
 
-Em 30/09/2026, o responsável decidiu manter o plano gratuito e adiar essa execução. A pendência não bloqueia o desenvolvimento do perfil comunitário, mas bloqueia qualquer retenção destrutiva e deve ser resolvida antes do beta público.
+A decisão de 30/09/2026 de adiar o backup descreve o estado da época e foi superada pelo ensaio de 08/11. A retenção destrutiva continua bloqueada pelos testes restantes.
 
 A separação de ambientes e o checklist de promoção estão em `docs/ENVIRONMENTS.md`. A sequência de produto aprovada para perfil, badges, veículo e recursos comunitários está em `docs/ROADMAP.md`.
 
@@ -91,7 +92,7 @@ O runbook, os limites iniciais e a rotina de incidentes estão em `docs/OBSERVAB
 
 ## Retenção de histórico
 
-Os prazos, exceções e o checklist operacional estão em `docs/DATA_RETENTION_POLICY.md`. A migração cria agregados privados e uma função administrativa que primeiro retorna contagens em modo `dry-run`. Nenhuma limpeza recorrente é agendada enquanto o projeto não tiver backup restaurável validado em homologação.
+Os prazos, exceções e o checklist operacional estão em `docs/DATA_RETENTION_POLICY.md`. A migração cria agregados privados e uma função administrativa que primeiro retorna contagens em modo `dry-run`. A cópia externa já foi restaurada em um projeto isolado e a leitura de visitante passou; a limpeza recorrente continua desativada porque o ensaio autenticado foi dispensado, a retenção efetiva ainda não foi conferida e a confiabilidade da execução diária precisa ser acompanhada.
 
 ## Critérios
 

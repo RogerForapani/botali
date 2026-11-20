@@ -1,0 +1,15 @@
+# Atendimento a pedidos de privacidade — preparação do beta
+
+Atualizado em 09/11/2026. Responsável: Roger Junio Marques Forapani. Canal publicado: `rogerforapani@gmail.com`. Este roteiro organiza o atendimento; a avaliação jurídica dos casos e dos prazos aplicáveis ainda é necessária. O pedido de exclusão tem [roteiro específico](ACCOUNT_DELETION_SUPPORT_RUNBOOK.md).
+
+1. **Receber e registrar o mínimo.** Anotar fora do Git data/hora, tipo de pedido, canal, identificador interno da conta quando identificado, responsável pelo atendimento e estado. Restringir acesso ao registro. Não copiar conteúdo da caixa de e-mail, tokens, documentos ou dados do titular para issues, logs de build ou repositório.
+2. **Classificar o direito.** Confirmação/acesso, correção, portabilidade, informação sobre compartilhamento, oposição, bloqueio/anonimização, revogação quando aplicável ou exclusão. Identificar se é solicitação sobre o próprio Botali ou sobre serviço de outro fornecedor.
+3. **Verificar titularidade de forma proporcional.** Comparar o endereço de origem com a conta. Para pedidos de acesso/exportação ou alteração sensível, confirmar a sessão ou usar outro fator adequado; não pedir senha, código ou documento por e-mail como primeira medida. Se a correspondência for duvidosa, responder solicitando um caminho seguro de confirmação antes de revelar ou alterar dados.
+4. **Levantar dados e limitações.** Consultar apenas o necessário em Auth, perfil, contribuições, fotos, alertas e registros locais descritos na política. Distinguir banco ativo, dados públicos anonimizados, backups e dados que ficam só no aparelho. Não prometer portabilidade ou eliminação integral sem verificar as fontes e hipóteses de conservação.
+5. **Executar e revisar.** Aplicar a correção/entrega/eliminação aprovada, conferir resultado por leitura independente e registrar exceções e motivos. Excluir avatar pelo Storage antes de remover usuário do Auth. Quando houver correção/eliminação de dados compartilhados com operadores, avaliar a comunicação necessária.
+6. **Responder ao titular.** Explicar o que foi atendido, o que permaneceu e por quê, e como contestar ou complementar. Enviar dados pessoais somente ao endereço verificado e por meio proporcional à sensibilidade. Registrar data e conclusão, sem reter cópia desnecessária dos dados entregues.
+7. **Acompanhar prazo.** Tratar confirmação/acesso simples prontamente. Para declaração completa de acesso, usar o limite de até 15 dias indicado pela LGPD/ANPD como referência, sujeito à avaliação do caso. Não aplicar esse número indiscriminadamente a todos os direitos; revisar com profissional jurídico e acompanhar a caixa diariamente durante o beta.
+
+Antes do beta público, definir prazo de conservação do registro de atendimento, responsável substituto e roteiro para incidentes ou pedidos de representante. Testar ao menos um pedido de acesso/correção com conta descartável, sem enviar dados de outra pessoa.
+
+Referências: [LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) e [ANPD — direitos dos titulares](https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados-1/direito-dos-titulares).

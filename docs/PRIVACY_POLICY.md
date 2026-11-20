@@ -1,8 +1,10 @@
 # Política de Privacidade do Botali
 
-Última atualização: 10 de outubro de 2026.
+Última atualização: 9 de novembro de 2026.
 
 O Botali é operado por **Roger Junio Marques Forapani**, pessoa física e responsável pelas decisões sobre o tratamento de dados pessoais descrito nesta política. Para dúvidas, solicitações sobre seus dados ou exclusão de conta, escreva para **rogerforapani@gmail.com**.
+
+O aplicativo é destinado a motoristas adultos no Brasil e não foi concebido para crianças. O login com Google não verifica a idade do usuário.
 
 ## Dados utilizados
 
@@ -16,11 +18,13 @@ Alertas de preço também são opcionais e desligados por padrão. Para criá-lo
 
 Se você cadastrar um veículo no Perfil, tipo, marca, modelo, ano, combustível e consumo médio ficam somente no armazenamento local deste aparelho, separados por conta; não são enviados ao Supabase. Esse armazenamento local não é criptografado pelo Botali. A posição precisa obtida por sua ação para calcular distância e custo estimado fica apenas na memória do aplicativo por até cinco minutos, sem ser salva no cadastro do veículo. A estimativa usa distância em linha reta, que pode ser menor que a rota real.
 
+O aplicativo também pode guardar no aparelho o último resultado de postos consultados por até sete dias para manter preços visíveis durante uma falha de conexão. Ao voltar a conexão, o Supabase fornece os dados atualizados; preços antigos são identificados como desatualizados.
+
 Contribuições podem incluir preços, cadastros e correções de postos. O mapa exibe dados de postos aprovados e preços consolidados, sem o e-mail do autor. Relatos individuais e solicitações de correção são acessíveis somente ao autor e à moderação, conforme as regras de acesso do banco.
 
 ## Compartilhamento e segurança
 
-Não vendemos dados pessoais e não usamos localização para publicidade. O Botali usa Google para entrada na conta e mapas, Supabase para autenticação, banco e armazenamento privado de fotos, e Expo para distribuição, atualizações e notificações externas opcionais. Esses fornecedores podem processar os dados necessários para cada serviço, conforme suas próprias políticas.
+Não vendemos dados pessoais e não usamos localização para publicidade. O Botali usa Google para entrada na conta, mapas e entrega de notificações no Android; Supabase para autenticação, banco e armazenamento privado de fotos; e Expo para distribuição, atualizações e notificações externas opcionais. Usamos o Backblaze B2 para guardar cópias de segurança criptografadas do banco e dos arquivos na região **US East, nos Estados Unidos**. O e-mail de suporte é atendido pelo Gmail. Esses fornecedores podem processar os dados necessários para cada serviço conforme os contratos e as políticas aplicáveis. A escolha da região principal do banco não significa que todos os serviços e suboperadores processem dados somente no Brasil.
 
 O acesso ao banco aplica regras por usuário. Resultados públicos de preço e visita são agregados; contribuições brutas e identificadores individuais não são expostos ao público.
 
@@ -32,9 +36,9 @@ Para diagnóstico técnico, o aplicativo pode manter no próprio aparelho uma li
 
 A coordenada precisa usada para validar presença é processada somente para calcular a distância até o posto e é descartada imediatamente. O último preço conhecido de cada posto e combustível pode permanecer para evitar que o mapa perca a referência histórica, sempre marcado como desatualizado quando aplicável.
 
-Os prazos de 90 dias para visitas, 180 dias para confirmações e 24 meses para relatos e correções são **metas da política de retenção**, não uma limpeza automática já em execução. A rotina de remoção e anonimização efetiva permanece desativada até que um backup restaurável seja validado. Enquanto isso, os registros identificáveis podem permanecer além desses prazos, salvo exclusão de conta ou solicitação atendida pelo canal de privacidade. Essa pendência precisa ser resolvida antes do beta público.
+Os prazos de 90 dias para visitas, 180 dias para confirmações e 24 meses para relatos e correções são **metas da política de retenção**, não uma limpeza automática já em execução. A rotina de remoção e anonimização efetiva continua desativada enquanto concluímos as verificações de recuperação e operação. Enquanto isso, os registros identificáveis podem permanecer além desses prazos, salvo exclusão de conta ou solicitação atendida pelo canal de privacidade. Essa pendência precisa ser resolvida antes do beta público.
 
-O prazo planejado para remover comentários livres de avaliações é de 12 meses sem edição; essa remoção automática também está desativada. Dados públicos do estabelecimento e decisões essenciais de moderação podem permanecer anonimizados para preservar a integridade do mapa e da auditoria. Consulte a [política operacional de retenção](https://github.com/RogerForapani/botali/blob/main/docs/DATA_RETENTION_POLICY.md).
+O prazo planejado para remover comentários livres de avaliações é de 12 meses sem edição; essa remoção automática também está desativada. Cópias de segurança criadas antes de uma exclusão de conta não são alteradas imediatamente. Definimos a meta de eliminação dessas cópias após 30 dias. As rotinas externa e local foram ativadas e ensaiadas; a primeira eliminação de uma cópia externa real vencida ainda precisa ser observada. Dados públicos do estabelecimento e decisões essenciais de moderação podem permanecer anonimizados para preservar a integridade do mapa e da auditoria. Consulte a [política operacional de retenção](https://github.com/RogerForapani/botali/blob/main/docs/DATA_RETENTION_POLICY.md).
 
 ## Controle do usuário
 

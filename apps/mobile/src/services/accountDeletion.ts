@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { profileAvatarPath } from './communityProfile'
 
 export async function deleteRemoteAccount(userId: string, confirmation: string): Promise<void> {
+  if (process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill') throw new Error('Exclusão de conta desativada neste teste de restauro.')
   if (!supabase || !userId) throw new Error('Conta não encontrada.')
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError) throw userError

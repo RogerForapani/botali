@@ -2,9 +2,10 @@ import 'react-native-url-polyfill/auto'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL
-const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+const restoreDrill = process.env.EXPO_PUBLIC_APP_VARIANT === 'restore-drill'
+const url = restoreDrill ? process.env.EXPO_PUBLIC_RESTORE_SUPABASE_URL : process.env.EXPO_PUBLIC_SUPABASE_URL
+const key = restoreDrill ? process.env.EXPO_PUBLIC_RESTORE_SUPABASE_ANON_KEY : process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 
 export const supabase = url && key ? createClient(url, key, {
-  auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+  auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
 }) : null

@@ -35,6 +35,10 @@ O Botali não vende localização nem usa seus deslocamentos para publicidade. C
 
 Mapas e navegação.
 
+## Público e distribuição do primeiro beta
+
+Motoristas adultos no Brasil; o aplicativo não é dirigido a crianças. Confirmar a faixa etária e o país no questionário da Play Console antes de enviar o AAB.
+
 ## Contato e URLs antes da publicação
 
 - Política de privacidade: https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md (responsável identificado como pessoa física; revisão jurídica pendente).
