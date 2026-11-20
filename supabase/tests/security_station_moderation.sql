@@ -82,4 +82,47 @@ do $$ begin
 end $$;
 reset role;
 
+select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+set local role authenticated;
+select public.create_station_suggestion(
+  'Audit Rejected Station', 'Shell', 'Rua de Teste, 456', 'Centro',
+  'Belo Horizonte', 'MG', '30000-000', -19.805, -43.805,
+  array['gasolina'], '{}'::text[]
+);
+reset role;
+
+select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444', true);
+set local role authenticated;
+do $$
+declare pending_id uuid;
+begin
+  select id into pending_id from public.stations where name = 'Audit Rejected Station' and status = 'pending';
+  if pending_id is null then raise exception 'Moderator cannot see second pending station'; end if;
+  perform public.moderate_station(pending_id, 'rejected', 'Cadastro duplicado');
+  if (select status from public.stations where id = pending_id) <> 'rejected' then
+    raise exception 'Rejected station status was not updated';
+  end if;
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+set local role authenticated;
+do $$ begin
+  if not exists (
+    select 1 from public.station_moderation_actions a
+    join public.stations s on s.id = a.station_id
+    where s.name = 'Audit Rejected Station' and a.decision = 'rejected'
+      and a.reason = 'Cadastro duplicado'
+  ) then raise exception 'Author cannot read rejection notice'; end if;
+end $$;
+reset role;
+
+set local role anon;
+do $$ begin
+  if exists (select 1 from public.stations where name = 'Audit Rejected Station') then
+    raise exception 'Rejected station is visible to visitor';
+  end if;
+end $$;
+reset role;
+
 rollback;
