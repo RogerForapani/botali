@@ -53,6 +53,8 @@ Em 19/11, a branch isolada `codex/dependency-audit-20261119` atualizou o lockfil
 
 Após a atualização, 85 testes móveis em 14 arquivos, o `typecheck`, o lint da raiz e o build web passaram; o lint manteve três avisos preexistentes. O `expo-doctor` passou em 21/21 verificações e o export Android do JavaScript concluiu. A atualização inclui módulos nativos do Expo, e o hash Android gerado localmente mudou; portanto, exige novo AAB e validação na Play antes de distribuição. O hash local não reproduziu o runtime do build remoto anterior porque o ambiente de geração não é idêntico, mas a mudança dos módulos nativos por si só impede assumir compatibilidade com a OTA instalada. Ainda não houve teste do novo AAB no aparelho.
 
+O EAS concluiu o [AAB 1.0.5 (17)](https://expo.dev/accounts/ningas/projects/botali/builds/47939cf5-d387-4e9f-a936-5f43cf737ca2) a partir do commit `a363bec`, com runtime/fingerprint Android `af1c4150fda4ebf6d9b848c35506f55c360525cb`, diferente do runtime anterior `bb7d339e41234bef3a4b9628bc0a1b740d59db70`. O arquivo tem SHA-256 `0E6E7ECDFFFE3D0BB758BDF199102986F688900C741EFDE9B04A0CD2674B75AF`. A Play aceitou o pacote sem perda de aparelhos compatíveis e disponibilizou `Botali 1.0.5 (17) - teste interno` à faixa interna em 19/11. O único aviso da Play foi a ausência do arquivo opcional de desofuscação. Falta instalar a atualização no Android e repetir os fluxos essenciais; nenhuma versão foi promovida para teste fechado ou produção.
+
 ## Verificações concluídas e limites
 
 - O AAB 16 instalado pela Play não declara localização em segundo plano nem permissão para sobreposição de tela. A chave Maps está restrita ao SDK Android e aos certificados observados da distribuição Play.
