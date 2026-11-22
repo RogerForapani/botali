@@ -46,6 +46,8 @@ const baseConfig = () => ({
     infoPlist: {},
   },
   android: {
+    // A sessão OAuth persiste em AsyncStorage; não a incluir no backup automático do Android.
+    allowBackup: false,
     blockedPermissions: [
       'android.permission.ACCESS_BACKGROUND_LOCATION',
       'android.permission.FOREGROUND_SERVICE_LOCATION',
