@@ -1,8 +1,19 @@
 # Preparação da declaração Segurança dos Dados da Google Play
 
-Atualizado em 23/11/2026. Rascunho para o **beta Android destinado a adultos no Brasil**. **Apenas as respostas iniciais foram salvas como rascunho na Play Console; nada foi enviado à revisão.** A [instrução oficial](https://support.google.com/googleplay/android-developer/answer/10787469) exige considerar os SDKs, dados coletados ou compartilhados, finalidade, obrigatoriedade, segurança e exclusão. Um beta em faixa fechada também precisa da declaração; conferir a exceção apenas se a distribuição ficar exclusivamente na faixa interna.
+Atualizado em 24/11/2026. Declaração para o **beta Android destinado a adultos no Brasil**. O formulário completo foi **salvo na Play Console e está pronto na Visão geral da publicação**. **Não foi enviado ao Google para revisão.** A [instrução oficial](https://support.google.com/googleplay/android-developer/answer/10787469) exige considerar os SDKs, dados coletados ou compartilhados, finalidade, obrigatoriedade, segurança e exclusão. Um beta em faixa fechada também precisa da declaração; a faixa exclusivamente interna é dispensada.
 
-Este quadro descreve o código presente na branch de preparação. A declaração só pode ser fechada com o AAB que será distribuído, seus manifestos, dependências e documentação dos fornecedores. “Coletado” e “compartilhado” aqui são **pontos de investigação**, não respostas definitivas do formulário.
+## Respostas salvas na Play Console
+
+- Há coleta de dados; os dados enviados são criptografados em trânsito; a criação de conta usa OAuth.
+- Há exclusão de conta no app e por solicitação pela Web. Também é possível pedir exclusão de dados específicos sem encerrar a conta. Os dois links do formulário apontam para a [política de privacidade](https://github.com/RogerForapani/botali/blob/main/docs/PRIVACY_POLICY.md), que explica os pedidos, dados mantidos e a situação real da retenção. Antes de publicar o beta fechado, preferir uma página de exclusão direta com o mesmo conteúdo atualizado.
+- Coletados: nome, e-mail, ID de usuário; localização aproximada e exata; foto; registros de falhas e desempenho; interações no app e conteúdo criado pelo usuário; identificadores do dispositivo e outros IDs.
+- Compartilhados com outras organizações: registros de falhas e desempenho, interações no app e identificadores do dispositivo. Essa classificação conservadora considera o tratamento do Maps SDK para melhorar serviços do Google. Não foram declarados anúncios, dados financeiros, contatos ou dados do veículo, que ficam no aparelho.
+- Nome, e-mail, ID de usuário, localização, foto e conteúdo criado pelo usuário foram marcados como coleta opcional, pois há uso do mapa como visitante e ações deliberadas para enviá-los. Os dados automáticos do Maps SDK e do Expo Update foram marcados como obrigatórios. Dados persistidos foram marcados como não efêmeros.
+- Finalidades selecionadas: funcionalidade do app, gerenciamento de conta, prevenção de fraude, personalização de localização e análise técnica, conforme cada tipo. A prévia da Play foi conferida após o preenchimento. A confirmação exibida foi: “A mudança foi salva. Acesse ‘Visão geral da publicação’ para enviar a atualização para revisão.”
+
+Fontes adicionais para as respostas técnicas: [Expo Update](https://docs.expo.dev/eas-update/store-privacy-declarations/), [Maps SDK](https://developers.google.com/maps/documentation/android-sdk/play-data-disclosure), [Firebase Android](https://firebase.google.com/docs/android/play-data-disclosure), [Google Maps Platform em trânsito](https://developers.google.com/maps/security/compliance/security-compliance) e [Supabase TLS](https://supabase.com/docs/guides/security/tls). Revise a declaração quando mudar o AAB, os SDKs ou os fluxos de dados.
+
+Este quadro registra o raciocínio usado no formulário e pontos de manutenção para futuras versões.
 
 | Categoria a conferir na Play Console | Fluxo identificado | Finalidade e escolha do usuário | Evidência / conferência antes de declarar |
 | --- | --- | --- | --- |
@@ -17,21 +28,11 @@ Este quadro descreve o código presente na branch de preparação. A declaraçã
 | Dados financeiros/veículo | Tipo, marca, modelo, ano e consumo do veículo ficam no armazenamento local; o app calcula estimativa de custo | Cadastro opcional | `services/vehicle.ts`; conferir se nenhum SDK ou diagnóstico transmite esses campos e se se enquadram em categoria da loja |
 | Favoritos e resultado em cache | Favoritos separados por conta e último resultado de postos ficam no aparelho | Funções de conveniência | `services/favorites.ts`, `services/stationCache.ts`; não declarar transmissão ao servidor sem evidência |
 
-## Perguntas do formulário que continuam abertas
+## Conferências antes do envio à revisão
 
-- Na etapa inicial da Play, foi informado em rascunho que há coleta de dados e que a criação de conta usa OAuth. O aplicativo não oferece criação de conta por senha na versão Android; o fluxo de e-mail e senha é somente para contas existentes e para a conta de avaliação criada no painel.
-- A [documentação oficial do FCM](https://firebase.google.com/docs/android/play-data-disclosure) indica coleta automática ligada ao Firebase Installations; conferir se e como esse SDK entrou no AAB distribuído pela Play. A [documentação da Expo](https://docs.expo.dev/push-notifications/faq/) informa uso de HTTPS para as conexões de entrega e retenção transitória do conteúdo; isso não prova que todos os fluxos do app são criptografados em trânsito.
-
-- Quais dados cada SDK integrado coleta ou compartilha automaticamente, mesmo sem ação explícita na interface? Conferir Maps SDK, Google Sign-In/OAuth, FCM, Expo Updates/Push, Supabase e bibliotecas do AAB.
-- Quais transmissões são criptografadas em trânsito e como isso foi verificado para **todos** os destinos? Não marcar “sim” com base em um único endpoint HTTPS.
-- Para cada categoria, a coleta é obrigatória para usar o aplicativo ou opcional para a função específica? Distinguir leitura como visitante de contribuição autenticada.
-- Há compartilhamento segundo a definição específica da Play Console, inclusive processamento por terceiros e exceções aplicáveis? Não inferir “não compartilhado” apenas porque os fornecedores atuam sob contrato.
-- A solicitação de exclusão pode ser iniciada no app e por URL pública? Confirmar no pacote final e na página pública. Documentar que arquivos de backup anteriores não são apagados imediatamente e ainda aguardam prazo de expurgo.
-- Há publicidade, identificadores de anúncios ou outros componentes adicionados na compilação final? Conferir o AAB em vez de presumir ausência.
-
-## Fechamento antes do envio
-
-1. Gerar o AAB do beta e listar manifesto, permissões e SDKs presentes.
-2. Conferir a documentação de Segurança dos Dados de cada SDK e registrar versão e link consultado.
-3. Testar como visitante, com login, foto, localização e push, observando os destinos de dados; comparar com a política.
-4. Revisar cada resposta com o responsável e a revisão jurídica. Só então preencher e enviar a declaração na Play Console.
+- O Android oferece criação por OAuth. O fluxo de e-mail e senha atende apenas contas existentes e a conta de avaliação criada no painel.
+- O AAB 1.0.5 (18) foi inspecionado: contém Maps SDK, FCM/Firebase Installations, Expo Update, permissões de localização em primeiro plano, galeria e notificações; não contém permissão de localização em segundo plano. Ao trocar o pacote, repetir a inspeção de SDKs, manifesto e fluxos de rede.
+- A [documentação oficial do FCM](https://firebase.google.com/docs/android/play-data-disclosure) informa coleta do ID de instalação; [Expo Update](https://docs.expo.dev/eas-update/store-privacy-declarations/) envia ID da instalação e dados de falha. Esses identificadores e registros foram incluídos no formulário.
+- A página de exclusão deve informar diretamente que backups anteriores não são apagados na hora, que 30 dias é uma **meta ainda não comprovada por expurgo externo real**, e quais registros podem persistir anonimizados. Atualizar a página pública e trocar o URL da Play antes de enviar ao Google para revisão.
+- A política de retenção de visitas, confirmações e correções continua pendente de execução automática. Corrigir antes do beta público e manter a declaração consistente com o comportamento real.
+- A documentação dos SDKs descreve a versão mais recente; verificar diferenças após atualizações de dependências. Revisar a resposta de compartilhamento do Maps SDK e de criptografia em trânsito se mudar o provedor ou aparecer endpoint sem TLS.
