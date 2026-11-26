@@ -29,7 +29,7 @@ O aplicativo oferece temas claro e escuro. O modo claro é o padrão inicial; a 
 
 Estruture a interface em quatro camadas: Tokens → Primitivos → Componentes botali → Features.
 
-Preço comunitário deve sempre mostrar confiança por texto, número e cor. No mapa, somente a melhor opção usa o verde principal; os demais marcadores ficam neutros. No celular, priorize mapa com bottom sheet; no desktop, lista lateral com mapa.
+Preço comunitário deve sempre mostrar confiança por texto, número e cor. No mapa, somente o posto de menor preço atualizado entre os postos visíveis na tela usa o verde principal; os demais marcadores ficam neutros. Quando esse posto estiver agrupado, o grupo recebe o destaque verde e um ícone de estrela, enquanto os outros grupos permanecem neutros. O destaque acompanha o combustível selecionado e muda ao mover o mapa. No celular, priorize mapa com bottom sheet; no desktop, lista lateral com mapa.
 
 O seletor do mapa alterna Gasolina, Etanol, Diesel e Recarga. Marcadores de combustível mostram o preço selecionado como informação principal e, quando possível, “Etanol NN%” em uma segunda linha discreta. O modo Recarga usa azul informativo e filtra postos com carregamento elétrico.
 
