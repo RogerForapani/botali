@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #171717; background: #fafaf7; }
+    .canvas { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fafaf7; }
+    .canvas::before { content: ''; position: absolute; width: 1120px; height: 1120px; border-radius: 50%; top: 390px; right: -560px; background: #e6f8ec; }
+    .canvas::after { content: ''; position: absolute; width: 720px; height: 720px; border-radius: 50%; bottom: -440px; left: -420px; background: #e6f8ec; }
+    .topline { position: absolute; z-index: 2; top: 84px; left: 74px; display: flex; align-items: center; gap: 18px; font-size: 30px; font-weight: 800; letter-spacing: -.025em; }
+    .topline img { width: 58px; height: 58px; object-fit: contain; border-radius: 13px; }
+    .eyebrow { position: absolute; z-index: 2; top: 202px; left: 74px; color: #157b3c; font-size: 22px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { position: absolute; z-index: 2; top: 235px; left: 70px; right: 70px; margin: 0; font-size: 78px; line-height: 1.04; letter-spacing: -.055em; font-weight: 900; }
+    h1 em { color: #159d4d; font-style: normal; }
+    .sub { position: absolute; z-index: 2; top: 412px; left: 74px; right: 74px; font-size: 32px; line-height: 1.24; color: #454a45; }
+    .demo-label { position: absolute; z-index: 2; top: 490px; left: 74px; font-size: 21px; font-weight: 800; color: #555b55; text-transform: uppercase; letter-spacing: .07em; }
+    .phone { position: absolute; z-index: 3; left: 152px; top: 550px; width: 776px; height: 1560px; border: 16px solid #171717; border-radius: 72px; background: #fff; overflow: hidden; box-shadow: 0 24px 70px rgba(23,23,23,.24); }
+    .phone img { width: 100%; height: auto; display: block; }
+    .footer { position: absolute; z-index: 5; left: 0; bottom: 0; height: 70px; width: 100%; background: linear-gradient(transparent,#fafaf7); }
+    .canvas.search { background: #eff9f1; }
+    .canvas.search::before { background: #d8f4e0; }
+    .canvas.search::after { background: #fafaf7; }
+    .canvas.alert { background: #171717; color: #fafaf7; }
+    .canvas.alert::before { background: #123424; }
+    .canvas.alert::after { background: #203e2b; }
+    .canvas.alert .eyebrow { color: #42dd78; }
+    .canvas.alert h1 em { color: #42dd78; }
+    .canvas.alert .sub { color: #d4e0d7; }
+    .canvas.alert .footer { background: linear-gradient(transparent,#171717); }
+    .canvas.alert .phone { top: 545px; height: 1565px; }
+    .canvas.alert .demo-label, .canvas.vehicle .demo-label { display: none; }
+    .canvas.vehicle { background: #f6f3eb; }
+    .canvas.vehicle::before { background: #e8f4e8; }
+    .canvas.vehicle .phone { top: 545px; }
+  </style>
+</head>
+<body>
+  <main id="canvas" class="canvas">
+    <div class="topline"><img src="../botali-play-icon-512.png" alt=""><span>botali</span></div>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="headline"></h1>
+    <div class="sub" id="sub"></div>
+    <div class="demo-label">Preços ilustrativos</div>
+    <div class="phone"><img id="screen" alt="Captura real do aplicativo Botali"></div>
+    <div class="footer"></div>
+  </main>
+  <script>
+    const slides = {
+      map: { eyebrow: 'Explore no mapa', headline: 'Compare preços<br><em>perto de você.</em>', sub: 'Veja postos e preços no mapa em um só lugar.', image: 'source/map-demo.png' },
+      search: { eyebrow: 'Encontre seu posto', headline: 'Busque e<br><em>compare.</em>', sub: 'Pesquise por nome, bandeira ou endereço.', image: 'source/search-demo.png' },
+      alert: { eyebrow: 'Alerta de preço', headline: 'Preço bom?<br><em>Fique sabendo.</em>', sub: 'Escolha combustível, limite e área de interesse.', image: 'source/alert.jpg' },
+      vehicle: { eyebrow: 'Seu veículo', headline: 'Mais controle<br><em>ao abastecer.</em>', sub: 'Cadastre seus combustíveis e consumo por litro.', image: 'source/vehicle.jpg' },
+    };
+    const key = new URLSearchParams(location.search).get('slide') || 'map';
+    const slide = slides[key];
+    document.getElementById('canvas').classList.add(key);
+    document.getElementById('eyebrow').textContent = slide.eyebrow;
+    document.getElementById('headline').innerHTML = slide.headline;
+    document.getElementById('sub').textContent = slide.sub;
+    document.getElementById('screen').src = slide.image;
+  </script>
+</body>
+</html>

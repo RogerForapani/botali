@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1024px; height: 500px; overflow: hidden; }
+    body { background: #171717; color: #fafaf7; font-family: Arial, Helvetica, sans-serif; }
+    main { position: relative; width: 1024px; height: 500px; overflow: hidden; background: radial-gradient(circle at 92% 8%, #24543b 0, #171717 58%); }
+    .bar { position: absolute; left: 58px; top: 64px; display: flex; align-items: center; gap: 13px; font-weight: 800; font-size: 28px; }
+    .bar img { width: 42px; height: 42px; border-radius: 10px; }
+    h1 { position: absolute; left: 58px; top: 136px; margin: 0; font-size: 54px; line-height: 1.06; letter-spacing: -.05em; font-weight: 900; }
+    h1 em { color: #46db7e; font-style: normal; }
+    p { position: absolute; left: 60px; top: 310px; margin: 0; font-size: 23px; line-height: 1.25; color: #d9e3db; }
+    .line { position: absolute; left: 60px; top: 408px; width: 90px; height: 8px; border-radius: 10px; background: #22c55e; }
+    .note { position: absolute; left: 60px; bottom: 29px; font-size: 14px; letter-spacing: .04em; color: #b7c9bb; }
+    .device { position: absolute; left: 618px; top: -125px; width: 338px; height: 695px; border: 10px solid #070b08; border-radius: 46px; overflow: hidden; box-shadow: -26px 14px 55px rgba(0,0,0,.5); transform: rotate(9deg); }
+    .device img { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="bar"><img src="../botali-play-icon-512.png" alt="">botali</div>
+    <h1>O melhor posto<br><em>tá ali.</em></h1>
+    <p>Compare preços e escolha<br>onde abastecer.</p>
+    <div class="line"></div>
+    <div class="note">Preços ilustrativos</div>
+    <div class="device"><img src="source/map-demo.png" alt="Captura demonstrativa do mapa do Botali"></div>
+  </main>
+</body>
+</html>
